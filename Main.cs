@@ -45,7 +45,7 @@ namespace s649PBR
             Thing t = null;
             string prod = "";
             //Thing t = ThingGen.Create("potion_empty");
-            Debug.Log("[PBR]Akibin:" + __instance.owner.id.ToString());
+            //Debug.Log("[PBR]Akibin:" + __instance.owner.id.ToString());
             int num;
             if(int.TryParse(__instance.owner.id, out num)){
                 switch(num){
@@ -69,7 +69,12 @@ namespace s649PBR
                 if(c.IsPC){
                      c.Pick(t);
                 }else {
-                    EClass._zone.AddCard(t, c.pos);
+                    if(EClass.rnd(3) == 0){
+                        EClass._zone.AddCard(t, c.pos);
+                    } else {
+                       c.Pick(t);
+                    }
+                    
                 }
             }
         }
