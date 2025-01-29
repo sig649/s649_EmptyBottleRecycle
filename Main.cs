@@ -61,19 +61,38 @@ namespace s649PBR
                 break;
                 }
             } else {
-                prod = "potion_empty";
+                switch(__instance.owner.id){
+                    case "crimAle" : prod = "726";
+                    break;
+                    default : prod = "potion_empty";
+                    break;
+                }
+                
             }
             
             if(prod != ""){
-                t = ThingGen.Create(prod);
                 if(c.IsPC){
-                     c.Pick(t);
-                }else {
-                    if(EClass.rnd(3) == 0){
-                        EClass._zone.AddCard(t, c.pos);
+                    t = ThingGen.Create(prod);
+                    c.Pick(t);
+                } else {
+                    if(prod != "potion_empty"){
+                        t = ThingGen.Create(prod);
+                        if(EClass.rnd(4) == 0){
+                            EClass._zone.AddCard(t, c.pos);
+                        } else {
+                            c.Pick(t);
+                        }
                     } else {
-                       c.Pick(t);
+                        if(EClass.rnd(4) == 0){
+                            t = ThingGen.Create(prod);
+                            if(EClass.rnd(4) == 0){
+                                EClass._zone.AddCard(t, c.pos);
+                            } else {
+                                c.Pick(t);
+                            }
+                        } 
                     }
+                    
                     
                 }
             }
