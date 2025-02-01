@@ -42,6 +42,7 @@ namespace s649PBR
         [HarmonyPostfix]
         [HarmonyPatch(typeof(TraitDrink), "OnDrink")]
         public static void Postfix(TraitDrink __instance, Chara c){
+            Debug.Log("[PBR]Drinked->" + __instance.owner.id.ToString());
             Thing t = null;
             string prod = "";
             //Thing t = ThingGen.Create("potion_empty");
@@ -49,11 +50,15 @@ namespace s649PBR
             int num;
             if(int.TryParse(__instance.owner.id, out num)){
                 switch(num){
+                    case 928 : prod = "potion_empty";//horumon
+                    break;
                     case 718 : prod = "1170";//coffee -> akikan
+                    break;
+                    case >= 504 and <= 505 : prod = "1170";//-> akikan
                     break;
                 case >= 48 and <= 59 : prod = "726";//akibin
                 break;
-                case >= 501 and <= 508 : prod = "529";//akikan
+                case >= 501 and <= 508 : prod = "726";
                 break;
                 case >= 718 and <= 1134 : prod = "726";
                 break;
@@ -69,21 +74,21 @@ namespace s649PBR
                 }
                 
             }
-            
             if(prod != ""){
+                Debug.Log("[PBR]Prod->" + prod + " :by " + c.GetName(NameStyle.Simple));
                 if(c.IsPC){
                     t = ThingGen.Create(prod);
                     c.Pick(t);
                 } else {
                     if(prod != "potion_empty"){
                         t = ThingGen.Create(prod);
-                        if(EClass.rnd(4) == 0){
+                        if(EClass.rnd(9) == 0){
                             EClass._zone.AddCard(t, c.pos);
                         } else {
                             c.Pick(t);
                         }
                     } else {
-                        if(EClass.rnd(4) == 0){
+                        if(EClass.rnd(2) == 0){
                             t = ThingGen.Create(prod);
                             if(EClass.rnd(4) == 0){
                                 EClass._zone.AddCard(t, c.pos);
