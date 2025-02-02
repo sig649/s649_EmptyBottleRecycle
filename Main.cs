@@ -14,23 +14,29 @@ namespace s649PBR
 
     public class Main : BaseUnityPlugin
     {
+        private static ConfigEntry<bool> CE_FlagNpcCreatesBottlesWhenDrinking;
+        private static ConfigEntry<bool> CE_DebugLogging;
+        
+        public static bool configFlagNpcCreatesBottlesWhenDrinking => CE_FlagNpcCreatesBottlesWhenDrinking.Value;
+
+        public static bool configDebugLogging => CE_DebugLogging.Value;
+        
         /*
         private static ConfigEntry<bool> flagModInfiniteDigOnField;
         private static ConfigEntry<bool> flagModInfiniteDigOnFieldToNothing;
-        private static ConfigEntry<bool> flagModDiggingChunk;
-
+        
 
         public static bool configFlagModInfiniteDigOnField => flagModInfiniteDigOnField.Value;
         public static bool configFlagModInfiniteDigOnFieldToNothing => flagModInfiniteDigOnFieldToNothing.Value;
-        public static bool configFlagModDiggingChunk => flagModDiggingChunk.Value;
         
         */
         private void Start()
         {
             //flagModInfiniteDigOnField = Config.Bind("#FUNC_01_00_a", "MOD_INFINITE_DIG", true, "Mod digging infinite dirt chunk on field");
             //flagModInfiniteDigOnFieldToNothing = Config.Bind("#FUNC_01_00_b", "CHANGE_TO_DIGGING_NOTHING_ON_FIELD", false, "Digging nothing on field");
-            //flagModDiggingChunk = Config.Bind("#FUNC_01_01", "MOD_DIGGING_CHUNK", true, "Mod digging chunks (This function takes precedence over #FUNC_01_00)");
+            CE_FlagNpcCreatesBottlesWhenDrinking = Config.Bind("#FUNC_01", "FLAG_NPC_CREATES_BOTTLE_WHEN_DRINKING", true, "NPC creates empty bottle when drinking");
             //UnityEngine.Debug.Log("[LS]Start [configLog:" + propFlagEnablelLogging.ToString() + "]");
+            CE_DebugLogging = Config.Bind("#FUNC_ZZ", "DEBUG_LOGGING", false, "If true, Outputs debug info.");
             var harmony = new Harmony("Main");
             new Harmony("Main").PatchAll();
         }
@@ -38,17 +44,19 @@ namespace s649PBR
     }
     //++++EXE++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     [HarmonyPatch]
-    public class PostExe{
+    public class PatchExe{
         [HarmonyPostfix]
         [HarmonyPatch(typeof(TraitDrink), "OnDrink")]
         public static void Postfix(TraitDrink __instance, Chara c){
-            Debug.Log("[PBR]Drinked->" + __instance.owner.id.ToString());
+            if(Main.configDebugLogging){
+                Debug.Log("[PBR]Drinked->" + __instance.owner.id.ToString());
+            }
             Thing t = null;
             string prod = "";
             //Thing t = ThingGen.Create("potion_empty");
             //Debug.Log("[PBR]Akibin:" + __instance.owner.id.ToString());
             int num;
-            if(int.TryParse(__instance.owner.id, out num)){
+            if(int.TryParse(__instance.owner.id, out num)){//owner.idが数字
                 switch(num){
                     case 928 : prod = "potion_empty";//horumon
                     break;
@@ -66,8 +74,12 @@ namespace s649PBR
                 break;
                 }
             } else {
-                switch(__instance.owner.id){
+                switch(__instance.owner.id){//owner.idが数字以外
+                    case "bucket" : prod = "bucket_empty";
+                    break;
                     case "crimAle" : prod = "726";
+                    break;
+                    case "milk" or "milkcan" : prod = "726";
                     break;
                     default : prod = "potion_empty";
                     break;
@@ -75,33 +87,66 @@ namespace s649PBR
                 
             }
             if(prod != ""){
-                Debug.Log("[PBR]Prod->" + prod + " :by " + c.GetName(NameStyle.Simple));
+                if(Main.configDebugLogging){
+                    Debug.Log("[PBR]Prod->" + prod + " :by " + c.GetName(NameStyle.Simple));
+                }     
                 if(c.IsPC){
                     t = ThingGen.Create(prod);
                     c.Pick(t);
                 } else {
-                    if(prod != "potion_empty"){
-                        t = ThingGen.Create(prod);
-                        if(EClass.rnd(9) == 0){
-                            EClass._zone.AddCard(t, c.pos);
-                        } else {
-                            c.Pick(t);
-                        }
-                    } else {
-                        if(EClass.rnd(2) == 0){
+                    if(Main.configFlagNpcCreatesBottlesWhenDrinking){
+                        if(prod != "potion_empty"){
                             t = ThingGen.Create(prod);
-                            if(EClass.rnd(4) == 0){
-                                EClass._zone.AddCard(t, c.pos);
-                            } else {
-                                c.Pick(t);
-                            }
-                        } 
+                                if(EClass.rnd(9) == 0){
+                                    EClass._zone.AddCard(t, c.pos);
+                                } else {
+                                    c.Pick(t);
+                                }
+                        } else {
+                            if(EClass.rnd(2) == 0){
+                                t = ThingGen.Create(prod);
+                                if(EClass.rnd(4) == 0){
+                                    EClass._zone.AddCard(t, c.pos);
+                                } else {
+                                    c.Pick(t);
+                                }
+                            } 
+                        }
                     }
-                    
-                    
                 }
             }
         }
+        //TraitWell.OnBlend実行時にも瓶を還元する
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(TraitWell), "OnBlend")]
+        public static void Postfix(TraitWell __instance, Thing t, Chara c){
+            if(Main.configDebugLogging){
+                Debug.Log("[PBR]Blend->" + t.id.ToString());
+            }
+            string prod = "";
+            switch(t.id){
+                case "snow" or "drug" : break;
+                case "water" or "water_dirty" or "potion" or "perfume": prod = "potion_empty";
+                break;
+                case "bucket" : prod = "bucket_empty";
+                break;
+                case "milk" : prod = "726";//akibin
+                break;
+                case "504" or "505" or "718" : prod = "1170";//akikan
+                break;
+                default : prod = "726";//akibin
+                break;
+            }
+            if(Main.configDebugLogging && prod != ""){
+                    Debug.Log("[PBR]Prod->" + prod + " :by " + c.GetName(NameStyle.Simple));
+            }
+            if(c.IsPC && prod != ""){
+                t = ThingGen.Create(prod);
+                c.Pick(t);
+            }
+
+        }
+
     }
     
     //+++++++ EndExe +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
