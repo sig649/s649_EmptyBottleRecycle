@@ -3,40 +3,45 @@ using HarmonyLib;
 
 using UnityEngine;
 using BepInEx.Configuration;
+using System;
 //using System.IO;
+//using System.Linq;
+//using System.Text;
+//using System.Threading.Tasks;
+using System.Collections.Generic;
 //using System.Diagnostics;
 using Debug = UnityEngine.Debug;
-using System.Collections.Generic;
+//using System.Collections.Generic;
 
-namespace s649PBR
+namespace s649Osuikumi
 {
-    [BepInPlugin("s649_PotionBottleRecycle", "s649 Potion Bottle Recycle", "0.0.0.0")]
+    [BepInPlugin("s649_OsuiKumi", "s649 WaterDrawingByPotionBottle", "0.0.0.0")]
 
     public class Main : BaseUnityPlugin
     {
-        private static ConfigEntry<bool> CE_FlagNpcCreatesBottlesWhenDrinking;
+        private static ConfigEntry<bool> CE_FlagReplaceWaterFloor;
         private static ConfigEntry<bool> CE_DebugLogging;
         
-        public static bool configFlagNpcCreatesBottlesWhenDrinking => CE_FlagNpcCreatesBottlesWhenDrinking.Value;
-
+        public static bool configReplaceWaterFloor => CE_FlagReplaceWaterFloor.Value;
         public static bool configDebugLogging => CE_DebugLogging.Value;
         
         /*
-        private static ConfigEntry<bool> flagModInfiniteDigOnField;
-        private static ConfigEntry<bool> flagModInfiniteDigOnFieldToNothing;
         
+        private static ConfigEntry<bool> flagModInfiniteDigOnFieldToNothing;
+        private static ConfigEntry<bool> flagModDiggingChunk;
 
-        public static bool configFlagModInfiniteDigOnField => flagModInfiniteDigOnField.Value;
+
         public static bool configFlagModInfiniteDigOnFieldToNothing => flagModInfiniteDigOnFieldToNothing.Value;
+        public static bool configFlagModDiggingChunk => flagModDiggingChunk.Value;
         
         */
         private void Start()
         {
-            //flagModInfiniteDigOnField = Config.Bind("#FUNC_01_00_a", "MOD_INFINITE_DIG", true, "Mod digging infinite dirt chunk on field");
-            //flagModInfiniteDigOnFieldToNothing = Config.Bind("#FUNC_01_00_b", "CHANGE_TO_DIGGING_NOTHING_ON_FIELD", false, "Digging nothing on field");
-            CE_FlagNpcCreatesBottlesWhenDrinking = Config.Bind("#FUNC_01", "FLAG_NPC_CREATES_BOTTLE_WHEN_DRINKING", true, "NPC creates empty bottle when drinking");
-            //UnityEngine.Debug.Log("[LS]Start [configLog:" + propFlagEnablelLogging.ToString() + "]");
+            CE_FlagReplaceWaterFloor = Config.Bind("#FUNC_01", "FLAG_REPLACE_WATER_FLOOR", true, "If true, drawing water changes water floor");
             CE_DebugLogging = Config.Bind("#FUNC_ZZ", "DEBUG_LOGGING", false, "If true, Outputs debug info.");
+            //flagModInfiniteDigOnFieldToNothing = Config.Bind("#FUNC_01_00_b", "CHANGE_TO_DIGGING_NOTHING_ON_FIELD", false, "Digging nothing on field");
+            //flagModDiggingChunk = Config.Bind("#FUNC_01_01", "MOD_DIGGING_CHUNK", true, "Mod digging chunks (This function takes precedence over #FUNC_01_00)");
+            //UnityEngine.Debug.Log("[LS]Start [configLog:" + propFlagEnablelLogging.ToString() + "]");
             var harmony = new Harmony("Main");
             new Harmony("Main").PatchAll();
         }
@@ -44,114 +49,142 @@ namespace s649PBR
     }
     //++++EXE++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     [HarmonyPatch]
-    public class PatchExe{
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(TraitDrink), "OnDrink")]
-        public static void Postfix(TraitDrink __instance, Chara c){
-            if(Main.configDebugLogging){
-                Debug.Log("[PBR]Drinked->" + __instance.owner.id.ToString());
+    public class TraitPotionEmptyPatch{
+        internal static Point pos = null;
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(TraitPotionEmpty), "CanUse")]
+        internal static bool Prefix(Chara c, Point p, ref bool __result){
+            if(p.cell.IsTopWater){
+                __result = p.cell.IsTopWaterAndNoSnow;
+                return false;
             }
-            Thing t = null;
-            string prod = "";
-            //Thing t = ThingGen.Create("potion_empty");
-            //Debug.Log("[PBR]Akibin:" + __instance.owner.id.ToString());
-            int num;
-            if(int.TryParse(__instance.owner.id, out num)){//owner.idが数字
-                switch(num){
-                    case 928 : prod = "potion_empty";//horumon
-                    break;
-                    case 718 : prod = "1170";//coffee -> akikan
-                    break;
-                    case >= 504 and <= 505 : prod = "1170";//-> akikan
-                    break;
-                case >= 48 and <= 59 : prod = "726";//akibin
-                break;
-                case >= 501 and <= 508 : prod = "726";
-                break;
-                case >= 718 and <= 1134 : prod = "726";
-                break;
-                default : prod = "potion_empty";
-                break;
-                }
-            } else {
-                switch(__instance.owner.id){//owner.idが数字以外
-                    case "bucket" : prod = "bucket_empty";
-                    break;
-                    case "crimAle" : prod = "726";
-                    break;
-                    case "milk" or "milkcan" : prod = "726";
-                    break;
-                    default : prod = "potion_empty";
-                    break;
+            return true;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(TraitPotionEmpty), "OnUse")]
+        internal static bool Prefix(Chara c, Point p,TraitPotionEmpty __instance, ref bool __result){
+            TraitWell well = __instance.GetWell(p);
+            if(well == null){
+                SE.Play("water_farm");
+                pos = p;
+                //int idCell = pos.cell;
+                //Debug.Log("[OK]source:" + pos.cell.ToString());
+                switch ((pos.HasBridge ? pos.sourceBridge : pos.sourceFloor).alias)
+                {
+                    case "floor_water_shallow":
+                        ChangeFloor("floor_water_shallow2");
+                        break;
+                    case "floor_water":
+                        ChangeFloor("floor_water_shallow");
+                        break;
+                    case "floor_water_deep":
+                        ChangeFloor("floor_water");
+                        break;
+                    default:
+                        ChangeFloor("floor_raw3");
+                        break;
                 }
                 
-            }
-            if(prod != ""){
-                if(Main.configDebugLogging){
-                    Debug.Log("[PBR]Prod->" + prod + " :by " + c.GetName(NameStyle.Simple));
-                }     
-                if(c.IsPC){
-                    t = ThingGen.Create(prod);
-                    c.Pick(t);
+                if (EClass.rnd(3) == 0)
+                {
+                    c.stamina.Mod(-1);
+                }
+                
+                //Debug.Log("czbioid = " + EClass.pc.currentZone.biome.id.ToString());
+                __instance.owner.ModNum(-1);
+                string biome = EClass.pc.currentZone.biome.id.ToString();
+                Thing t;
+                if(biome == "Sand" || biome == "Water"){//sea
+                    t = ThingGen.Create("1142");//siomizu
                 } else {
-                    if(Main.configFlagNpcCreatesBottlesWhenDrinking){
-                        if(prod != "potion_empty"){
-                            t = ThingGen.Create(prod);
-                                if(EClass.rnd(9) == 0){
-                                    EClass._zone.AddCard(t, c.pos);
-                                } else {
-                                    c.Pick(t);
-                                }
-                        } else {
-                            if(EClass.rnd(2) == 0){
-                                t = ThingGen.Create(prod);
-                                if(EClass.rnd(4) == 0){
-                                    EClass._zone.AddCard(t, c.pos);
-                                } else {
-                                    c.Pick(t);
-                                }
-                            } 
-                        }
-                    }
+                    t = ThingGen.Create("water_dirty");
+                }
+                
+                c.Pick(t);
+                __result = true;
+                return false;
+
+            }
+            return true;
+        }
+
+        internal static void ChangeFloor(string id)
+        {
+            if(!Main.configReplaceWaterFloor){
+                return ;
+            }
+            SourceFloor.Row row = EClass.sources.floors.alias[id];
+            if (pos.HasBridge)
+            {
+                pos.cell._bridge = (byte)row.id;
+                if (id == "floor_raw3")
+                {
+                    pos.cell._bridgeMat = 45;
                 }
             }
+            else
+            {
+                pos.cell._floor = (byte)row.id;
+                if (id == "floor_raw3")
+                {
+                    pos.cell._floorMat = 45;
+                }
+            }
+            EClass._map.SetLiquid(pos.x, pos.z);
+            pos.RefreshNeighborTiles();
         }
-        //TraitWell.OnBlend実行時にも瓶を還元する
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(TraitWell), "OnBlend")]
-        public static void Postfix(TraitWell __instance, Thing t, Chara c){
-            if(Main.configDebugLogging){
-                Debug.Log("[PBR]Blend->" + t.id.ToString());
-            }
-            string prod = "";
-            switch(t.id){
-                case "snow" or "drug" : break;
-                case "water" or "water_dirty" or "potion" or "perfume": prod = "potion_empty";
-                break;
-                case "bucket" : prod = "bucket_empty";
-                break;
-                case "milk" : prod = "726";//akibin
-                break;
-                case "504" or "505" or "718" : prod = "1170";//akikan
-                break;
-                default : prod = "726";//akibin
-                break;
-            }
-            if(Main.configDebugLogging && prod != ""){
-                    Debug.Log("[PBR]Prod->" + prod + " :by " + c.GetName(NameStyle.Simple));
-            }
-            if(c.IsPC && prod != ""){
-                t = ThingGen.Create(prod);
-                c.Pick(t);
-            }
-
-        }
-
+        
     }
-    
+    [HarmonyPatch(typeof(Zone))]
+    [HarmonyPatch(nameof(Zone.Activate))]
+    public class HarmonyAct
+    {
+        //[HarmonyPostfix]
+        
+        static void Postfix(Zone __instance)
+        {
+            Zone z = __instance;
+            Zone topZo = z.GetTopZone();
+            FactionBranch br = __instance.branch;
+            //Lg("[LS]Fooked!");
+            if (Main.configDebugLogging)
+            {
+                Lg("[Osui]CALLED : Zone.Activate ");
+                string text;
+
+                text = ("[Osui]Ref : [Z:" + z.id.ToString() + "]");
+                //text += (" [id:" + z.id.ToString() + "]");
+                text += (" [Dlv:" + z.DangerLv.ToString() + "]");
+                text += (" [blv:" + Mathf.Abs(z.lv).ToString() + "]");
+                text += (" [bDLV:" + z._dangerLv.ToString() + "]");
+                text += (" [Dlfi:" + z.DangerLvFix.ToString() + "]");
+                if(topZo != null && z != topZo){text += (" [tpZ:" + topZo.NameWithLevel + "]");}
+                if(br != null){text += (" [br:" + br.ToString() + "]");}
+                if(z.ParentZone != null && z != z.ParentZone)text += (" [PaZ: " + z.ParentZone.id.ToString() + "]") ;
+                 //text += (" [iB:" + z.idBiome.ToString() + "]");
+                 text += (" [B:" + z.biome.ToString() + "]");
+                 text += (" [Bid:" + z.biome.id.ToString() + "]");
+                Lg(text);
+                //text = ("[LS]Charas : " + EClass._map.charas.Count);
+                //text += (" [Stsn:" + z.isPeace.ToString() + "]");
+            }
+            
+        }
+        public static void Lg(string t)
+        {
+            if(Main.configDebugLogging){
+                UnityEngine.Debug.Log(t);
+            }
+            //UnityEngine.Debug.Log(t);
+        }
+       
     //+++++++ EndExe +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     
 }
+}
+
 //------------template--------------------------------------------------------------------------------------------
 /*
 [HarmonyPatch]
@@ -184,45 +217,7 @@ public class PostExe{
 //////trash box//////////////////////////////////////////////////////////////////////////////////////////////////
 ///
 /*
-    [HarmonyPatch(typeof(Zone))]
-    [HarmonyPatch(nameof(Zone.Activate))]
-    public class HarmonyAct
-    {
-        //[HarmonyPostfix]
-        
-        static void Postfix(Zone __instance)
-        {
-            Zone z = __instance;
-            Zone topZo = z.GetTopZone();
-            FactionBranch br = __instance.branch;
-            //Lg("[LS]Fooked!");
-            if (Main.propFlagEnablelLogging)
-            {
-                Lg("[LS]CALLED : Zone.Activate ");
-                string text;
-
-                text = ("[LS]Ref : [Z:" + z.id.ToString() + "]");
-                //text += (" [id:" + z.id.ToString() + "]");
-                text += (" [Dlv:" + z.DangerLv.ToString() + "]");
-                text += (" [blv:" + Mathf.Abs(z.lv).ToString() + "]");
-                text += (" [bDLV:" + z._dangerLv.ToString() + "]");
-                text += (" [Dlfi:" + z.DangerLvFix.ToString() + "]");
-                if(topZo != null && z != topZo){text += (" [tpZ:" + topZo.NameWithLevel + "]");}
-                if(br != null){text += (" [br:" + br.ToString() + "]");}
-                if(z.ParentZone != null && z != z.ParentZone)text += (" [PaZ: " + z.ParentZone.id.ToString() + "]") ;
-                 text += (" [Pce:" + z.isPeace.ToString() + "]");
-                 text += (" [Twn:" + z.IsTown.ToString() + "]");
-                Lg(text);
-                //text = ("[LS]Charas : " + EClass._map.charas.Count);
-                //text += (" [Stsn:" + z.isPeace.ToString() + "]");
-            }
-            
-        }
-        public static void Lg(string t)
-        {
-            UnityEngine.Debug.Log(t);
-        }
-        
+    
     }
 
     [HarmonyPatch(typeof(HotItem))]
@@ -544,4 +539,40 @@ class ZonePatch {
             return true;
         }
     }
+
+[HarmonyPostfix]
+        [HarmonyPatch(typeof(TraitDrink), "OnDrink")]
+        public static void Postfix(TraitDrink __instance, Chara c){
+            Thing t = null;
+            string prod = "";
+            //Thing t = ThingGen.Create("potion_empty");
+            Debug.Log("[PBR]Akibin:" + __instance.owner.id.ToString());
+            int num;
+            if(int.TryParse(__instance.owner.id, out num)){
+                switch(num){
+                    case 718 : prod = "1170";//coffee -> akikan
+                    break;
+                case >= 48 and <= 59 : prod = "726";//akibin
+                break;
+                case >= 501 and <= 508 : prod = "529";//akikan
+                break;
+                case >= 718 and <= 1134 : prod = "726";
+                break;
+                default : prod = "potion_empty";
+                break;
+                }
+            } else {
+                prod = "potion_empty";
+            }
+            
+            if(prod != ""){
+                t = ThingGen.Create(prod);
+                if(c.IsPC){
+                     c.Pick(t);
+                }else {
+                    EClass._zone.AddCard(t, c.pos);
+                }
+            }
+        }
+
     */
