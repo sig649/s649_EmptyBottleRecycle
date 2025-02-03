@@ -125,8 +125,10 @@ namespace s649PBR
             }
             string prod = "";
             switch(t.id){
-                case "snow" or "drug" : break;
-                case "water" or "water_dirty" or "potion" or "perfume": prod = "potion_empty";
+                case "snow" or "drug" or "334": break;
+                case "water" or "water_dirty" or "potion" or "perfume" or "lovepotion" or "mercury" or "blood_angel": prod = "potion_empty";
+                break;
+                case "330" or "331" or "335" or "336" or "338" or "928" or "1142" or "1163" or "1165" : prod = "potion_empty";
                 break;
                 case "bucket" : prod = "bucket_empty";
                 break;
