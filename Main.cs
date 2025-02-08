@@ -87,30 +87,32 @@ namespace s649PBR
                 
             }
             if(prod != ""){
-                if(Main.configDebugLogging){
-                    Debug.Log("[PBR]Prod->" + prod + " :by " + c.GetName(NameStyle.Simple));
-                }     
+                     
                 if(c.IsPC){
                     t = ThingGen.Create(prod);
                     c.Pick(t);
+                    if(Main.configDebugLogging){
+                        Debug.Log("[PBR]Prod->" + prod + " :by " + c.GetName(NameStyle.Simple));
+                    }
                 } else {
                     if(Main.configFlagNpcCreatesBottlesWhenDrinking){
-                        if(prod != "potion_empty"){
-                            t = ThingGen.Create(prod);
-                                if(EClass.rnd(9) == 0){
-                                    EClass._zone.AddCard(t, c.pos);
-                                } else {
-                                    c.Pick(t);
-                                }
+                        t = ThingGen.Create(prod);
+                        if(prod == "potion_empty"){
+                            if(EClass.rnd(2) == 0 || (c.ChildrenWeight > c.WeightLimit)){
+                                EClass._zone.AddCard(t, c.pos);
+                            } else {
+                                c.Pick(t);
+                            }
                         } else {
-                            if(EClass.rnd(2) == 0){
-                                t = ThingGen.Create(prod);
-                                if(EClass.rnd(4) == 0){
-                                    EClass._zone.AddCard(t, c.pos);
-                                } else {
-                                    c.Pick(t);
-                                }
-                            } 
+                            if(EClass.rnd(9) == 0 || (c.ChildrenWeight > c.WeightLimit)){
+                                EClass._zone.AddCard(t, c.pos);
+                            } else {
+                                c.Pick(t);
+                            }
+                        }
+                        
+                        if(Main.configDebugLogging){
+                            Debug.Log("[PBR]Prod->" + prod + " :by " + c.GetName(NameStyle.Simple));
                         }
                     }
                 }
