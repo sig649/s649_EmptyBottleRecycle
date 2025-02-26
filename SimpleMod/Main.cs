@@ -47,31 +47,52 @@ namespace s649PBR
 }
 //------------template--------------------------------------------------------------------------------------------
 /*
+//------------namespace class--------------------------------------------------------------------------------------------
+namespace NAMAE-MAIN
+{   //begin:namespaceMain
+    namespace NAMAE-SUB
+    {   //begin:namespaceSub
+        //--nakami----------------------
+    }   //end:namespaceSub
+}   //end:namespaceMain
+
 [HarmonyPatch]
+internal class PatchExe
+{   //begin-class:PatchExe
+    //----nakami-------------------
+}   //end-class:PatchExe
+
+//----method--------------------------------------------------------------
 
 [HarmonyPrefix]
+[HarmonyPatch(typeof(ClassName), "MethodName")]
+internal static bool WakariyasuiName()
+{   //begin:method-@@@@@@@@@@@@
+   
+}   //end:method-@@@@@@@@@@@@
+
 [HarmonyPostfix]
-
-[HarmonyPatch(typeof(----),"method")]
-public class ------{}
-
-public static void ----(type arg){}
-public static bool Pre--(type arg){}
-
-[HarmonyPatch]
-public class PreExe{
-    [HarmonyPrefix]
-    [HarmonyPatch(typeof(------), "+++++++")]
-    public static bool Prefix(type arg){}
+[HarmonyPatch(typeof(ClassName), "MethodName")]
+internal static void WakariyasuiName()
+{
+    //nakami
 }
 
-[HarmonyPatch]
-public class PostExe{
-    [HarmonyPostfix]
-    [HarmonyPatch(typeof(------), "+++++++")]
-    public static void Postfix(type arg){}
-}
+//Harmony Patch Argument list
+__result
+__instance
 
+
+//---debug logging-------------------------------------------------------
+if(PatchMain.configDebugLogging)
+{
+    string text = "";
+}
+//text += "[aaa:" + xxx.ToString() +"]"; 
+//Debug.Log(text);
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 */
 
 //////trash box//////////////////////////////////////////////////////////////////////////////////////////////////
