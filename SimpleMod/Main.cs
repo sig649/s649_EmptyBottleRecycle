@@ -10,12 +10,12 @@ using System.Collections.Generic;
 using s649PBR.Main;
 
 namespace s649PBR
-{
+{//>begin namespaceMain
     namespace Main
-    {
+    {//>>begin namespaceSub
         [BepInPlugin("s649_PotionBottleRecycle", "s649 Potion Bottle Recycle", "0.0.0.0")]
         public class PatchMain : BaseUnityPlugin
-        {
+        {//>>>begin class:PatchExe 
             private static ConfigEntry<bool> CE_FlagNpcCreatesBottlesWhenDrinking;
             private static ConfigEntry<bool> CE_DebugLogging;
         
@@ -33,7 +33,7 @@ namespace s649PBR
         
             */
             private void Start()
-            {
+            {//>>>>begin method:Start
                 //flagModInfiniteDigOnField = Config.Bind("#FUNC_01_00_a", "MOD_INFINITE_DIG", true, "Mod digging infinite dirt chunk on field");
                 //flagModInfiniteDigOnFieldToNothing = Config.Bind("#FUNC_01_00_b", "CHANGE_TO_DIGGING_NOTHING_ON_FIELD", false, "Digging nothing on field");
                 CE_FlagNpcCreatesBottlesWhenDrinking = Config.Bind("#FUNC_01", "FLAG_NPC_CREATES_BOTTLE_WHEN_DRINKING", true, "NPC creates empty bottle when drinking");
@@ -41,26 +41,33 @@ namespace s649PBR
                 CE_DebugLogging = Config.Bind("#FUNC_ZZ", "DEBUG_LOGGING", false, "If true, Outputs debug info.");
                 var harmony = new Harmony("PatchMain");
                 new Harmony("PatchMain").PatchAll();
-            }
-        }
-    } 
-}
+            }//<<<<end method:Start
+        }//<<<end class:Main
+    }//<<end namespaceSub
+}//<end namespaceMain
+
+
+
+
+
+
+
 //------------template--------------------------------------------------------------------------------------------
 /*
 //------------namespace class--------------------------------------------------------------------------------------------
 namespace NAMAE-MAIN
-{   //begin:namespaceMain
+{//>begin namespaceMain
     namespace NAMAE-SUB
-    {   //begin:namespaceSub
+    {//>>begin namespaceSub
         //--nakami----------------------
-    }   //end:namespaceSub
-}   //end:namespaceMain
+    }//<<end namespaceSub
+}//>end namespaceMain
 
 [HarmonyPatch]
 internal class PatchExe
-{   //begin-class:PatchExe
+{//>begin class:PatchExe
     //----nakami-------------------
-}   //end-class:PatchExe
+}//<end class:PatchExe
 
 //----method--------------------------------------------------------------
 

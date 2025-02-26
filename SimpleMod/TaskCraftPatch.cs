@@ -10,16 +10,16 @@ using System.Collections.Generic;
 using s649PBR.Main;
 
 namespace s649PBR
-{   //begin:namespaceMain >
+{//>begin NamespaceMain
     namespace TaskCraftPatchMain
-    {   //begin:namespaceSub >>
+    {//>>begin NamespaceSub
         [HarmonyPatch]
         internal class PatchExe
-        {   //begin class:PatchExe >>>
+        {//>>>begin class:PatchExe
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TaskCraft), "OnProgressComplete")]
             private static void PostPatch(TaskCraft __instance)
-            {   //begin method:OnProgressComplete  >>>>
+            {//>>>>begin method:OnProgressComplete
                 List <Ingredient> ingL = __instance.recipe.ingredients;
                 if(PatchMain.configDebugLogging)
                 {
@@ -27,7 +27,7 @@ namespace s649PBR
                     text += "[ingL:" + ingL.ToString() +"]";
                     Debug.Log(text);
                 } 
-            }   //end method:OnProgressComplete   <<<<
-        }   //end class:PatchExe    <<<
-    }   //end:namespaceSub  <<
-}   //end:namespaceMain <
+            }//<<<<end method:OnProgressComplete
+        }//<<<end class:PatchExe
+    }//<<end namespaceSub
+}//<end namespaceMain
