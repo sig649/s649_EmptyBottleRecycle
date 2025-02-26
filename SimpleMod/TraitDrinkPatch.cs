@@ -67,7 +67,7 @@ namespace s649PBR
                         if(PatchMain.configDebugLogging){Debug.Log("[PBR]Prod->" + prod + " :by " + c.GetName(NameStyle.Simple));}
                     } else 
                     {
-                        if(PatchMain.configFlagNpcCreatesBottlesWhenDrinking)
+                        if(PatchMain.cf_F01_NCBWD)
                         {
                             t = ThingGen.Create(prod);
                             if(prod == "potion_empty")

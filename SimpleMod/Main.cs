@@ -1,10 +1,12 @@
+using System;
+using System.IO;
+using System.Diagnostics;
 using BepInEx;
 using HarmonyLib;
 
 using UnityEngine;
 using BepInEx.Configuration;
-//using System.IO;
-//using System.Diagnostics;
+
 using Debug = UnityEngine.Debug;
 using System.Collections.Generic;
 using s649PBR.Main;
@@ -16,32 +18,36 @@ namespace s649PBR
         [BepInPlugin("s649_PotionBottleRecycle", "s649 Potion Bottle Recycle", "0.0.0.0")]
         public class PatchMain : BaseUnityPlugin
         {//>>>begin class:PatchExe 
-            private static ConfigEntry<bool> CE_FlagNpcCreatesBottlesWhenDrinking;
+            private static ConfigEntry<bool> CE_NpcCreatesBottlesWhenDrinking;
             private static ConfigEntry<bool> CE_DebugLogging;
         
-            public static bool configFlagNpcCreatesBottlesWhenDrinking => CE_FlagNpcCreatesBottlesWhenDrinking.Value;
+            public static bool cf_F01_NCBWD => CE_NpcCreatesBottlesWhenDrinking.Value;
 
             public static bool configDebugLogging => CE_DebugLogging.Value;
-        
-            /*
-            private static ConfigEntry<bool> flagModInfiniteDigOnField;
-            private static ConfigEntry<bool> flagModInfiniteDigOnFieldToNothing;
-        
-
-            public static bool configFlagModInfiniteDigOnField => flagModInfiniteDigOnField.Value;
-            public static bool configFlagModInfiniteDigOnFieldToNothing => flagModInfiniteDigOnFieldToNothing.Value;
-        
-            */
             private void Start()
             {//>>>>begin method:Start
-                //flagModInfiniteDigOnField = Config.Bind("#FUNC_01_00_a", "MOD_INFINITE_DIG", true, "Mod digging infinite dirt chunk on field");
-                //flagModInfiniteDigOnFieldToNothing = Config.Bind("#FUNC_01_00_b", "CHANGE_TO_DIGGING_NOTHING_ON_FIELD", false, "Digging nothing on field");
-                CE_FlagNpcCreatesBottlesWhenDrinking = Config.Bind("#FUNC_01", "FLAG_NPC_CREATES_BOTTLE_WHEN_DRINKING", true, "NPC creates empty bottle when drinking");
-                //UnityEngine.Debug.Log("[LS]Start [configLog:" + propFlagEnablelLogging.ToString() + "]");
+                // 01 use
+                CE_PcCreatesBottlesWhenDrinking = Config.Bind("#FUNC01-Use_00", "PC_CREATES_BOTTLE_WHEN_DRINKING", true, "PC creates empty bottle when drinking");
+                CE_AllowPcCreatesJunkBottles = Config.Bind("#FUNC01-Use_00_a", "ALLOW_PC_CREATES_JUNK_BOTTLES", true, "Allow PC to generate junk bottles");
+                CE_NpcCreatesJunkBottlesWhenDrinking = Config.Bind("#FUNC01-Use_01", "NPC_CREATES_BOTTLE_WHEN_DRINKING", true, "NonPC creates empty bottle when drinking");
+                CE_AllowNpcCreatesJunkBottles = Config.Bind("#FUNC01-Use_01_a", "ALLOW_NPC_CREATES_JUNK_BOTTLES", true, "Allow NonPC to generate junk bottles");
+                // 02 Blend PC only?
+                //CE_ = Config.Bind("#FUNC_02-Blend_00", "RECYCLE_BOTTLES_WHEN_BLENDING", true, "");
+                // 03 Craft PC only!
+                //CE_ = Config.Bind("#FUNC_03-Craft_00", "RECYCLE_BOTTLES_WHEN_CRAFTING", true, "");
+                // 04 Throw
+                //CE_ = Config.Bind("#FUNC_04-Throw_00", "RECYCLE_BOTTLES_WHEN_THROWING", true, "");
+                
                 CE_DebugLogging = Config.Bind("#FUNC_ZZ", "DEBUG_LOGGING", false, "If true, Outputs debug info.");
+                if(configDebugLogging){
+                    string text = "[PBR]Config";
+                    text += ("[F01/" + TorF(cf_F01_NCBWD) + "]");
+                    Debug.Log(text);
+                }
                 var harmony = new Harmony("PatchMain");
                 new Harmony("PatchMain").PatchAll();
             }//<<<<end method:Start
+            private string TorF(bool b){return (b)? "T": "F";}
         }//<<<end class:Main
     }//<<end namespaceSub
 }//<end namespaceMain
