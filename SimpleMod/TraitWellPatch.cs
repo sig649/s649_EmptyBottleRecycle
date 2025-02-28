@@ -10,18 +10,38 @@ using System.Collections.Generic;
 using s649PBR.Main;
 
 namespace s649PBR
-{
-    namespace TraitWellPatchMain
-    {
+{//>begin namespaceMain
+    namespace TraitWellPatch
+    {//>>begin namespaceSub
         [HarmonyPatch]
         internal class PatchExe 
-        {
+        {//>>>begin class:PatchExe
+            private static Thing DoRecycleBottle(Thing t){return PatchMain.DoRecycleBottle(t);}
+            private static bool Func_Allowed => PatchMain.cf_Allow_F02_Blend;
+            //private static bool PC_Allowed => PatchMain.cf_F01_PC_CBWD;
+
             //TraitWell.OnBlend実行時にも瓶を還元する
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitWell), "OnBlend")]
-            internal static void TraitWellPatch(TraitWell __instance, Thing t, Chara c)
-            {
-                if(PatchMain.configDebugLogging){Debug.Log("[PBR]Blend->" + t.id.ToString());}
+            private static void TraitWellPostPatch(TraitWell __instance, Thing t, Chara c)
+            {//>>>>begin method:TraitDrinkPatch
+                //if(PatchMain.configDebugLogging){Debug.Log("[PBR]Blend->" + t.id.ToString());}
+                if(Func_Allowed)
+                {
+                    Thing usedT = t;
+                    Thing prodT = DoRecycleBottle(usedT);
+
+                    if(prodT != null)
+                    {
+                        if(c.IsPC)
+                        {
+                            //t = ThingGen.Create(prod);
+                            c.Pick(prodT);
+                            if(PatchMain.configDebugLogging){Debug.Log("[PBR]Used->" + usedT.ToString() +"/Prod->" + prodT.ToString() + " :by " + c.GetName(NameStyle.Simple));}
+                        } 
+                    }
+                }
+                /*
                 string prod = "";
                 switch(t.id)
                 {
@@ -45,7 +65,8 @@ namespace s649PBR
                     t = ThingGen.Create(prod);
                     c.Pick(t);
                 }
-            }
-        }
-    }
-}
+                */
+            }//<<<<end method:TraitDrinkPatch
+        }//<<<end class:PatchExe
+    }//<<end namespaceSub
+}//<end namespaceMain
