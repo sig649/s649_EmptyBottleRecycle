@@ -56,7 +56,7 @@ namespace s649PBR
                         {
                             //t = ThingGen.Create(prod);
                             c.Pick(prodT);
-                            if(PatchMain.configDebugLogging){Debug.Log("[PBR]Used->" + usedT.ToString() +"/Prod->" + prodT.ToString() + " :by " + c.GetName(NameStyle.Simple));}
+                            PatchMain.Log("[PBR]Used->" + usedT.GetName(NameStyle.Simple) +"/Prod->" + prodT.GetName(NameStyle.Simple) + " :by " + c.GetName(NameStyle.Simple));
                         } 
                                 /*
                             if(PatchMain.cf_F02_NPC_CBWD)

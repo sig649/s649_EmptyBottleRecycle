@@ -77,6 +77,13 @@ namespace s649PBR
                 {
                     string text = "[PBR]CF";
                     //text += ("[F01/" + TorF(cf_F01_NCBWD) + "]");
+                    Log(text);
+                }
+            }
+            internal static void Log(string text)
+            {
+                if(configDebugLogging)
+                {
                     Debug.Log(text);
                 }
             }
@@ -103,14 +110,14 @@ namespace s649PBR
                 string category = t.sourceCard.category;
                 string unit = t.source.unit;
                     
-                Debug.Log("[TCPB]t is " + trait.ToString() + "/cate:" + category + "/u:" + unit);
+                Log("[TCPB]t is " + trait.ToString() + "/cate:" + category + "/u:" + unit);
                 if(trait is TraitSnow){return 0;}
                 if(trait is TraitPotion || trait is TraitPotionRandom){return 1;}
                 if(trait is TraitPerfume){return 0;}
                 //if(trait is TraitDrinkMilk || trait is TraitDrinkMilkMother){return 0;}
                 if(trait is TraitDrink)
                 {
-                    if(category == "Booze"){
+                    if(category == "booze"){
                         return -1;
                     }else if(category == "_drink"){
                         if(unit == "bucket"){return 2;}
