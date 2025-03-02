@@ -15,7 +15,7 @@ namespace s649PBR
 {//>begin namespaceMain
     namespace Main
     {//>>begin namespaceSub
-        [BepInPlugin("s649_PotionBottleRecycle", "s649 Potion Bottle Recycle", "0.0.0.0")]
+        [BepInPlugin("s649_PotionBottleRecycle", "s649 Potion Bottle Recycle", "0.1.0.1")]
         public class PatchMain : BaseUnityPlugin
         {//>>>begin class:PatchExe
         //////-----Config Entry---------------------------------------------------------------------------------- 
@@ -112,9 +112,14 @@ namespace s649PBR
                     
                 Log("[TCPB]t is " + trait.ToString() + "/cate:" + category + "/u:" + unit);
                 if(trait is TraitSnow){return 0;}
-                if(trait is TraitPotion || trait is TraitPotionRandom){return 1;}
+                if(trait is TraitDye){return 1;}
+                if(trait is TraitPotion || trait is TraitPotionRandom || trait is TraitPotionEmpty)
+                {
+                    if(category == "drug"){return 0;} else {return 1;}
+                    //return 1;
+                }
                 if(trait is TraitPerfume){return 0;}
-                //if(trait is TraitDrinkMilk || trait is TraitDrinkMilkMother){return 0;}
+                if(trait is TraitDrinkMilk || trait is TraitDrinkMilkMother){return 0;}
                 if(trait is TraitDrink)
                 {
                     if(category == "booze"){
@@ -122,11 +127,12 @@ namespace s649PBR
                     }else if(category == "_drink"){
                         if(unit == "bucket"){return 2;}
                         if(unit == "pot"){return 1;}
+                        if(unit == "bottle"){return -1;}
                         return 0;
                     }
                     return 0;
                 }
-                return -999;
+                return 0;
                     /*
                     
                     if(t.trait == "Drug"){return 0;}
@@ -149,8 +155,9 @@ namespace s649PBR
                     //return 0;
             }//<<<<end method:TypeContainsPotionBottle
 
-            internal static Thing DoRecycleBottle(Thing t)
+            internal static Thing DoRecycleBottle(Thing t)//v0.1.0 edit
             {
+                //int oNum = t.Num;
                 int prodN = TypeContainsPotionBottle(t);
                     //Thing prodT = null;
                     string prod = "";
@@ -176,20 +183,67 @@ namespace s649PBR
         }//<<<end class:Main
     }//<<end namespaceSub
 }//<end namespaceMain
+/*
+//関連するレシピリスト・バニラ
+    ・・クラフト（未対応）
+    ・便利屋の机
+    大窯    飲料20  予測結果20～0
+    渇きの壺    水2     予測結果2
+    染料窯  飲料20  予測結果20～0
+    書道具　水1     予測結果1
+    ・木工の机
+    ベッド　※まだ
+    奉納酒　※まだ
+    ・金属工の机
+        ※まだりすと　バーの椅子・カジノの椅子
+    バスタブ　飲料20    予測結果20～0
+    トイレ      耐酸2   予測結果2
+    ・彫刻
+    間欠泉　染料1　※まだ
+    流し台  飲料4   予測結果4～0
+    石のバスタブ    飲料20  予測結果20～0
+    ・硝子工
+    なし
+    ・装飾台
+    パンプキンランプ　染料1　※まだ
+    ・裁縫
+        ※まだりすと　　椅子・ハートのクッション・お布団
+    変な枕  媚薬1   予測結果1
+    ・筆記用具
+    危ない本    乳1　※まだ
+    ・建材
+    素材染料　カーペット・水の床・タイルの床・モダンなカーペット
+    ・料理
+    ※まだ　乳・ミルクが含まれるもの・ムース・デラックス雪プチケーキ・プリン・クリームシチュー
+    
+・・加工設備
+    ・石うす
+    粘土    ポーション1    予測結果0～1
+    空き瓶  ポーション1     予測結果0
+    ・染料窯
+    染料    空き瓶1素材1    予測結果1～0
 
 
- /* potionList [id/Trait/CanDrink/CanBlend/ContainBottle]
-                    snow	雪	TraitSnow
+
+
+
+*/
+ /* potionList [id/Trait/[CanDrink/CanBlend/ContainBottle]
+                    snow	雪	TraitSnow   [F/T/F]
                     water   水  TraitDrink																									
                     water_dirty	汚水    TraitDrink
                     bucket	水の入ったバケツ    TraitDrink
                     potion	ポーション  TraitPotion/TraitPotionRandom
-                    drug	薬      TraitPotion
+                    drug	薬      TraitPotion [T/T/F]
                     perfume	香水    TraitPerfume
                     milk	乳
                     drink	飲料
                     milkcan	ミルク缶
+                    dye	染料   TraitDye [F/T/T]
+                    
+
                     +++++ thingV list ++++++++++++++++++++++++++
+                    TraitDrink
                     crimAle	drink	クリムエール    TraitDrink
                     48	drink	ワイン
                     49	drink	液体
@@ -222,6 +276,7 @@ namespace s649PBR
                     1081	drink	ラムネ
                     1134	drink	酒  
 
+                    TraitPotion
                     1165	potion	エーテル抗体のポーション
                     1163	potion	魔法のポーション
                     330	potion	盲目のポーション
@@ -249,7 +304,9 @@ namespace s649PBR
                     728	junkFlat	空き瓶
                     */
 
-
+//関係ありそうなアイテム
+//  potion_empty 空きポーション瓶　TraitPotionEmpty
+//   dyamaker   染料窯 
 
 
 //------------template--------------------------------------------------------------------------------------------
