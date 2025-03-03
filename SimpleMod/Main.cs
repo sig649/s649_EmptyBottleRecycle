@@ -15,7 +15,7 @@ namespace s649PBR
 {//>begin namespaceMain
     namespace Main
     {//>>begin namespaceSub
-        [BepInPlugin("s649_PotionBottleRecycle", "s649 Potion Bottle Recycle", "0.1.0.1")]
+        [BepInPlugin("s649_PotionBottleRecycle", "s649 Potion Bottle Recycle", "0.1.1.2")]
         public class PatchMain : BaseUnityPlugin
         {//>>>begin class:PatchExe
         //////-----Config Entry---------------------------------------------------------------------------------- 
@@ -33,7 +33,9 @@ namespace s649PBR
             //private static ConfigEntry<bool> CE_RecycleBottlesWhenBlending;
             //CE 03 Craft
             //CE 04 Throw
-            //CE GENERAL
+            //CE 10 TraitDye
+            private static ConfigEntry<bool> CE_AllowFunction10_TraitDye;
+            //CE debug
             private static ConfigEntry<bool> CE_DebugLogging;
             private static ConfigEntry<bool> CE_Dynamic_Configuration_Loading;
         //config--------------------------------------------------------------------------------------------------------------
@@ -42,6 +44,8 @@ namespace s649PBR
             public static bool cf_Allow_F02_Blend =>  CE_AllowFunction02Blend.Value;
             public static bool cf_Allow_F03_Craft =>  CE_AllowFunction03Craft.Value;
             public static bool cf_Allow_F04_Throw =>  CE_AllowFunction04Throw.Value;
+
+            public static bool cf_Allow_F10_TraitDye =>  CE_AllowFunction10_TraitDye.Value;//v0.1.1
             // 01 use
             public static bool cf_F01_PC_CBWD => CE_PcCreatesBottlesWhenDrinking.Value;
             public static bool cf_F02_NPC_CBWD => CE_NpcCreatesBottlesWhenDrinking.Value;
@@ -59,6 +63,9 @@ namespace s649PBR
                 CE_AllowFunction02Blend = Config.Bind("#F00-General", "ALLOW_FUNCTION_02_BLEND", true, "Allow control of function 02-blend");
                 CE_AllowFunction03Craft = Config.Bind("#F00-General", "ALLOW_FUNCTION_03_CRAFT", true, "Allow control of function 03-craft");
                 CE_AllowFunction04Throw = Config.Bind("#F00-General", "ALLOW_FUNCTION_04_THROW", true, "Allow control of function 04-throw");
+
+                CE_AllowFunction10_TraitDye = Config.Bind("#F00-General", "ALLOW_FUNCTION_10_TRAIT_DYE", true, "Allow control of function 10-dye");//v0.1.1
+                
                 // 01 use
                 CE_PcCreatesBottlesWhenDrinking = Config.Bind("#F01-Use_01", "PC_CREATES_BOTTLE_WHEN_DRINKING", true, "PC creates empty bottle when drinking");
                 CE_AllowPcCreatesJunkBottles = Config.Bind("#F01-Use_01_a", "PC_ALLOW_CREATES_JUNK_BOTTLES", true, "Allow PC to generate junk bottles");
@@ -75,7 +82,7 @@ namespace s649PBR
                 CE_Dynamic_Configuration_Loading = Config.Bind("#FZZ", "DYNAMIC_CONFIGURATION_LOADING", false, "Enable dynamic configuration loading.(Experimental)");
                 if(configDebugLogging)
                 {
-                    string text = "[PBR]CF";
+                    string text = "[PBR]CF:Load";
                     //text += ("[F01/" + TorF(cf_F01_NCBWD) + "]");
                     Log(text);
                 }
