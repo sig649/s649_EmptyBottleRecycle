@@ -20,7 +20,7 @@ namespace s649PBR
         {//>>>begin class:PatchExe
             private static int TypeContainsPotionBottle(Thing t){return PatchMain.TypeContainsPotionBottle(t);}
             private static Thing DoRecycleBottle(Thing t){return PatchMain.DoRecycleBottle(t);}
-            private static bool Func_Allowed => PatchMain.cf_Allow_F03_Craft;
+            private static bool Func_Craft_Allowed => PatchMain.cf_Allow_F03_Craft;
             //private static bool PC_Allowed => PatchMain.cf_F01_PC_CBWD;
 
             [HarmonyPostfix]

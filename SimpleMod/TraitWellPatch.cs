@@ -17,8 +17,13 @@ namespace s649PBR
         internal class PatchExe 
         {//>>>begin class:PatchExe
             private static Thing DoRecycleBottle(Thing t){return PatchMain.DoRecycleBottle(t);}
-            private static bool Func_Allowed => PatchMain.cf_Allow_F02_Blend;
-            //private static bool PC_Allowed => PatchMain.cf_F01_PC_CBWD;
+            private static bool Func_Use_Allowed => PatchMain.Cf_Allow_Use;
+            private static bool Use_PC_Allowed => PatchMain.Cf_Reg_Use_PC;
+            private static bool Use_NPC_Allowed => PatchMain.Cf_Reg_Use_NPC;
+
+            private static bool Func_Blend_Allowed => PatchMain.Cf_Allow_Blend;
+            private static bool Blend_PC_Allowed => PatchMain.Cf_Reg_Blend_PC;
+            private static bool Blend_NPC_Allowed => PatchMain.Cf_Reg_Blend_NPC;
 
             //TraitWell.OnBlend実行時にも瓶を還元する
             [HarmonyPostfix]
@@ -26,7 +31,7 @@ namespace s649PBR
             private static void TraitWellPostPatch(TraitWell __instance, Thing t, Chara c)
             {//>>>>begin method:TraitDrinkPatch
                 //if(PatchMain.configDebugLogging){Debug.Log("[PBR]Blend->" + t.id.ToString());}
-                if(Func_Allowed)
+                if(Func_Blend_Allowed)
                 {
                     Thing usedT = t;
                     Thing prodT = DoRecycleBottle(usedT);
@@ -37,7 +42,7 @@ namespace s649PBR
                         {
                             //t = ThingGen.Create(prod);
                             c.Pick(prodT);
-                            if(PatchMain.configDebugLogging){Debug.Log("[PBR]Used->" + usedT.ToString() +"/Prod->" + prodT.ToString() + " :by " + c.GetName(NameStyle.Simple));}
+                            PatchMain.Log("[PBR]Used->" + usedT.ToString() +"/Prod->" + prodT.ToString() + " :by " + c.GetName(NameStyle.Simple));
                         } 
                     }
                 }
