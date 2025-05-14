@@ -18,39 +18,37 @@ namespace s649PBR
         [HarmonyPatch]
         internal class PatchExe  //v0.1.1 new
         {//>>>begin class:PatchExe
-            private static bool Func_Use_Allowed => PatchMain.Cf_Allow_Use;
-            private static bool Use_PC_Allowed => PatchMain.Cf_Reg_Use_PC;
-            private static bool Use_NPC_Allowed => PatchMain.Cf_Reg_Use_NPC;
+            //private static bool Func_Use_Allowed => PatchMain.Cf_Allow_Use;
+            //private static bool Use_PC_Allowed => PatchMain.Cf_Reg_Use_PC;
+            //private static bool Use_NPC_Allowed => PatchMain.Cf_Reg_Use_NPC;
 
-            private static bool Func_Blend_Allowed => PatchMain.Cf_Allow_Blend;
-            private static bool Blend_PC_Allowed => PatchMain.Cf_Reg_Blend_PC;
-            private static bool Blend_NPC_Allowed => PatchMain.Cf_Reg_Blend_NPC;
+            //private static bool Func_Blend_Allowed => PatchMain.Cf_Allow_Blend;
+            //private static bool Blend_PC_Allowed => PatchMain.Cf_Reg_Blend_PC;
+            //private static bool Blend_NPC_Allowed => PatchMain.Cf_Reg_Blend_NPC;
             //internal int TypeContainsPotionBottle(Thing t){return PatchMain.TypeContainsPotionBottle(t);}
-            private static Thing DoRecycleBottle(Thing t){return PatchMain.DoRecycleBottle(t);}
+            private static string DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
             //private static bool Func_Allowed => PatchMain.cf_Allow_F10_TraitDye;
             //private static bool PC_Allowed => PatchMain.cf_F01_PC_CBWD;
 
-            
+
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDye), "OnUse")]
             private static void OnUsePostPatch(TraitDye __instance, Chara c)
             {//>>>>begin method:OnUsePostPatch
                 Thing usedT = __instance.owner.Thing;
-                Thing prodT = null;
-                if (Func_Use_Allowed)
-                {//>5begin if(Func_Allowed)
-                    
-                    prodT = DoRecycleBottle(usedT);
-                    if(prodT != null)
-                    {   
-                        if(c.IsPC && Use_PC_Allowed)
-                        {
-                            //t = ThingGen.Create(prod);
-                            c.Pick(prodT);
-                            PatchMain.Log("[PBR]DyeUse:->" + usedT.GetName(NameStyle.Simple) +"/Prod->" + prodT.GetName(NameStyle.Simple) + " :by " + c.GetName(NameStyle.Simple));
-                        }      
-                    }
-                }//<5end if(Func_Allowed)
+                string prodT = DoRecycleBottle(usedT, c, ActType.Use);
+                Thing result;
+                //if (Func_Use_Allowed)
+                //{//>5begin if(Func_Allowed)
+
+                //prodT = DoRecycleBottle(usedT);
+                if (prodT != "")
+                {
+                    result = ThingGen.Create(prodT);
+                    if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
+                    PatchMain.Log("[PBR:DyeUse]Used->" + usedT.NameSimple + "/Prod->" + prodT + " :by " + c.NameSimple);
+                }
+                //}//<5end if(Func_Allowed)
             }//<<<<end method:OnUsePostPatch
 
             [HarmonyPostfix]
@@ -58,21 +56,19 @@ namespace s649PBR
             private static void OnBlendPostPatch(TraitDye __instance, Chara c)
             {//>>>>begin method:OnUsePostPatch
                 Thing usedT = __instance.owner.Thing;
-                Thing prodT = null;
-                if (Func_Blend_Allowed)
-                {//>5begin if(Func_Allowed)
-                    //Thing usedT = __instance.owner.Thing;
-                    prodT = DoRecycleBottle(usedT);
-                    if(prodT != null)
-                    {   
-                        if(c.IsPC && Blend_PC_Allowed)
-                        {
-                            //t = ThingGen.Create(prod);
-                            c.Pick(prodT);
-                            PatchMain.Log("[PBR]DyeBlend:->" + usedT.GetName(NameStyle.Simple) +"/Prod->" + prodT.GetName(NameStyle.Simple) + " :by " + c.GetName(NameStyle.Simple));
-                        }      
-                    }
-                }//<5end if(Func_Allowed)
+                string prodT = DoRecycleBottle(usedT, c, ActType.Blend);
+                Thing result;
+                //if (Func_Blend_Allowed)
+                //{//>5begin if(Func_Allowed)
+                //Thing usedT = __instance.owner.Thing;
+                //prodT = DoRecycleBottle(usedT);
+                if (prodT != "")
+                {
+                    result = ThingGen.Create(prodT);
+                    if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
+                    PatchMain.Log("[PBR:DyeBlend]Used->" + usedT.NameSimple + "/Prod->" + prodT + " :by " + c.NameSimple);
+                }
+                // }//<5end if(Func_Allowed)
             }//<<<<end method:OnUsePostPatch
 
 

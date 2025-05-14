@@ -10,17 +10,58 @@ using BepInEx.Configuration;
 using Debug = UnityEngine.Debug;
 using System.Collections.Generic;
 using s649PBR.Main;
+using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 namespace s649PBR
 {//>begin NamespaceMain
     namespace CrafterPatchMain
     {//>>begin NamespaceSub
+        public class RecycleThing
+        {
+            private string name { get; set; }
+            private int num { get; set; }
+
+            // Change the constructor's access modifier to 'public' to fix CS0122  
+            public RecycleThing(string name, int num)
+            {
+                this.name = name;
+                this.num = num;
+            }
+            public void AddNum(RecycleThing t)
+            { this.num += t.num; }
+            public bool IsEqualName(RecycleThing t)
+            {
+                if (t.name == this.name) { return true; }
+                return false;
+            }
+                    
+        }
         [HarmonyPatch]
         internal class PatchExe
         {//>>>begin class:PatchExe
+            private static void AddThing(List<RecycleThing> list, RecycleThing rt)
+                {
+                bool b = false;
+                foreach (RecycleThing t in list)
+                {
+                    if (t.IsEqualName(rt))
+                    {
+                        t.AddNum(rt);
+                        b = true;
+                        break;
+                    }
+                }
+                if(b == false)
+                    {
+                        list.Add(rt);
+                    }
+                }
+
+
+
             private static int TypeContainsPotionBottle(Thing t){return PatchMain.TypeContainsPotionBottle(t);}
-            private static Thing DoRecycleBottle(Thing t){return PatchMain.DoRecycleBottle(t);}
-            private static bool Func_Craft_Allowed => PatchMain.cf_Allow_F03_Craft;
+            private static string DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
+            private static bool Func_Craft_Allowed => PatchMain.Cf_Allow_Craft;
             //private static bool PC_Allowed => PatchMain.cf_F01_PC_CBWD;
 
             [HarmonyPostfix]
@@ -33,36 +74,39 @@ namespace s649PBR
                     //__resultにもTCPBがtrueを返すなら、resNumを__result.Num分減算
                     //resNum > 0ならクリエイトしてスポーンさせる
 
-                if(Func_Allowed)
+                if(Func_Craft_Allowed)
                 {//>>>>>if
                     List<Thing> ings = ai.ings;
                     string text = "[PBR]";
                     Point pos = ai.owner.pos;
                     int resNum = 0;
-                    Thing resT = null;// = DoRecycleBottle(t);
-                    foreach(Thing t in ings)//v0.1.0.1 edit
+                    string result = "";// = DoRecycleBottle(t);
+                    var recycleList = new List<RecycleThing>();
+                    foreach (Thing t in ings)//v0.1.0.1 edit
                     {   
                         text += "[ings:" + t.id.ToString() +"]";
-                        
+
                         //bottleをcreateしてposにadd
                         
                         int prodType = TypeContainsPotionBottle(t);//akibin aru?
-                        if(prodType == 1){resT = DoRecycleBottle(t);}//akibin tukuru
-                        int prodNum = (prodType == 1)? t.Num : 0;//kosuu
+                        if(prodType != 0){ result = DoRecycleBottle(t, ai.owner, ActType.Craft); }//akibin tukuru
+                        int prodNum = (prodType != 0)? t.Num : 0;//kosuu
                         
-                        //var recycleList = new List<string>();
-                        
-                        if(prodType == 1 && prodNum > 0)
+                        if(prodType != 0)
                         {
-                            resNum += prodNum;
-                            //recycleList.Add(prodT);
-                            //EClass._zone.AddCard(prodT, pos);
+                            //resNum += prodNum;
+                            RecycleThing rt = new(result, prodNum);
+                            AddThing(recycleList, rt);
+                            
                         }
                     }
-                    if(TypeContainsPotionBottle(__result) == 1)
+                    if(TypeContainsPotionBottle(__result) != 0)
                         {
-                            resNum -= __result.Num;
+                        //resNum -= __result.Num;
+                        recycleList.Remove(DoRecycleBottle(__result, ai.owner, ActType.Craft), __result.Num);
                         }
+                    recycleList.ExeRecycle();
+                    /*
                     if(resNum > 0)
                         {
                             if(resT != null)
@@ -75,7 +119,7 @@ namespace s649PBR
                         } else 
                         {
                             if(resT != null){resT.Destroy();}
-                        }
+                        }*/
                     PatchMain.Log(text); 
                 }//<<<<<end if
             }//<<<<end method:PostPatch

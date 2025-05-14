@@ -16,36 +16,36 @@ namespace s649PBR
         [HarmonyPatch]
         internal class PatchExe 
         {//>>>begin class:PatchExe
-            private static Thing DoRecycleBottle(Thing t){return PatchMain.DoRecycleBottle(t);}
-            private static bool Func_Use_Allowed => PatchMain.Cf_Allow_Use;
-            private static bool Use_PC_Allowed => PatchMain.Cf_Reg_Use_PC;
-            private static bool Use_NPC_Allowed => PatchMain.Cf_Reg_Use_NPC;
+            private static string DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
+            //private static bool Func_Use_Allowed => PatchMain.Cf_Allow_Use;
+            //private static bool Use_PC_Allowed => PatchMain.Cf_Reg_Use_PC;
+            //private static bool Use_NPC_Allowed => PatchMain.Cf_Reg_Use_NPC;
 
-            private static bool Func_Blend_Allowed => PatchMain.Cf_Allow_Blend;
-            private static bool Blend_PC_Allowed => PatchMain.Cf_Reg_Blend_PC;
-            private static bool Blend_NPC_Allowed => PatchMain.Cf_Reg_Blend_NPC;
+            //private static bool Func_Blend_Allowed => PatchMain.Cf_Allow_Blend;
+            //private static bool Blend_PC_Allowed => PatchMain.Cf_Reg_Blend_PC;
+            //private static bool Blend_NPC_Allowed => PatchMain.Cf_Reg_Blend_NPC;
 
             //TraitWell.OnBlend実行時にも瓶を還元する
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitWell), "OnBlend")]
             private static void TraitWellPostPatch(TraitWell __instance, Thing t, Chara c)
             {//>>>>begin method:TraitDrinkPatch
+                Thing usedT = __instance.owner.Thing;
+                string prodT = DoRecycleBottle(usedT, c, ActType.Blend);
+                Thing result;
                 //if(PatchMain.configDebugLogging){Debug.Log("[PBR]Blend->" + t.id.ToString());}
-                if(Func_Blend_Allowed)
-                {
-                    Thing usedT = t;
-                    Thing prodT = DoRecycleBottle(usedT);
+                //if(Func_Blend_Allowed)
+                //{
+                //Thing usedT = t;
+                //Thing prodT = DoRecycleBottle(usedT);
 
-                    if(prodT != null)
-                    {
-                        if(c.IsPC)
-                        {
-                            //t = ThingGen.Create(prod);
-                            c.Pick(prodT);
-                            PatchMain.Log("[PBR]Used->" + usedT.ToString() +"/Prod->" + prodT.ToString() + " :by " + c.GetName(NameStyle.Simple));
-                        } 
-                    }
+                if (prodT != "")
+                {
+                    result = ThingGen.Create(prodT);
+                    if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
+                    PatchMain.Log("[PBR:WellBlend]Used->" + usedT.NameSimple + "/Prod->" + prodT + " :by " + c.NameSimple);
                 }
+                // }
                 /*
                 string prod = "";
                 switch(t.id)
