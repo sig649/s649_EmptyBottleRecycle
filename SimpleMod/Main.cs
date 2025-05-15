@@ -34,9 +34,9 @@ namespace s649PBR
             public static bool Cf_Allow_Throw => CE_AllowFunctionThrow.Value;
 
             //CE キャラ制御
-            private static ConfigEntry<int> CE_WhichCharaCreatesWhenDrink;//Useをどのキャラに適応させるか//2 = PC&NPC, 1 = PC, 0 = NPC, -1 = None
-            private static ConfigEntry<int> CE_WhichCharaCreatesWhenBlend;//Blendをどのキャラに適応させるか//2 = PC&NPC, 1 = PC, 0 = NPC, -1 = None
-            private static ConfigEntry<int> CE_WhichCharaCreatesWhenThrow;//Throwをどのキャラに適応させるか//2 = PC&NPC, 1 = PC, 0 = NPC, -1 = None
+            private static ConfigEntry<int> CE_WhichCharaCreatesWhenDrink;//Useをどのキャラに適応させるか
+            private static ConfigEntry<int> CE_WhichCharaCreatesWhenBlend;//Blendをどのキャラに適応させるか
+            private static ConfigEntry<int> CE_WhichCharaCreatesWhenThrow;//Throwをどのキャラに適応させるか
 
             //操作キャラごとの制御のコンフィグ
             //private static bool Cf_Reg_Use_PC => Cf_Allow_Use && PlayerType.ContainPC(CE_WhichCharaCreatesWhenDrink.Value);
@@ -49,7 +49,7 @@ namespace s649PBR
 
             //Junk bottle
             private static ConfigEntry<bool> CE_AllowCreatesJunkBottles;
-            private static ConfigEntry<int> CE_WhichCharaCreatesJunkBottles;//CreateJunkBottlesをどのキャラに適応させるか//2 = PC&NPC, 1 = PC, 0 = NPC, -1 = None
+            private static ConfigEntry<int> CE_WhichCharaCreatesJunkBottles;//CreateJunkBottlesをどのキャラに適応させるか
 
             public static bool Cf_Reg_JunkBottle => CE_AllowCreatesJunkBottles.Value;
             //public static bool Cf_Reg_CJB_PC => Cf_Reg_JunkBottle && PlayerType.ContainPC(CE_WhichCharaCreatesJunkBottles.Value);
@@ -74,16 +74,16 @@ namespace s649PBR
                 //CE_AllowFunction10_TraitDye = Config.Bind("#F00-General", "ALLOW_FUNCTION_10_TRAIT_DYE", true, "Allow control of function 10-dye");//v0.1.1
                 
                 // Regulate
-                CE_WhichCharaCreatesWhenDrink = Config.Bind("#Reg-Use_00", "Which_Chara_Creates_When_Drinking", 1, "2 = PC&NPC, 1 = PC, 0 = NPC, -1 = None");
-                CE_WhichCharaCreatesWhenBlend = Config.Bind("#Reg-Blend_00", "Which_Chara_Creates_When_Blending", 1, "2 = PC&NPC, 1 = PC, 0 = NPC, -1 = None");
-                CE_WhichCharaCreatesWhenThrow = Config.Bind("#Reg-Throw_00", "Which_Chara_Creates_When_Throwing", 1, "2 = PC&NPC, 1 = PC, 0 = NPC, -1 = None");
+                CE_WhichCharaCreatesWhenDrink = Config.Bind("#Reg-Use_00", "Which_Chara_Creates_When_Drinking", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
+                CE_WhichCharaCreatesWhenBlend = Config.Bind("#Reg-Blend_00", "Which_Chara_Creates_When_Blending", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
+                CE_WhichCharaCreatesWhenThrow = Config.Bind("#Reg-Throw_00", "Which_Chara_Creates_When_Throwing", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
 
                 // junk
                 CE_AllowCreatesJunkBottles = Config.Bind("#F00-General", "ALLOW_CREATES_JUNK_BOTTLES", true, "Allow to generate junk bottles");
-                CE_WhichCharaCreatesJunkBottles = Config.Bind("#Reg-CJB_00", "Which_Chara_Creates_Junk_Bottles", 1, "2 = PC&NPC, 1 = PC, 0 = NPC, -1 = None");
+                CE_WhichCharaCreatesJunkBottles = Config.Bind("#Reg-CJB_00", "Which_Chara_Creates_Junk_Bottles", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
                 
                 // zz debug
-                CE_LogLevel = Config.Bind("#FZZ", "DEBUG_LOGGING", 0, "If true, Outputs debug info.");
+                CE_LogLevel = Config.Bind("#FZZ", "DEBUG_LOGGING", 0, "If value >= 0, Outputs debug info.");
                 
                 string text = "[PBR]CF:Load";
                 //text += ("[F01/" + TorF(cf_F01_NCBWD) + "]");
@@ -100,7 +100,7 @@ namespace s649PBR
 
 
             //local----------------------------------------------------------------------------------------------------------------------------------------
-            public static PlayerType PlayerType;//コンフィグのプレイヤー識別用//2 = PC&NPC, 1 = PC, 0 = NPC, -1 = None
+            public static PlayerType PlayerType;//コンフィグのプレイヤー識別用
 
             internal static void Log(string text, int lv = 0)
             {
@@ -109,33 +109,55 @@ namespace s649PBR
                     Debug.Log(text);
                 }
             }
-            public static bool GetRegulation(PlayerType pt, int at, bool isJunk)
+            internal static bool GetRegulation(Chara c, int at, bool isJunk)
             {
-                int wcc;
-                int wccjb = CE_WhichCharaCreatesJunkBottles.Value;
+                PlayerType pt = PlayerType.GetPT(c);
+                return GetRegulation(pt, at, isJunk);
+            }
+            private static bool GetRegulation(PlayerType pt, int at, bool isJunk)
+            {
+                //int wcc;
+                //int wccjb = CE_WhichCharaCreatesJunkBottles.Value;
+                bool allow_Func;
+                bool reg_chara;
+                bool reg_junk = (!isJunk) ? true : pt.IsContain(CE_WhichCharaCreatesJunkBottles.Value);
                 switch (at)
                 {
                     case ActType.None: return false;
                     case ActType.Use:
-                        wcc = CE_WhichCharaCreatesWhenDrink.Value;
-                        return Cf_Allow_Use && (!isJunk)? pt.IsContain(wcc) : pt.IsContain(wccjb);
+                        allow_Func = Cf_Allow_Use;
+                        //wcc = CE_WhichCharaCreatesWhenDrink.Value;
+                        reg_chara = pt.IsContain(CE_WhichCharaCreatesWhenDrink.Value);
+                        break;
+                        //reg_junk = (!isJunk) ? true : pt.IsContain(wccjb);
+                        //return Cf_Allow_Use && (!isJunk)? pt.IsContain(wcc) : pt.IsContain(wccjb);
+                        //return Cf_Allow_Use && (!isJunk) ? pt.IsContain(wcc) : pt.IsContain(wccjb);
                     case ActType.Blend:
-                        wcc = CE_WhichCharaCreatesWhenBlend.Value;
-                        return Cf_Allow_Blend && (!isJunk) ? pt.IsContain(wcc) : pt.IsContain(wccjb);
+                        allow_Func = Cf_Allow_Blend;
+                        //wcc = CE_WhichCharaCreatesWhenBlend.Value;
+                        reg_chara = pt.IsContain(CE_WhichCharaCreatesWhenBlend.Value);
+                        break;
+                        //reg_junk = (!isJunk) ? true : pt.IsContain(wccjb);
+                    //wcc = CE_WhichCharaCreatesWhenBlend.Value;
+                    //return Cf_Allow_Blend && (!isJunk) ? pt.IsContain(wcc) : pt.IsContain(wccjb);
                     case ActType.Throw:
-                        wcc = CE_WhichCharaCreatesWhenThrow.Value;
-                        return Cf_Allow_Throw && (!isJunk) ? pt.IsContain(wcc) : pt.IsContain(wccjb);
+                        allow_Func = Cf_Allow_Throw;
+                        //wcc = CE_WhichCharaCreatesWhenThrow.Value;
+                        reg_chara = pt.IsContain(CE_WhichCharaCreatesWhenThrow.Value);
+                        break;
+                    //return Cf_Allow_Throw && (!isJunk) ? pt.IsContain(wcc) : pt.IsContain(wccjb);
                     case ActType.Craft:
                         //wcc = CE_WhichCharaCreatesWhenCraft.Value;
                         return Cf_Allow_Craft;
                     default: return false;
                 }
+                return allow_Func && reg_chara && (isJunk)? reg_junk : true; 
             }
             
             private string TorF(bool b){return (b)? "T": "F";}
 
-            internal static int TypeContainsPotionBottle(Thing t)
-            {//>>>>begin method:TypeContainsPotionBottle
+            internal static int ReturnBottleIngredient(Thing t)
+            {//>>>>begin method:ReturnBottleIngredient
                 //description
                     //return 1 : potion bottle
                     //return 2 : empty bucket
@@ -151,53 +173,56 @@ namespace s649PBR
                 string unit = t.source.unit;
                     
                 //Log("[TCPB]t is " + trait.ToString() + "/cate:" + category + "/u:" + unit);
-                if(trait is TraitSnow){return 0;}
-                if(trait is TraitDye){return 1;}
+                if(trait is TraitSnow){return BottleIngredient.None;}
+                if(trait is TraitDye){return BottleIngredient.Bottle_Empty;}
                 if(trait is TraitPotion || trait is TraitPotionRandom || trait is TraitPotionEmpty)
                 {
-                    if(category == "drug"){return -4;} else {return 1;}
+                    if(category == "drug"){return BottleIngredient.Drug_Bin;} else {return BottleIngredient.Bottle_Empty; }
                     //return 1;
                 }
-                if(trait is TraitPerfume){return -1;}
-                if(trait is TraitDrinkMilk || trait is TraitDrinkMilkMother){return 0;}
+                if(trait is TraitPerfume){return BottleIngredient.Junk_Bottles;}
+                if(trait is TraitDrinkMilk || trait is TraitDrinkMilkMother){return BottleIngredient.None; }
                 if(trait is TraitDrink)
                 {
                     if(category == "booze"){
-                        return -1;
+                        return BottleIngredient.Junk_Bottles;
                     }else if(category == "_drink"){
-                        if(unit == "bucket"){return 2;}
-                        if(unit == "pot"){return 1;}
-                        if(unit == "bottle"){return -1;}
-                        return 0;
+                        if(unit == "bucket"){return BottleIngredient.Bucket_Empty;}
+                        if(unit == "pot"){return BottleIngredient.Bottle_Empty; }
+                        if(unit == "bottle"){return BottleIngredient.Junk_Bottles; }
                     }
-                    return 0;
                 }
                 return 0;
                    
                     
-                    //return 0;
-            }//<<<<end method:TypeContainsPotionBottle
-            private static bool IsEnableRecycleBottle(int prodN, Chara c, int acttype, bool broken = false)
+                    
+            }//<<<<end method:ReturnBottleIngredient
+            private static bool IsEnableRecycleBottle(int bottleIng, Chara c, int acttype, bool broken = false)
             {
                 //regulateを参照して実行できるかどうかを返す
-                int ptype = (c.IsPC) ? PlayerType.Player : PlayerType.NonPlayer;
-                PlayerType pt = new PlayerType(ptype);
-                //int prodN = TypeContainsPotionBottle(t);
-                if (prodN == 0) { return false; }
-                if (prodN > 0)
-                {
-                    return GetRegulation(pt, acttype, false);
-                } else {
-                    return GetRegulation(pt, acttype, true);
-                }
+                //int ptype = (c.IsPC) ? PlayerType.Player : PlayerType.NonPlayer;
+                //PlayerType pt = PlayerType.GetPT(c);
+                //int prodN = ReturnBottleIngredient(t);
+                bool isJunk = (bottleIng < 0) ? true : false;
+                //if (bottleIng == 0) { return false; }
+                //if (bottleIng > 0)
+                //{
+                //    return GetRegulation(c, acttype, false);
+                //} else {
+                //    return GetRegulation(c, acttype, true);
+                //}
+                return (bottleIng != 0)? GetRegulation(c, acttype, isJunk) : false;
             }
 
             internal static string DoRecycleBottle(Thing t, Chara c, int acttype, bool broken = false)
             {
-                int prodN = TypeContainsPotionBottle(t);
+                /*
+                 * Thing t に使われるBottleIngをidで返す
+                */
+                int prodN = ReturnBottleIngredient(t);
                 if (!IsEnableRecycleBottle(prodN, c, acttype, broken)) { return ""; }
                 //int oNum = t.Num;
-                //int prodN = TypeContainsPotionBottle(t);
+                //int prodN = ReturnBottleIngredient(t);
                 string result = null;
                 //Thing prodT = null;
                 //string prod = "";
@@ -246,24 +271,46 @@ namespace s649PBR
                 _value = v;
             }
             public const int None = 0;
-            public const int NonPlayer = 1;
-            public const int Player = 2;
+            public const int Player = 1;
+            public const int PlayerAndParty = 2;
             public const int All = 3;
-            private bool ContainPC()
-            { if (_value == Player || _value == All) { return true; } else { return false; } }
-            private bool ContainNPC()
-            { if (_value == NonPlayer || _value == All) { return true; } else { return false; } }
-            public bool IsContain(int cc)
-            { 
+            public PlayerType GetPT(Chara c)
+            {
+                PlayerType pt;
+                if(c.IsPC)
+                {
+                    pt = new PlayerType(PlayerType.Player);
+                } else if(c.IsPCParty)
+                {
+                    pt = new PlayerType(PlayerType.PlayerAndParty);
+                } else
+                {
+                    pt = new PlayerType(PlayerType.All);
+                }
+                //PlayerType pt = new PlayerType((c.IsPC) ? PlayerType.Player : PlayerType.NonPlayer);
+                return pt;
+            }
+            //private bool ContainPC()
+            //{ if (_value == Player || _value == All) { return true; } else { return false; } }
+            //private bool ContainNPC()
+            //{ if (_value == NonPlayer || _value == All) { return true; } else { return false; } }
+            //private bool IsContain(int pt)
+            //{
+
+            //}
+            public bool IsContain(int wcc)
+            {
+                return wcc >= _value;
                 //if (who == Player || who == All) { return true; } else { return false; }
-                switch(cc)
+                /*
+                switch(wcc)
                 {
                     case None: return false;
-                    case NonPlayer: return ContainNPC();
                     case Player: return ContainPC();
+                    case PlayerAndParty: return ContainNPC();
                     case All: return true;
                     default: return false;
-                }
+                }*/
             }
         }//class:PlayerType
         public class ActType
@@ -276,6 +323,18 @@ namespace s649PBR
             public const int Craft = 4;
             
         }//class:PlayerType
+        public class BottleIngredient
+        {//class:BottleIngredient
+            //public int value;
+            public const int None = 0;
+            public const int Bottle_Empty = 1;
+            public const int Bucket_Empty = 2;
+            public const int Junk_Bottles = -1;
+            public const int Junk_Can = -2;
+            public const int Can = -3;
+            public const int Drug_Bin = -4;
+            public const int Other = -999;
+        }//class:BottleIngredient
 
     }//<<end namespaceSub
 }//<end namespaceMain

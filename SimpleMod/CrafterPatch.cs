@@ -59,7 +59,7 @@ namespace s649PBR
 
 
 
-            private static int TypeContainsPotionBottle(Thing t){return PatchMain.TypeContainsPotionBottle(t);}
+            private static int ReturnBottleIngredient(Thing t){return PatchMain.ReturnBottleIngredient(t);}
             private static string DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
             private static bool Func_Craft_Allowed => PatchMain.Cf_Allow_Craft;
             //private static bool PC_Allowed => PatchMain.cf_F01_PC_CBWD;
@@ -88,7 +88,7 @@ namespace s649PBR
 
                         //bottleをcreateしてposにadd
                         
-                        int prodType = TypeContainsPotionBottle(t);//akibin aru?
+                        int prodType = ReturnBottleIngredient(t);//akibin aru?
                         if(prodType != 0){ result = DoRecycleBottle(t, ai.owner, ActType.Craft); }//akibin tukuru
                         int prodNum = (prodType != 0)? t.Num : 0;//kosuu
                         
@@ -100,7 +100,7 @@ namespace s649PBR
                             
                         }
                     }
-                    if(TypeContainsPotionBottle(__result) != 0)
+                    if(ReturnBottleIngredient(__result) != 0)
                         {
                         //resNum -= __result.Num;
                         recycleList.Remove(DoRecycleBottle(__result, ai.owner, ActType.Craft), __result.Num);
