@@ -109,7 +109,7 @@ namespace s649PBR
                     Debug.Log(text);
                 }
             }
-            internal static bool GetRegulation(Chara c, int at, bool isJunk)
+            internal static bool GetRegulation(Card c, int at, bool isJunk)
             {
                 PlayerType pt = PlayerType.GetPT(c);
                 return GetRegulation(pt, at, isJunk);
@@ -156,6 +156,11 @@ namespace s649PBR
             
             private string TorF(bool b){return (b)? "T": "F";}
 
+            //internal static int ReturnBottleIngredient(Card c)
+            //{
+
+            //}
+
             internal static int ReturnBottleIngredient(Thing t)
             {//>>>>begin method:ReturnBottleIngredient
                 //description
@@ -197,28 +202,61 @@ namespace s649PBR
                     
                     
             }//<<<<end method:ReturnBottleIngredient
-            private static bool IsEnableRecycleBottle(int bottleIng, Chara c, int acttype, bool broken = false)
+            private static bool IsEnableRecycleBottle(int bottleIng, Card c, int acttype, bool broken = false)
             {
                 //regulateを参照して実行できるかどうかを返す
-                //int ptype = (c.IsPC) ? PlayerType.Player : PlayerType.NonPlayer;
-                //PlayerType pt = PlayerType.GetPT(c);
-                //int prodN = ReturnBottleIngredient(t);
                 bool isJunk = (bottleIng < 0) ? true : false;
-                //if (bottleIng == 0) { return false; }
-                //if (bottleIng > 0)
-                //{
-                //    return GetRegulation(c, acttype, false);
-                //} else {
-                //    return GetRegulation(c, acttype, true);
-                //}
                 return (bottleIng != 0)? GetRegulation(c, acttype, isJunk) : false;
+            }
+
+            internal static string DoRecycleBottle(Thing t, Card c, int acttype, bool broken = false)
+            {
+                /*
+                * Thing t に使われるBottleIngをidで返す
+               */
+                int prodN = ReturnBottleIngredient(t);
+                if (!IsEnableRecycleBottle(prodN, c, acttype, broken)) { return ""; }
+                //int oNum = t.Num;
+                //int prodN = ReturnBottleIngredient(t);
+                string result = null;
+                //Thing prodT = null;
+                //string prod = "";
+
+                switch (prodN)
+                {
+                    case 1:
+                        result = (!broken) ? "potion_empty" : "fragment";
+                        break;
+                    case 2:
+                        result = "bucket_empty";
+                        break;
+                    case 0://nothing
+                        break;
+                    case -1:
+                        result = (!broken) ? GetRandomJunkBottle() : "fragment";//bottle
+                        break;
+                    case -2:
+                        result = GetRandomJunkCan();//can
+                        break;
+                    case -3:
+                        result = "";//can not junk
+                        break;
+                    case -4:
+                        result = "";//(!broken) ? "231" : "";//drug bin
+                        break;
+                    default:
+                        break;
+                }
+                //if(prod == ""|| prod == "qqq"){return null;} else {return ThingGen.Create(prod);} 
+                return result;
             }
 
             internal static string DoRecycleBottle(Thing t, Chara c, int acttype, bool broken = false)
             {
+                return DoRecycleBottle(t, (Card)c, acttype, broken);
                 /*
                  * Thing t に使われるBottleIngをidで返す
-                */
+                
                 int prodN = ReturnBottleIngredient(t);
                 if (!IsEnableRecycleBottle(prodN, c, acttype, broken)) { return ""; }
                 //int oNum = t.Num;
@@ -247,7 +285,7 @@ namespace s649PBR
                     break;
                 }
                 //if(prod == ""|| prod == "qqq"){return null;} else {return ThingGen.Create(prod);} 
-                return result;
+                return result;*/
             }
             public static List<string> JunkBottleList = new List<string> { "726", "727", "728" };
             public static string GetRandomJunkBottle()
@@ -260,6 +298,48 @@ namespace s649PBR
             {
                 List<string> sList = JunkCanList;
                 return (sList != null) ? sList[Random.Range(0, sList.Count)] : "";
+            }
+            internal static void AddThingToList(List<RecycleThing> list, RecycleThing rt)
+            {
+                bool b = false;
+                foreach (RecycleThing t in list)
+                {
+                    if (t.IsEqualName(rt))
+                    {
+                        t.AddNum(rt);
+                        b = true;
+                        break;
+                    }
+                }
+                if (b == false)
+                {
+                    list.Add(rt);
+                }
+            }
+
+            internal static void RemoveFromList(List<RecycleThing> rlist, string rt, int rnum)
+            {
+                foreach (RecycleThing rthing in rlist)
+                {
+                    if (rthing.IsEqualName(rt))
+                    {
+                        rthing.Decrease(rnum);
+                        if (rthing.num <= 0)
+                        {
+                            rlist.Remove(rthing);
+                        }
+                        return;
+                    }
+
+                }
+            }
+            internal static void ExeRecycle(List<RecycleThing> rlist, Chara c)
+            {
+                foreach (RecycleThing rthing in rlist)
+                {
+                    Thing t = ThingGen.Create(rthing.name, rthing.num);
+                    EClass._zone.AddCard(t, c.pos);
+                }
             }
 
         }//<<<end class:Main
@@ -274,7 +354,7 @@ namespace s649PBR
             public const int Player = 1;
             public const int PlayerAndParty = 2;
             public const int All = 3;
-            public PlayerType GetPT(Chara c)
+            public PlayerType GetPT(Card c)
             {
                 PlayerType pt;
                 if(c.IsPC)
@@ -312,6 +392,7 @@ namespace s649PBR
                     default: return false;
                 }*/
             }
+            
         }//class:PlayerType
         public class ActType
         {//class:PlayerType
@@ -335,6 +416,36 @@ namespace s649PBR
             public const int Drug_Bin = -4;
             public const int Other = -999;
         }//class:BottleIngredient
+        public class RecycleThing
+        {
+            public string name { get; }
+            public int num { get; set; }
+
+            // Change the constructor's access modifier to 'public' to fix CS0122  
+            public RecycleThing(string name, int num)
+            {
+                this.name = name;
+                this.num = num;
+            }
+            public void AddNum(RecycleThing t)
+            { this.num += t.num; }
+            public bool IsEqualName(RecycleThing t)
+            {
+                if (t.name == this.name) { return true; }
+                return false;
+            }
+            public bool IsEqualName(string tid)
+            {
+                if (tid == this.name) { return true; }
+                return false;
+            }
+
+            public void Decrease(int a)
+            {
+                this.num -= a;
+            }
+
+        }
 
     }//<<end namespaceSub
 }//<end namespaceMain
