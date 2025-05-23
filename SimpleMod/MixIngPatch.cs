@@ -30,35 +30,31 @@ namespace s649PBR
             {//begin method:TraitDrinkPatch
                 if (Func_Craft_Allowed)
                 {//>>>>>if
-                    //List<Thing> ings = ai.ings;
-                    string text = "[PBR]";
-
+                    string text = "[PBR:MixIng]";
                     string result = "";
                     var recycleList = new List<RecycleThing>();
                     foreach (Thing t in ings)
                     {
-                        text += "[ings:" + t.id.ToString() + "]";
-
+                        text += "[ings]";
                         int prodType = ReturnBottleIngredient(t);
-                        int prodNum = (prodType != 0) ? t.Num : 0;//kosuu
+                        int prodNum = (prodType != 0) ? t.Num : 0;
 
                         if (prodType != 0)
                         {
-                            //resNum += prodNum;
-                            //RecycleThing rt = new(result, prodNum);
                             result = DoRecycleBottle(t, crafter, ActType.Craft);
                             PatchMain.AddThingToList(recycleList, new(result, prodNum));
-
                         }
+                        text += "N:" + t.id.ToString() + "/T:" + prodType.ToString() + "/n:" + prodNum.ToString();
                     }
-                    if (ReturnBottleIngredient((Thing)product) != 0)
-                    {
-                        //resNum -= __result.Num;
-                        PatchMain.RemoveFromList(recycleList, DoRecycleBottle((Thing)product, crafter, ActType.Craft), ((Thing)product).Num);
-                    }
+                    int rt = ReturnBottleIngredient((Thing)product);
+                    text += "[result]N:" + ((Thing)product).NameSimple;
+                    text += "/T:" + rt.ToString();
+                    text += "/n:" + ((Thing)product).Num.ToString();
+                    PatchMain.Log(text, 1);
+                    PatchMain.RemoveFromList(recycleList, DoRecycleBottle((Thing)product, crafter, ActType.Craft), ((Thing)product).Num);
                     PatchMain.ExeRecycle(recycleList, crafter);
 
-                    PatchMain.Log(text);
+                    //PatchMain.Log(text);
 
                 }//<<<<end method:TraitDrinkPatch
             }

@@ -39,48 +39,33 @@ namespace s649PBR
                 if(Func_Craft_Allowed)
                 {//>>>>>if
                     List<Thing> ings = ai.ings;
-                    string text = "[PBR]";
-                    //Point pos = ai.owner.pos;
-                    //int resNum = 0;
-                    string result = "";// = DoRecycleBottle(t);
+                    string text = "[PBR:process]";
+                    string result = "";
                     var recycleList = new List<RecycleThing>();
-                    foreach (Thing t in ings)//v0.1.0.1 edit
+                    foreach (Thing t in ings)
                     {   
-                        text += "[ings:" + t.id.ToString() +"]";
-
                         int prodType = ReturnBottleIngredient(t);
-                        int prodNum = (prodType != 0) ? t.Num : 0;//kosuu
-                        
-                        if(prodType != 0)
+                        int prodNum = (prodType != 0) ? t.Num : 0;
+                        text += "[ings]";
+                        if (prodType != 0)
                         {
-                            //resNum += prodNum;
-                            //RecycleThing rt = new(result, prodNum);
                             result = DoRecycleBottle(t, ai.owner, ActType.Craft);
                             PatchMain.AddThingToList(recycleList, new(result, prodNum));
-                            
                         }
+                        text += "N:" + t.id.ToString() + "/T:" + prodType.ToString() + "/n:"  + prodNum.ToString();
                     }
-                    if(ReturnBottleIngredient(__result) != 0)
-                        {
-                        //resNum -= __result.Num;
-                        PatchMain.RemoveFromList(recycleList, DoRecycleBottle(__result, ai.owner, ActType.Craft), __result.Num);
-                        }
+                    int rt = ReturnBottleIngredient(__result);
+                    text += "[result]N:" + __result.NameSimple;
+                    text += "/T:" + rt.ToString();
+                    text += "/n:" + __result.Num.ToString();
+                    PatchMain.Log(text, 1);
+                    //productにbottleingが含まれている場合はリターンを減産する
+                    PatchMain.RemoveFromList(recycleList, DoRecycleBottle(__result, ai.owner, ActType.Craft), __result.Num);
                     PatchMain.ExeRecycle(recycleList, ai.owner);
-                    
-                    PatchMain.Log(text); 
+                    //string text2 = "[PBR:return]" + recycleList.ToString() + "[C:" + ai.owner.NameSimple + "]";
+                    //PatchMain.Log(text2, 1); 
                 }//<<<<<end if
             }//<<<<end method:PostPatch
-            /*
-            private bool CanRecycleBottle(Thing t)
-            {//>>>>begin method:DoRecycleBottle
-                if(PatchMain.TypeContainsPotionBottle(t) == 1)
-                {
-                    return true;
-                } else {
-                    return false;
-                }
-            }//<<<<end method:DoRecycleBottle
-            */
         }//<<<end class:PatchExe
     }//<<end namespaceSub
 }//<end namespaceMain
