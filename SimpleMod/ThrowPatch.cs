@@ -19,7 +19,7 @@ namespace s649PBR
         internal class PatchExe
         {//>>>begin class:PatchExe
             //internal int TypeContainsPotionBottle(Thing t){return PatchMain.TypeContainsPotionBottle(t);}
-            private static string DoRecycleBottle(Thing t, Card c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
+            private static void DoRecycleBottle(Thing t, Chara c, int at, bool broken = false, Point p = null) { PatchMain.DoRecycleBottle(t, c, at, broken, p); }
             
 
             [HarmonyPostfix]
@@ -28,18 +28,19 @@ namespace s649PBR
             {//begin method:TraitDrinkPatch
                 
                 //Thing usedT = t;
-                //Chara usedC = __instance.Act.CC;
-                string prodT = DoRecycleBottle(t, c, ActType.Throw, true);
-                PatchMain.Log("[PBR:Throw]Used->" + t.NameSimple + "/prod:" + prodT.ToString() + " :by " + c.NameSimple, 1);
+                Chara usedC = c.Chara;
+                PatchMain.Log("[PBR:Throw]Used->" + t.NameSimple + " :by " + usedC.NameSimple, 1);
+                DoRecycleBottle(t, usedC, ActType.Throw, true, p);
+                
 
-                Thing result;
+                //Thing result;
                 //int prodN = TypeContainsPotionBottle(usedT);
-                if (prodT != "")
-                {
-                    result = ThingGen.Create(prodT);
-                    EClass._zone.AddCard(result, p);
-                    PatchMain.Log("[PBR:Throw]Used->" + result.NameSimple + " :-> " + p.ToString());
-                }
+                //if (prodT != "")
+                //{
+                //    result = ThingGen.Create(prodT);
+                //    EClass._zone.AddCard(result, p);
+                //    PatchMain.Log("[PBR:Throw]Used->" + result.NameSimple + " :-> " + p.ToString());
+                //}
                 
             }//<<<<end method:TraitDrinkPatch
         }//<<<end class:PatchExe

@@ -1,16 +1,15 @@
-using System;
-using System.IO;
-using System.Diagnostics;
 using BepInEx;
-using HarmonyLib;
-
-using UnityEngine;
 using BepInEx.Configuration;
-
+using HarmonyLib;
+using s649PBR.Main;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using UnityEditor.Experimental.GraphView;
+using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
-using System.Collections.Generic;
-using s649PBR.Main;
 
 namespace s649PBR
 {//>begin namespaceMain
@@ -110,13 +109,7 @@ namespace s649PBR
                     Debug.Log(text);
                 }
             }
-            //internal static bool GetRegulation(Card c, int at, bool isJunk = false)
-            //{
-                //Log("[GR]" + c.ToString() + "/" + at.ToString() + isJunk.ToString());
-
-                //PlayerType pt = playerType.GetPT(c);
-                //return GetRegulation(c, at, isJunk);
-            //}
+            
             private static int TypeCharaPlaying(Card c)
             {
                 if (c == null) { return 0; }
@@ -199,8 +192,6 @@ namespace s649PBR
                     }
                 }
                 return BottleIngredient.None;
-                   
-                    
                     
             }//<<<<end method:ReturnBottleIngredient
             private static bool IsEnableRecycleBottle(int bottleIng, Card c, int acttype)
@@ -212,52 +203,97 @@ namespace s649PBR
                 //return false;
             }
 
-            internal static string DoRecycleBottle(Thing t, Card c, int acttype, bool broken = false)
+            internal static string GetBottleIngredient(Thing t)
             {
-                /*
-                * Thing t に使われるBottleIngをidで返す
-               */
-                int prodN = ReturnBottleIngredient(t);
-                if (!IsEnableRecycleBottle(prodN, c, acttype)) { return ""; }
-                //int oNum = t.Num;
-                //int prodN = ReturnBottleIngredient(t);
-                string result = null;
-                //Thing prodT = null;
-                //string prod = "";
-
-                switch (prodN)
+                return GetBottleIngredient(ReturnBottleIngredient(t));
+            }
+            internal static string GetBottleIngredient(int bi)
+            {
+                string resultid = null;
+                
+                switch (bi)
                 {
                     case BottleIngredient.Bottle_Empty:
-                        result = (!broken) ? "potion_empty" : "fragment";
+                        resultid = "potion_empty";
                         break;
                     case BottleIngredient.Bucket_Empty:
-                        result = "bucket_empty";
+                        resultid = "bucket_empty";
                         break;
                     case BottleIngredient.None://nothing
                         break;
                     case BottleIngredient.Junk_Bottles:
-                        result = (!broken) ? GetRandomJunkBottle() : "fragment";//bottle
+                        resultid = GetRandomJunkBottle();//bottle
                         break;
                     case BottleIngredient.Junk_Can:
-                        result = GetRandomJunkCan();//can
+                        resultid = GetRandomJunkCan();//can
                         break;
                     case BottleIngredient.Can:
-                        result = "";//can not junk
+                        resultid = "";//can not junk
                         break;
                     case BottleIngredient.Drug_Bin:
-                        result = "";//(!broken) ? "231" : "";//drug bin
+                        resultid = "";//(!broken) ? "231" : "";//drug bin
                         break;
                     default:
-                        result = "";
+                        resultid = "";
                         break;
                 }
-                //if(prod == ""|| prod == "qqq"){return null;} else {return ThingGen.Create(prod);} 
-                return result;
+                return resultid;
             }
-
-            internal static string DoRecycleBottle(Thing t, Chara c, int acttype, bool broken = false)
+            internal static void DoRecycleBottle(Thing t, Chara c, int acttype, bool broken = false, Point p = null)
             {
-                return DoRecycleBottle(t, (Card)c, acttype, broken);
+                /*
+                * Thing t に使われるBottleIngをidで返す->リサイクル実行
+               */
+                int bottleIng = ReturnBottleIngredient(t);
+                if (!IsEnableRecycleBottle(bottleIng, (Card)c, acttype)) { return; }
+                //int oNum = t.Num;
+                //int prodN = ReturnBottleIngredient(t);
+                string resultid = GetBottleIngredient(bottleIng);
+                //Thing prodT = null;
+                //string prod = "";
+                if (broken) //破損処理
+                {
+                    switch (bottleIng)
+                    {
+                        case BottleIngredient.Bottle_Empty:
+                            resultid = "fragment";
+                            break;
+                        case BottleIngredient.Bucket_Empty:
+                            //resultid = "bucket_empty";
+                            break;
+                        case BottleIngredient.None://nothing
+                            break;
+                        case BottleIngredient.Junk_Bottles:
+                            resultid = "fragment";//bottle
+                            break;
+                        case BottleIngredient.Junk_Can:
+                            //resultid = GetRandomJunkCan();//can
+                            break;
+                        case BottleIngredient.Can:
+                            //resultid = "";//can not junk
+                            break;
+                        case BottleIngredient.Drug_Bin:
+                            //resultid = "";//(!broken) ? "231" : "";//drug bin
+                            break;
+                        default:
+                            //resultid = "";
+                            break;
+                    }
+                }
+                
+
+                //if(prod == ""|| prod == "qqq"){return null;} else {return ThingGen.Create(prod);} 
+                Thing result;
+                if (resultid != "")
+                {
+                    result = ThingGen.Create(resultid);
+                    if (c.IsPC) { c.Pick(result); } else 
+                    { 
+                        if(p == null) { p = c.pos; }
+                        EClass._zone.AddCard(result, p);
+                    }
+                    PatchMain.Log("[PBR:DRB]result:" + result.NameSimple + "  -> " + c.NameSimple);
+                }
             }
             public static List<string> JunkBottleList = new List<string> { "726", "727", "728" };
             public static string GetRandomJunkBottle()
@@ -278,15 +314,12 @@ namespace s649PBR
                 {
                     if (t.IsEqualName(rt))
                     {
-                        t.AddNum(rt);
+                        t.AddNum(rt);//listにあったので加算
                         b = true;
                         return;
                     }
                 }
-                if (b == false)
-                {
-                    list.Add(rt);
-                }
+                list.Add(rt);//listになかったので追加
             }
 
             internal static void RemoveFromList(List<RecycleThing> rlist, string rt, int rnum)
@@ -322,41 +355,7 @@ namespace s649PBR
             }
 
         }//<<<end class:Main
-        /*
-        public class PlayerType
-        {//class:PlayerType
-            private int _value;//constructorで指定するように
-            public PlayerType(int v = 0)
-            {
-                _value = v;
-            }
-            public const int None = 0;
-            public const int Player = 1;
-            public const int PlayerAndParty = 2;
-            public const int All = 3;
-            public PlayerType GetPT(Card c)
-            {
-                PlayerType pt;
-                if(c.IsPC)
-                {
-                    pt = new PlayerType(PlayerType.Player);
-                } else if(c.IsPCParty)
-                {
-                    pt = new PlayerType(PlayerType.PlayerAndParty);
-                } else
-                {
-                    pt = new PlayerType(PlayerType.All);
-                }
-                return pt;
-            }
-            
-            public bool IsContain(int wcc)
-            {
-                return wcc >= _value;
-            }
-            
-        }//class:PlayerType
-        */
+        
         public class ActType
         {//class:PlayerType
             //public int value;
@@ -1000,3 +999,45 @@ public class PreExe{
 
                 }
             }*/
+//internal static bool GetRegulation(Card c, int at, bool isJunk = false)
+//{
+//Log("[GR]" + c.ToString() + "/" + at.ToString() + isJunk.ToString());
+
+//PlayerType pt = playerType.GetPT(c);
+//return GetRegulation(c, at, isJunk);
+//}
+/*
+        public class PlayerType
+        {//class:PlayerType
+            private int _value;//constructorで指定するように
+            public PlayerType(int v = 0)
+            {
+                _value = v;
+            }
+            public const int None = 0;
+            public const int Player = 1;
+            public const int PlayerAndParty = 2;
+            public const int All = 3;
+            public PlayerType GetPT(Card c)
+            {
+                PlayerType pt;
+                if(c.IsPC)
+                {
+                    pt = new PlayerType(PlayerType.Player);
+                } else if(c.IsPCParty)
+                {
+                    pt = new PlayerType(PlayerType.PlayerAndParty);
+                } else
+                {
+                    pt = new PlayerType(PlayerType.All);
+                }
+                return pt;
+            }
+            
+            public bool IsContain(int wcc)
+            {
+                return wcc >= _value;
+            }
+            
+        }//class:PlayerType
+        */

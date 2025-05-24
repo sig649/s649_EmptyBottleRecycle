@@ -20,9 +20,9 @@ namespace s649PBR
         internal class PatchExe
         {//>>>begin class:PatchExe
             
-            private static int ReturnBottleIngredient(Thing t) { return PatchMain.ReturnBottleIngredient(t); }
-            private static string DoRecycleBottle(Thing t, Card c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
-            private static bool Func_Craft_Allowed => PatchMain.Cf_Allow_Craft;
+            //private static int ReturnBottleIngredient(Thing t) { return PatchMain.ReturnBottleIngredient(t); }
+            //private static string DoRecycleBottle(Thing t, Card c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
+            //private static bool Func_Craft_Allowed => PatchMain.Cf_Allow_Craft;
 
             //[HarmonyPostfix]
             //[HarmonyPatch(typeof(TraitWell), "OnBlend")]

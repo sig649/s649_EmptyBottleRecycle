@@ -18,26 +18,16 @@ namespace s649PBR
         [HarmonyPatch]
         internal class PatchExe  //v0.1.1 new
         {//>>>begin class:PatchExe
+
+            private static void DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { PatchMain.DoRecycleBottle(t, c, at, broken); }
             
-            private static string DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
-            //private static bool Func_Allowed => PatchMain.cf_Allow_F10_TraitDye;
-            //private static bool PC_Allowed => PatchMain.cf_F01_PC_CBWD;
-
-
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDye), "OnUse")]
             private static void OnUsePostPatch(TraitDye __instance, Chara c)
             {//>>>>begin method:OnUsePostPatch
                 Thing usedT = __instance.owner.Thing;
-                string prodT = DoRecycleBottle(usedT, c, ActType.Use);
-                Thing result;
-                if (prodT != "")
-                {
-                    result = ThingGen.Create(prodT);
-                    if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
-                    PatchMain.Log("[PBR:DyeUse]Used->" + usedT.NameSimple + "/Prod->" + prodT + " :by " + c.NameSimple);
-                }
-                //}//<5end if(Func_Allowed)
+                PatchMain.Log("[PBR:Dye]Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
+                DoRecycleBottle(usedT, c, ActType.Use);
             }//<<<<end method:OnUsePostPatch
 
             [HarmonyPostfix]
@@ -45,14 +35,8 @@ namespace s649PBR
             private static void OnBlendPostPatch(TraitDye __instance, Chara c)
             {//>>>>begin method:OnUsePostPatch
                 Thing usedT = __instance.owner.Thing;
-                string prodT = DoRecycleBottle(usedT, c, ActType.Blend);
-                Thing result;
-                if (prodT != "")
-                {
-                    result = ThingGen.Create(prodT);
-                    if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
-                    PatchMain.Log("[PBR:DyeBlend]Used->" + usedT.NameSimple + "/Prod->" + prodT + " :by " + c.NameSimple);
-                }
+                PatchMain.Log("[PBR:Dye]Blend->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
+                DoRecycleBottle(usedT, c, ActType.Blend);
                 // }//<5end if(Func_Allowed)
             }//<<<<end method:OnUsePostPatch
 

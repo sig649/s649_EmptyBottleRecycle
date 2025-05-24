@@ -1,13 +1,13 @@
 using BepInEx;
-using HarmonyLib;
-
-using UnityEngine;
 using BepInEx.Configuration;
+using HarmonyLib;
+using s649PBR.Main;
+using System.Collections.Generic;
+using UnityEngine;
+//using static UnityEngine.UIElements.UxmlAttributeDescription;
 //using System.IO;
 //using System.Diagnostics;
 using Debug = UnityEngine.Debug;
-using System.Collections.Generic;
-using s649PBR.Main;
 
 namespace s649PBR
 {//>begin namespaceMain
@@ -16,7 +16,7 @@ namespace s649PBR
         [HarmonyPatch]
         internal class PatchExe 
         {//>>>begin class:PatchExe
-            private static string DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
+            private static void DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { PatchMain.DoRecycleBottle(t, c, at, broken); }
 
             //TraitWell.OnBlend実行時にも瓶を還元する
             [HarmonyPostfix]
@@ -24,18 +24,18 @@ namespace s649PBR
             private static void TraitWellPostPatch(TraitWell __instance, Thing t, Chara c)
             {//>>>>begin method:TraitDrinkPatch
                 //Thing usedT = __instance.owner.Thing;
-                string prodT = DoRecycleBottle(t, c, ActType.Blend);
-                PatchMain.Log("[PBR:WellBlend]Used->" + t.NameSimple + "/prod:" + prodT.ToString() + " /C: " + c.NameSimple, 1);
-                
-                Thing result;
-                if (prodT != "")
-                {
-                    result = ThingGen.Create(prodT);
-                    if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
-                    PatchMain.Log("[PBR:WellBlend]result[" + result.NameSimple + " -> " + c.NameSimple + "]");
-                }
-                
-                
+                //string prodT = DoRecycleBottle(t, c, ActType.Blend);
+                PatchMain.Log("[PBR:WellBlend]Used->" + t.NameSimple + " /C: " + c.NameSimple, 1);
+                DoRecycleBottle(t, c, ActType.Blend);
+                //Thing result;
+                //if (prodT != "")
+                //{
+                //    result = ThingGen.Create(prodT);
+                //    if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
+                //    PatchMain.Log("[PBR:WellBlend]result[" + result.NameSimple + " -> " + c.NameSimple + "]");
+                //}
+
+
             }//<<<<end method:TraitDrinkPatch
         }//<<<end class:PatchExe
     }//<<end namespaceSub
