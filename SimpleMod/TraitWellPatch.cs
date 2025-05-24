@@ -23,16 +23,16 @@ namespace s649PBR
             [HarmonyPatch(typeof(TraitWell), "OnBlend")]
             private static void TraitWellPostPatch(TraitWell __instance, Thing t, Chara c)
             {//>>>>begin method:TraitDrinkPatch
-                Thing usedT = __instance.owner.Thing;
-                string prodT = DoRecycleBottle(usedT, c, ActType.Blend);
-                Thing result;
+                //Thing usedT = __instance.owner.Thing;
+                string prodT = DoRecycleBottle(t, c, ActType.Blend);
+                PatchMain.Log("[PBR:WellBlend]Used->" + t.NameSimple + "/prod:" + prodT.ToString() + " /C: " + c.NameSimple, 1);
                 
-
+                Thing result;
                 if (prodT != "")
                 {
                     result = ThingGen.Create(prodT);
                     if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
-                    PatchMain.Log("[PBR:WellBlend]Used->" + usedT.NameSimple + "/Prod->" + prodT + " :by " + c.NameSimple);
+                    PatchMain.Log("[PBR:WellBlend]result[" + result.NameSimple + " -> " + c.NameSimple + "]");
                 }
                 
                 

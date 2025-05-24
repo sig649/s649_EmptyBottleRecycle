@@ -24,8 +24,12 @@ namespace s649PBR
             private static string DoRecycleBottle(Thing t, Card c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
             private static bool Func_Craft_Allowed => PatchMain.Cf_Allow_Craft;
 
+            //[HarmonyPostfix]
+            //[HarmonyPatch(typeof(TraitWell), "OnBlend")]
+
+            /*
             [HarmonyPostfix]
-            [HarmonyPatch(typeof(CraftUtil), "MixIngredients", new Type[] { typeof(Card), typeof(List<>), typeof(CraftUtil.MixType), typeof(int), typeof(Chara) })]
+            [HarmonyPatch(typeof(CraftUtil), "MixIngredients", new Type[] { typeof(Card), typeof(List<Thing>), typeof(CraftUtil.MixType), typeof(int), typeof(Chara) })]
             private static void MixIngPostPatch(Card product, List<Thing> ings, CraftUtil.MixType type, int maxQuality, Chara crafter)
             {//begin method:TraitDrinkPatch
                 if (Func_Craft_Allowed)
@@ -55,9 +59,9 @@ namespace s649PBR
                     PatchMain.ExeRecycle(recycleList, crafter);
 
                     //PatchMain.Log(text);
-
+            
                 }//<<<<end method:TraitDrinkPatch
-            }
+            }*/
         }//<<<end class:PatchExe
     }//<<end namespaceSub
 }//<end namespaceMain

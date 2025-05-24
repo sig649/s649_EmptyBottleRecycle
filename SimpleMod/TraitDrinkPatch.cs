@@ -19,43 +19,24 @@ namespace s649PBR
         {//>>>begin class:PatchExe
             //internal int TypeContainsPotionBottle(Thing t){return PatchMain.TypeContainsPotionBottle(t);}
             private static string DoRecycleBottle(Thing t, Chara c, int at, bool broken = false){return PatchMain.DoRecycleBottle(t, c, at, broken);}
-            //private static bool Func_Use_Allowed => PatchMain.Cf_Allow_Use;
-            //private static bool Use_PC_Allowed => PatchMain.Cf_Reg_Use_PC;
-            //private static bool Use_NPC_Allowed => PatchMain.Cf_Reg_Use_NPC;
-
-            //private static bool Allow_CreateJunkBottle => PatchMain.Cf_Reg_JunkBottle;
-            //private static bool CJB_PC_Allowed => PatchMain.Cf_Reg_CJB_PC;
-            //private static bool CJB_NPC_Allowed => PatchMain.Cf_Reg_CJB_NPC;
 
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDrink), "OnDrink")]
             private static void TraitDrinkPostPatch(TraitDrink __instance, Chara c)
             {//>>>>begin method:TraitDrinkPatch
-                //if(Func_Use_Allowed)
-                //{//>5begin if(Func_Use_Allowed)
+                
                 Thing usedT = __instance.owner.Thing;
                 string prodT = DoRecycleBottle(usedT, c, ActType.Use);
+                PatchMain.Log("[PBR:Drink]Used->" + usedT.NameSimple + "/prod:" + prodT.ToString() + " :by " + c.NameSimple, 1);
+
                 Thing result;
-                //int prodN = TypeContainsPotionBottle(usedT);
                 if (prodT != "") 
                 {
                     result = ThingGen.Create(prodT);
                     if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
-                    PatchMain.Log("[PBR:Drink]Used->" + usedT.NameSimple + "/Prod->" + prodT + " :by " + c.NameSimple);
+                    PatchMain.Log("[PBR:Drink]result:" + result.NameSimple + "  -> " + c.NameSimple);
                 }
-                //if (c.IsPC && Use_PC_Allowed)
-                //    {
-                 //       prodT = DoRecycleBottle(usedT);
-                //        c.Pick(prodT);
-                //        PatchMain.Log("[PBR]Used->" + usedT.NameSimple + "/Prod->" + prodT.NameSimple + " :by " + c.NameSimple);
-                //    }
-                //    else if(!c.IsPC && Use_NPC_Allowed)
-                //    {
-                //        prodT = DoRecycleBottle(usedT);
-                //        EClass._zone.AddCard(prodT, c.pos);
-                //        PatchMain.Log("[PBR]Used->" + usedT.NameSimple + "/Prod->" + prodT.NameSimple + " :by " + c.NameSimple);
-                //    } 
-                //}//<5end if(Func_Use_Allowed)
+                
             }//<<<<end method:TraitDrinkPatch
         }//<<<end class:PatchExe
     }//<<end namespaceSub
@@ -144,3 +125,25 @@ if(int.TryParse(__instance.owner.id, out num))
                                 if(PatchMain.configDebugLogging){Debug.Log("[PBR]Prod->" + prod + " :by " + c.GetName(NameStyle.Simple));}
                             }
                             */
+
+//private static bool Func_Use_Allowed => PatchMain.Cf_Allow_Use;
+//private static bool Use_PC_Allowed => PatchMain.Cf_Reg_Use_PC;
+//private static bool Use_NPC_Allowed => PatchMain.Cf_Reg_Use_NPC;
+
+//private static bool Allow_CreateJunkBottle => PatchMain.Cf_Reg_JunkBottle;
+//private static bool CJB_PC_Allowed => PatchMain.Cf_Reg_CJB_PC;
+//private static bool CJB_NPC_Allowed => PatchMain.Cf_Reg_CJB_NPC
+
+//if (c.IsPC && Use_PC_Allowed)
+//    {
+//       prodT = DoRecycleBottle(usedT);
+//        c.Pick(prodT);
+//        PatchMain.Log("[PBR]Used->" + usedT.NameSimple + "/Prod->" + prodT.NameSimple + " :by " + c.NameSimple);
+//    }
+//    else if(!c.IsPC && Use_NPC_Allowed)
+//    {
+//        prodT = DoRecycleBottle(usedT);
+//        EClass._zone.AddCard(prodT, c.pos);
+//        PatchMain.Log("[PBR]Used->" + usedT.NameSimple + "/Prod->" + prodT.NameSimple + " :by " + c.NameSimple);
+//    } 
+//}//<5end if(Func_Use_Allowed)

@@ -1,14 +1,14 @@
 using BepInEx;
-using HarmonyLib;
-
-using UnityEngine;
 using BepInEx.Configuration;
+using HarmonyLib;
+using s649PBR.Main;
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using static UnityEngine.UIElements.UxmlAttributeDescription;
 //using System.IO;
 //using System.Diagnostics;
 using Debug = UnityEngine.Debug;
-using System;
-using System.Collections.Generic;
-using s649PBR.Main;
 
 
 namespace s649PBR
@@ -30,13 +30,15 @@ namespace s649PBR
                 //Thing usedT = t;
                 //Chara usedC = __instance.Act.CC;
                 string prodT = DoRecycleBottle(t, c, ActType.Throw, true);
+                PatchMain.Log("[PBR:Throw]Used->" + t.NameSimple + "/prod:" + prodT.ToString() + " :by " + c.NameSimple, 1);
+
                 Thing result;
                 //int prodN = TypeContainsPotionBottle(usedT);
                 if (prodT != "")
                 {
                     result = ThingGen.Create(prodT);
-                    EClass._zone.AddCard(result, c.pos);
-                    PatchMain.Log("[PBR:Throw]Used->" + t.NameSimple + "/Prod->" + prodT + " :by " + c.NameSimple);
+                    EClass._zone.AddCard(result, p);
+                    PatchMain.Log("[PBR:Throw]Used->" + result.NameSimple + " :-> " + p.ToString());
                 }
                 
             }//<<<<end method:TraitDrinkPatch

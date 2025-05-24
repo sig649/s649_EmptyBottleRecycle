@@ -26,17 +26,44 @@ namespace s649PBR
             private static bool Func_Craft_Allowed => PatchMain.Cf_Allow_Craft;
             //private static bool PC_Allowed => PatchMain.cf_F01_PC_CBWD;
 
+            /*
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(AI_UseCrafter), "OnSuccess")]
+            internal static void OnSuccessPostPatch(AI_UseCrafter __instance)
+            {
+                PatchMain.Log("[PBR:craft]Fook:AI_UseCrafter/OnSuccess", 1);
+                List<Thing> ings = __instance.ings;
+                string text = "";
+                foreach(Thing thing in ings)
+                {
+                    text += thing.NameSimple + "/";
+                }
+                PatchMain.Log("[PBR:craft]ings:" + text, 1);
+                Chara owner = __instance.owner;
+                PatchMain.Log("[PBR:craft]chara:" + owner.NameSimple, 1);
+            }
+            */
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(Recipe), "Craft")]
+            private static void RecipeCraftPostPatch()
+            { }
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(RecipeCard), "Craft")]
+            private static void RecipeCardCraftPostPatch()
+            { }
+
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitCrafter), "Craft")]
-            private static void PostPatch(TraitCrafter __instance, 	AI_UseCrafter ai, Thing __result)
+            private static void TraitCrafterCraftPostPatch(TraitCrafter __instance, 	AI_UseCrafter ai, Thing __result)
             {//>>>>begin method:PostPatch
+                //PatchMain.Log("TraitCrafter/Craft/Fook");
                 //description
-                    //ai.ings ：素材リスト
-                    //ingsの要素Thing tにおいて、TCPBがtrueを返すならresNumをtの個数分加算
-                    //__resultにもTCPBがtrueを返すなら、resNumを__result.Num分減算
-                    //resNum > 0ならクリエイトしてスポーンさせる
-
-                if(Func_Craft_Allowed)
+                //ai.ings ：素材リスト
+                //ingsの要素Thing tにおいて、TCPBがtrueを返すならresNumをtの個数分加算
+                //__resultにもTCPBがtrueを返すなら、resNumを__result.Num分減算
+                //resNum > 0ならクリエイトしてスポーンさせる
+                /*
+                if (Func_Craft_Allowed)
                 {//>>>>>if
                     List<Thing> ings = ai.ings;
                     string text = "[PBR:process]";
@@ -65,6 +92,7 @@ namespace s649PBR
                     //string text2 = "[PBR:return]" + recycleList.ToString() + "[C:" + ai.owner.NameSimple + "]";
                     //PatchMain.Log(text2, 1); 
                 }//<<<<<end if
+                */
             }//<<<<end method:PostPatch
         }//<<<end class:PatchExe
     }//<<end namespaceSub
@@ -91,4 +119,12 @@ namespace s649PBR
                         } else 
                         {
                             if(resT != null){resT.Destroy();}
-                        }*/
+                        }
+
+ [HarmonyPostfix]
+            [HarmonyPatch(typeof(AI_Craft), "OnSuccess")]
+            internal static void APostPatch()
+            {
+                PatchMain.Log("[PBR]AI_craft/OnSucess/Fook");
+            }
+ */
