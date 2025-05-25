@@ -19,8 +19,9 @@ namespace s649PBR
         internal class PatchExe
         {//>>>begin class:PatchExe
             //internal int TypeContainsPotionBottle(Thing t){return PatchMain.TypeContainsPotionBottle(t);}
-            private static void DoRecycleBottle(Thing t, Chara c, int at, bool broken = false, Point p = null) { PatchMain.DoRecycleBottle(t, c, at, broken, p); }
-            
+            //private static void DoRecycleBottle(Thing t, Chara c, int at, bool broken = false, Point p = null) { PatchMain.DoRecycleBottle(t, c, at, broken, p); }
+            private static Thing DoRecycleBottle(Thing t, Chara c, int at, bool broken = false, Point p = null) { return PatchMain.DoRecycleBottle(t, c, at, broken, p); }
+
 
             [HarmonyPostfix]
             [HarmonyPatch(typeof(ActThrow), "Throw", new Type[] { typeof(Card), typeof(Point), typeof(Card), typeof(Thing), typeof(ThrowMethod) })]
@@ -30,19 +31,22 @@ namespace s649PBR
                 //Thing usedT = t;
                 Chara usedC = c.Chara;
                 PatchMain.Log("[PBR:Throw]Used->" + t.NameSimple + " :by " + usedC.NameSimple, 1);
-                DoRecycleBottle(t, usedC, ActType.Throw, true, p);
-                
-
-                //Thing result;
-                //int prodN = TypeContainsPotionBottle(usedT);
-                //if (prodT != "")
-                //{
-                //    result = ThingGen.Create(prodT);
-                //    EClass._zone.AddCard(result, p);
-                //    PatchMain.Log("[PBR:Throw]Used->" + result.NameSimple + " :-> " + p.ToString());
-                //}
-                
+                Thing result = DoRecycleBottle(t, usedC, ActType.Throw, true, p);
+                if (result != null)
+                {
+                    PatchMain.Log("[PBR:Dye]result->" + result.NameSimple, 1);
+                }
             }//<<<<end method:TraitDrinkPatch
         }//<<<end class:PatchExe
     }//<<end namespaceSub
 }//<end namespaceMain
+
+
+//Thing result;
+//int prodN = TypeContainsPotionBottle(usedT);
+//if (prodT != "")
+//{
+//    result = ThingGen.Create(prodT);
+//    EClass._zone.AddCard(result, p);
+//    PatchMain.Log("[PBR:Throw]Used->" + result.NameSimple + " :-> " + p.ToString());
+//}

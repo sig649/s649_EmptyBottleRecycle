@@ -18,16 +18,20 @@ namespace s649PBR
         [HarmonyPatch]
         internal class PatchExe  //v0.1.1 new
         {//>>>begin class:PatchExe
+            private static Thing DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
 
-            private static void DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { PatchMain.DoRecycleBottle(t, c, at, broken); }
-            
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDye), "OnUse")]
             private static void OnUsePostPatch(TraitDye __instance, Chara c)
             {//>>>>begin method:OnUsePostPatch
+                
                 Thing usedT = __instance.owner.Thing;
                 PatchMain.Log("[PBR:Dye]Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
-                DoRecycleBottle(usedT, c, ActType.Use);
+                Thing result = DoRecycleBottle(usedT, c, ActType.Use);
+                if (result != null)
+                {
+                    PatchMain.Log("[PBR:Dye]result->" + result.NameSimple, 1);
+                }
             }//<<<<end method:OnUsePostPatch
 
             [HarmonyPostfix]
@@ -36,7 +40,11 @@ namespace s649PBR
             {//>>>>begin method:OnUsePostPatch
                 Thing usedT = __instance.owner.Thing;
                 PatchMain.Log("[PBR:Dye]Blend->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
-                DoRecycleBottle(usedT, c, ActType.Blend);
+                Thing result = DoRecycleBottle(usedT, c, ActType.Blend);
+                if (result != null)
+                {
+                    PatchMain.Log("[PBR:Dye]result->" + result.NameSimple, 1);
+                }
                 // }//<5end if(Func_Allowed)
             }//<<<<end method:OnUsePostPatch
 
@@ -50,6 +58,9 @@ namespace s649PBR
 
 //trash box
 
+//Thing usedT = __instance.owner.Thing;
+//PatchMain.Log("[PBR:Dye]Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
+//DoRecycleBottle(usedT, c, ActType.Use);
 
 
 //if(PatchMain.configDebugLogging){Debug.Log("[PBR]Drinked->" + usedT.id.ToString());}

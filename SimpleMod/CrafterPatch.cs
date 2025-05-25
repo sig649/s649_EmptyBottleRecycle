@@ -24,16 +24,38 @@ namespace s649PBR
             private static string GetBottleIngredient(Thing t) { return PatchMain.GetBottleIngredient(t); }
             private static void DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { PatchMain.DoRecycleBottle(t, c, at, broken); }
             private static bool Func_Craft_Allowed => PatchMain.Cf_Allow_Craft;
-            
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(AI_UseCrafter), "OnEnd")]
+            private static void AI_UseCrafterPostPatch()
+            {
+                PatchMain.Log("[PBR:craft]Fook:AI_UseCrafter/OnEnd");
+            }
+
+
+
             [HarmonyPostfix]
             [HarmonyPatch(typeof(Recipe), "Craft")]
             private static void RecipeCraftPostPatch(Thing __result, BlessedState blessed, bool sound, List<Thing> ings, TraitCrafter crafter, bool model)
             {
-                PatchMain.Log("[PBR:craft]Fook:Recipe/Craft/product:" + __result.NameSimple + "/Num:" + __result.Num.ToString(), 1);
+                //PatchMain.Log("[PBR:craft]Fook:Recipe/Craft");
+                /*
+                if (__result == null)
+                {
+                    PatchMain.Log("[PBR:Craft]NoResult");
+                    return;
+                }
+                PatchMain.Log("[PBR:craft]product:" + __result.NameSimple + "/Num:" + __result.Num.ToString(), 1);
+                if (ings == null)
+                {
+                    PatchMain.Log("[PBR:Craft]NoIngs");
+                    return;
+                }
                 if (Func_Craft_Allowed)
                 {
                     string text = "[PBR:craft]ings:";
                     //string resultBI = "";
+                    
                     var recycleList = new List<RecycleThing>();
                     foreach (Thing thing in ings)
                     {
@@ -51,20 +73,44 @@ namespace s649PBR
                     //productにbottleingが含まれている場合はリターンを減産する
                     PatchMain.RemoveFromList(recycleList, resultBI, __result.Num);
                     PatchMain.ExeRecycle(recycleList, EClass.pc);
-                }
+                
+                }*/
             }
-
+            
             [HarmonyPostfix]
             [HarmonyPatch(typeof(RecipeCard), "Craft")]
             private static void RecipeCardCraftPostPatch(Thing __result, BlessedState blessed, bool sound, List<Thing> ings, TraitCrafter crafter, bool model)
             {
+                //PatchMain.Log("[PBR:craft]Fook:RecipeCard/Craft");
+                //if(__result != null) { PatchMain.Log("[PBR:craft]product:" + __result.NameSimple + "/Num:" + __result.Num.ToString(), 1); }
+               // PatchMain.Log("[PBR:craft]blessed:" + blessed.ToString(), 1);
+                //PatchMain.Log("[PBR:craft]sound:" + sound.ToString(), 1);
+                //if (ings != null) { PatchMain.Log("[PBR:craft]ings:" + ings.ToString(), 1); }
+                //if (crafter != null) { PatchMain.Log("[PBR:craft]crafter:" + crafter.ToString(), 1); }
+                //PatchMain.Log("[PBR:craft]model:" + model.ToString(), 1);
+
+
+                /*
+                if (__result == null)
+                {
+                    PatchMain.Log("[PBR:Craft]NoResult");
+                    return;
+                }
                 //PatchMain.Log("[PBR:craft]Fook:RecipeCard/Craft", 1);
-                PatchMain.Log("[PBR:craft]Fook:RecipeCard/Craft/product:" + __result.NameSimple + "/Num:" + __result.Num.ToString(), 1);
+                PatchMain.Log("[PBR:craft]product:" + __result.NameSimple + "/Num:" + __result.Num.ToString(), 1);
+                
                 if (Func_Craft_Allowed)
                 {
+                    if (ings == null)
+                    {
+                        PatchMain.Log("[PBR:Craft]NoIngs");
+                        return;
+                    }
                     string text = "[PBR:craft]ings:";
                     //string resultBI = "";
+                    
                     var recycleList = new List<RecycleThing>();
+
                     foreach (Thing thing in ings)
                     {
                         string bi = GetBottleIngredient(thing);
@@ -81,20 +127,33 @@ namespace s649PBR
                     //productにbottleingが含まれている場合はリターンを減産する
                     PatchMain.RemoveFromList(recycleList, resultBI, __result.Num);
                     PatchMain.ExeRecycle(recycleList, EClass.pc);
-                }
+                }*/
             }
 
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitCrafter), "Craft")]
             private static void TraitCrafterCraftPostPatch(TraitCrafter __instance, AI_UseCrafter ai, Thing __result)
             {//>>>>begin method:PostPatch
-                PatchMain.Log("[PBR:craft]Fook:TraitCrafter/Craft", 1);
+                PatchMain.Log("[PBR:craft]Fook:TraitCrafter/Craft");
+                /*
+                if (__result == null)
+                {
+                    PatchMain.Log("[PBR:Craft]NoResult");
+                    return;
+                }
+                //PatchMain.Log("[PBR:craft]Fook:TraitCrafter/Craft", 1);
+
                 if (Func_Craft_Allowed)
                 {
                     string text = "[PBR:craft]ings:";
                     //string resultBI = "";
                     var recycleList = new List<RecycleThing>();
                     List<Thing> ings = ai.ings;
+                    if (ings == null) 
+                    {
+                        PatchMain.Log("[PBR:Craft]NoIngs");
+                        return;
+                    }
                     foreach (Thing thing in ings)
                     {
                         string bi = GetBottleIngredient(thing);
@@ -111,7 +170,7 @@ namespace s649PBR
                     //productにbottleingが含まれている場合はリターンを減産する
                     PatchMain.RemoveFromList(recycleList, resultBI, __result.Num);
                     PatchMain.ExeRecycle(recycleList, EClass.pc);
-                }
+                }*/
 
                 //description
                 //ai.ings ：素材リスト

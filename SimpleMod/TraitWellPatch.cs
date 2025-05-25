@@ -16,26 +16,19 @@ namespace s649PBR
         [HarmonyPatch]
         internal class PatchExe 
         {//>>>begin class:PatchExe
-            private static void DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { PatchMain.DoRecycleBottle(t, c, at, broken); }
+            private static Thing DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
 
             //TraitWell.OnBlend実行時にも瓶を還元する
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitWell), "OnBlend")]
             private static void TraitWellPostPatch(TraitWell __instance, Thing t, Chara c)
             {//>>>>begin method:TraitDrinkPatch
-                //Thing usedT = __instance.owner.Thing;
-                //string prodT = DoRecycleBottle(t, c, ActType.Blend);
                 PatchMain.Log("[PBR:WellBlend]Used->" + t.NameSimple + " /C: " + c.NameSimple, 1);
-                DoRecycleBottle(t, c, ActType.Blend);
-                //Thing result;
-                //if (prodT != "")
-                //{
-                //    result = ThingGen.Create(prodT);
-                //    if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
-                //    PatchMain.Log("[PBR:WellBlend]result[" + result.NameSimple + " -> " + c.NameSimple + "]");
-                //}
-
-
+                Thing result = DoRecycleBottle(t, c, ActType.Blend);
+                if (result != null)
+                {
+                    PatchMain.Log("[PBR:WellBlend]result->" + result.NameSimple, 1);
+                }
             }//<<<<end method:TraitDrinkPatch
         }//<<<end class:PatchExe
     }//<<end namespaceSub
@@ -74,3 +67,18 @@ namespace s649PBR
 //{
 //Thing usedT = t;
 //Thing prodT = DoRecycleBottle(usedT);
+
+//Thing result;
+//if (prodT != "")
+//{
+//    result = ThingGen.Create(prodT);
+//    if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
+//    PatchMain.Log("[PBR:WellBlend]result[" + result.NameSimple + " -> " + c.NameSimple + "]");
+//}
+//DoRecycleBottle(t, c, ActType.Blend);
+
+//Thing usedT = __instance.owner.Thing;
+//PatchMain.Log("[PBR:Drink]Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
+
+//Thing usedT = __instance.owner.Thing;
+//string prodT = DoRecycleBottle(t, c, ActType.Blend);

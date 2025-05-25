@@ -18,7 +18,7 @@ namespace s649PBR
         internal class PatchExe
         {//>>>begin class:PatchExe
             //internal int TypeContainsPotionBottle(Thing t){return PatchMain.TypeContainsPotionBottle(t);}
-            private static void DoRecycleBottle(Thing t, Chara c, int at, bool broken = false){PatchMain.DoRecycleBottle(t, c, at, broken);}
+            private static Thing DoRecycleBottle(Thing t, Chara c, int at, bool broken = false){return PatchMain.DoRecycleBottle(t, c, at, broken);}
 
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDrink), "OnDrink")]
@@ -27,17 +27,12 @@ namespace s649PBR
                 
                 Thing usedT = __instance.owner.Thing;
                 PatchMain.Log("[PBR:Drink]Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
-                DoRecycleBottle(usedT, c, ActType.Use);
-                
-
-                //Thing result;
-                //if (prodT != "") 
-                //{
-                //    result = ThingGen.Create(prodT);
-                //    if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
-                //    PatchMain.Log("[PBR:Drink]result:" + result.NameSimple + "  -> " + c.NameSimple);
-                //}
-                
+                Thing result = DoRecycleBottle(usedT, c, ActType.Use);
+                if(result != null)
+                {
+                    PatchMain.Log("[PBR:Drink]result->" + result.NameSimple, 1);
+                }
+              
             }//<<<<end method:TraitDrinkPatch
         }//<<<end class:PatchExe
     }//<<end namespaceSub
@@ -148,3 +143,12 @@ if(int.TryParse(__instance.owner.id, out num))
 //        PatchMain.Log("[PBR]Used->" + usedT.NameSimple + "/Prod->" + prodT.NameSimple + " :by " + c.NameSimple);
 //    } 
 //}//<5end if(Func_Use_Allowed)
+
+
+//Thing result;
+//if (prodT != "") 
+//{
+//    result = ThingGen.Create(prodT);
+//    if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
+//    PatchMain.Log("[PBR:Drink]result:" + result.NameSimple + "  -> " + c.NameSimple);
+//}
