@@ -18,19 +18,20 @@ namespace s649PBR
         [HarmonyPatch]
         internal class PatchExe  //v0.1.1 new
         {//>>>begin class:PatchExe
-            private static Thing DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
-
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDye), "OnUse")]
             private static void OnUsePostPatch(TraitDye __instance, Chara c)
             {//>>>>begin method:OnUsePostPatch
-                
-                Thing usedT = __instance.owner.Thing;
-                PatchMain.Log("[PBR:Dye]Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
-                Thing result = DoRecycleBottle(usedT, c, ActType.Use);
-                if (result != null)
+                if (PatchMain.Cf_Allow_Use)
                 {
-                    PatchMain.Log("[PBR:Dye]result->" + result.NameSimple, 1);
+                    string title = "[PBR:Dye]";
+                    Thing usedT = __instance.owner.Thing;
+                    PatchMain.Log(title + "Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
+                    bool result = PatchMain.DoRecycleBottle(usedT, c, ActType.Use);
+                    if (result)
+                    {
+                        PatchMain.Log(title + "Success", 1);
+                    }
                 }
             }//<<<<end method:OnUsePostPatch
 
@@ -38,12 +39,16 @@ namespace s649PBR
             [HarmonyPatch(typeof(TraitDye), "OnBlend")]
             private static void OnBlendPostPatch(TraitDye __instance, Chara c)
             {//>>>>begin method:OnUsePostPatch
-                Thing usedT = __instance.owner.Thing;
-                PatchMain.Log("[PBR:Dye]Blend->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
-                Thing result = DoRecycleBottle(usedT, c, ActType.Blend);
-                if (result != null)
+                if (PatchMain.Cf_Allow_Blend)
                 {
-                    PatchMain.Log("[PBR:Dye]result->" + result.NameSimple, 1);
+                    string title = "[PBR:Dye]";
+                    Thing usedT = __instance.owner.Thing;
+                    PatchMain.Log(title + "Blend->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
+                    bool result = PatchMain.DoRecycleBottle(usedT, c, ActType.Blend);
+                    if (result)
+                    {
+                        PatchMain.Log(title + "Success", 1);
+                    }
                 }
                 // }//<5end if(Func_Allowed)
             }//<<<<end method:OnUsePostPatch
@@ -67,6 +72,25 @@ namespace s649PBR
 
 ////sitaya old
 /*
+ * 
+                Thing usedT = __instance.owner.Thing;
+                PatchMain.Log("[PBR:Dye]Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
+                Thing result = DoRecycleBottle(usedT, c, ActType.Use);
+                if (result != null)
+                {
+                    PatchMain.Log("[PBR:Dye]result->" + result.NameSimple, 1);
+                }
+
+ * 
+
+                Thing usedT = __instance.owner.Thing;
+                PatchMain.Log("[PBR:Dye]Blend->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
+                Thing result = DoRecycleBottle(usedT, c, ActType.Blend);
+                if (result != null)
+                {
+                    PatchMain.Log("[PBR:Dye]result->" + result.NameSimple, 1);
+                }
+ * 
 string prod = "";
 //Thing t = ThingGen.Create("potion_empty");
 //Debug.Log("[PBR]Akibin:" + __instance.owner.id.ToString());

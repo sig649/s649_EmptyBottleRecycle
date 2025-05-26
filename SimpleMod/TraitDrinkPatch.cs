@@ -17,22 +17,21 @@ namespace s649PBR
         [HarmonyPatch]
         internal class PatchExe
         {//>>>begin class:PatchExe
-            //internal int TypeContainsPotionBottle(Thing t){return PatchMain.TypeContainsPotionBottle(t);}
-            private static Thing DoRecycleBottle(Thing t, Chara c, int at, bool broken = false){return PatchMain.DoRecycleBottle(t, c, at, broken);}
-
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDrink), "OnDrink")]
             private static void TraitDrinkPostPatch(TraitDrink __instance, Chara c)
             {//>>>>begin method:TraitDrinkPatch
-                
-                Thing usedT = __instance.owner.Thing;
-                PatchMain.Log("[PBR:Drink]Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
-                Thing result = DoRecycleBottle(usedT, c, ActType.Use);
-                if(result != null)
+                if (PatchMain.Cf_Allow_Use) 
                 {
-                    PatchMain.Log("[PBR:Drink]result->" + result.NameSimple, 1);
+                    string title = "[PBR:Drink]";
+                    Thing usedT = __instance.owner.Thing;
+                    PatchMain.Log(title + "Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
+                    bool result = PatchMain.DoRecycleBottle(usedT, c, ActType.Use);
+                    if (result)
+                    {
+                        PatchMain.Log(title + "Success", 1);
+                    }
                 }
-              
             }//<<<<end method:TraitDrinkPatch
         }//<<<end class:PatchExe
     }//<<end namespaceSub

@@ -59,13 +59,13 @@ namespace s649PBR
                 //CE_AllowFunction10_TraitDye = Config.Bind("#F00-General", "ALLOW_FUNCTION_10_TRAIT_DYE", true, "Allow control of function 10-dye");//v0.1.1
                 
                 // Regulate
-                CE_WhichCharaCreatesWhenDrink = Config.Bind("#01-Reg", "Which_Chara_Creates_When_Drinking", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
-                CE_WhichCharaCreatesWhenBlend = Config.Bind("#01-Reg", "Which_Chara_Creates_When_Blending", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
-                CE_WhichCharaCreatesWhenThrow = Config.Bind("#01-Reg", "Which_Chara_Creates_When_Throwing", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
+                CE_WhichCharaCreatesWhenDrink = Config.Bind("#01-Reg", "Use_Regulation", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
+                CE_WhichCharaCreatesWhenBlend = Config.Bind("#01-Reg", "Blend_Regulation", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
+                CE_WhichCharaCreatesWhenThrow = Config.Bind("#01-Reg", "Throw_Regulation", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
 
                 // junk
                 CE_AllowCreatesJunkBottles = Config.Bind("#F00-General", "ALLOW_CREATES_JUNK_Things", true, "Allow to generate junk things");
-                CE_WhichCharaCreatesJunkBottles = Config.Bind("#01-Reg", "Which_Chara_Creates_Junk_Things", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
+                CE_WhichCharaCreatesJunkBottles = Config.Bind("#01-Reg", "Junk_Regulation", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
                 
                 // zz debug
                 CE_LogLevel = Config.Bind("#ZZ-Debug", "DEBUG_LOGGING", 0, "If value >= 0, Outputs debug info.");
@@ -109,11 +109,11 @@ namespace s649PBR
                     return 3;
                 }
             }
-            private static bool GetRegulation(Card c, int at, bool isJunk = false)
+            private static bool GetRegulation(Chara c, int at, bool isJunk = false)
             {
                 int wcc = 0;
                 int tcp = TypeCharaPlaying(c);
-                bool allow_Func;
+                //bool allow_Func;
                 bool reg_chara;
                 bool reg_junk = Cf_Reg_JunkBottle && (isJunk) ? (tcp <= CE_WhichCharaCreatesJunkBottles.Value) : true;
                 switch (at)
@@ -121,25 +121,25 @@ namespace s649PBR
                     case ActType.None: return false;
                     case ActType.Use:
                         wcc = CE_WhichCharaCreatesWhenDrink.Value;
-                        allow_Func = Cf_Allow_Use;
+                        //allow_Func = Cf_Allow_Use;
                         break;
                     case ActType.Blend:
                         wcc = CE_WhichCharaCreatesWhenBlend.Value;
-                        allow_Func = Cf_Allow_Blend;
+                        //allow_Func = Cf_Allow_Blend;
                         break;
                     case ActType.Throw:
                         wcc = CE_WhichCharaCreatesWhenThrow.Value;
-                        allow_Func = Cf_Allow_Throw;
+                        //allow_Func = Cf_Allow_Throw;
                         break;
                     case ActType.Craft: return Cf_Allow_Craft;
                     default: return false;
                 }
                 reg_chara = TypeCharaPlaying(c) <= wcc;
 
-                bool result = (!isJunk) ? (allow_Func && reg_chara) : (allow_Func && reg_chara && reg_junk);
+                bool result = (!isJunk) ? reg_chara : (reg_chara && reg_junk);
                 string text = "[PBR:GR]";
                 text += "TCP:" + tcp.ToString() + "/";
-                text += "Func:" + ToTF(allow_Func) + "/";
+                //text += "Func:" + ToTF(allow_Func) + "/";
                 text += "RC:" + ToTF(reg_chara) + "/";
                 text += (isJunk)? ("RJ:" + ToTF(reg_junk) + "/") : "RJ:-/";
                 text += "rs:" + ToTF(result) + "/";
@@ -149,9 +149,45 @@ namespace s649PBR
             
             private static string ToTF(bool b){return (b)? "T": "F";}
 
-            
-            internal static int ReturnBottleIngredient(Thing t)
+            internal static string GetBottleIngredient(string id, string category, string unit)
+            {
+                return GetBottleIngredient( ReturnBottleIngredient(id, category, unit));
+            }
+
+            private static int ReturnBottleIngredient(string id, string category, string unit)
+            {
+                //ThingがCreateされておらず、idから呼び出す時に使う。ThingVには使えない？Foodは対応する
+                //description
+                //return 1 : potion bottle
+                //return 2 : empty bucket
+                //return 0 : none
+                //return -1 : bottle junk
+                //return -2 : can junk
+                //return -3  : can not junk
+                //return -4 : drug bin
+                //return -999 : fumei
+                //description end
+                if (id == "") { return 0; }
+                switch (category) 
+                {
+                    case "_drink" ://雪・汚水・水・水バケツ・ポーション・香水・飲料
+                        if (unit == "bucket") { return BottleIngredient.Bucket_Empty; }
+                        if (unit == "handful") { return BottleIngredient.None; }
+                        if (unit == "pot") { return BottleIngredient.Bottle_Empty; }
+                        if (unit == "bottle") { return BottleIngredient.Junk_Bottles; }
+                        if (id == "perfume") { return BottleIngredient.Junk_Bottles; }
+                        return BottleIngredient.Bottle_Empty;//random potion
+                    case "drug" ://薬
+                        return BottleIngredient.None;
+                    case "milk" ://乳・ミルク缶・
+                        return BottleIngredient.None;
+                    default:
+                        return BottleIngredient.None;
+                }
+            }
+            private static int ReturnBottleIngredient(Thing t)
             {//>>>>begin method:ReturnBottleIngredient
+                //return ReturnBottleIngredient(t.trait);
              //description
              //return 1 : potion bottle
              //return 2 : empty bucket
@@ -162,6 +198,7 @@ namespace s649PBR
              //return -4 : drug bin
              //return -999 : fumei
              //description end
+             
                 if (t == null) { return 0; }
                 Trait trait = t.trait; 
                 string category = t.sourceCard.category;
@@ -190,7 +227,7 @@ namespace s649PBR
                 return BottleIngredient.None;
                     
             }//<<<<end method:ReturnBottleIngredient
-            private static bool IsEnableRecycleBottle(int bottleIng, Card c, int acttype)
+            private static bool IsEnableRecycleBottle(int bottleIng, Chara c, int acttype)
             {
                 string text = "[IERB]bi:" + bottleIng.ToString() + "/C:" + c.NameSimple + "/at:" + acttype.ToString();
                // Log("[IERB]bi:" + bottleIng.ToString() + "/" + c.NameSimple + "/" + acttype.ToString());
@@ -207,7 +244,7 @@ namespace s649PBR
             {
                 return GetBottleIngredient(ReturnBottleIngredient(t));
             }
-            internal static string GetBottleIngredient(int bi)
+            private static string GetBottleIngredient(int bi)
             {
                 string resultid = null;
                 
@@ -239,14 +276,14 @@ namespace s649PBR
                 }
                 return resultid;
             }
-            internal static Thing DoRecycleBottle(Thing t, Chara c, int acttype, bool broken = false, Point p = null)
+            internal static bool DoRecycleBottle(Thing t, Chara c, int acttype, bool broken = false, Point p = null)
             {
                 /*
                 * Thing t に使われるBottleIngをidで返す->リサイクル実行:成否をThingで返す
                */
                 Thing result = null;
                 int bottleIng = ReturnBottleIngredient(t);
-                if (!IsEnableRecycleBottle(bottleIng, (Card)c, acttype)) { return result; }
+                if (!IsEnableRecycleBottle(bottleIng, c, acttype)) { return false; }
                 //int oNum = t.Num;
                 //int prodN = ReturnBottleIngredient(t);
                 string resultid = GetBottleIngredient(bottleIng);
@@ -294,10 +331,10 @@ namespace s649PBR
                         if(p == null) { p = c.pos; }
                         EClass._zone.AddCard(result, p);
                     }
-                    PatchMain.Log("[PBR:DRB]Create:" + result.id + "  -> " + c.NameSimple, 1);
-                    //return true;
+                    PatchMain.Log("[PBR:DRB]Create:" + result.id + ":"+ result.NameSimple + "  -> " + c.NameSimple);
+                    return true;
                 }
-                return result;
+                return false;
             }
             public static List<string> JunkBottleList = new List<string> { "726", "727", "728" };
             public static string GetRandomJunkBottle()
@@ -392,6 +429,7 @@ namespace s649PBR
                 this.name = name;
                 this.num = num;
             }
+            
             public void AddNum(RecycleThing t)
             { this.num += t.num; }
             public bool IsEqualName(RecycleThing t)

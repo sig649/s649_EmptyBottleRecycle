@@ -14,21 +14,24 @@ namespace s649PBR
     namespace TraitWellPatch
     {//>>begin namespaceSub
         [HarmonyPatch]
-        internal class PatchExe 
-        {//>>>begin class:PatchExe
-            private static Thing DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
-
-            //TraitWell.OnBlend実行時にも瓶を還元する
+        internal class PatchExe
+        {
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitWell), "OnBlend")]
             private static void TraitWellPostPatch(TraitWell __instance, Thing t, Chara c)
             {//>>>>begin method:TraitDrinkPatch
-                PatchMain.Log("[PBR:WellBlend]Used->" + t.NameSimple + " /C: " + c.NameSimple, 1);
-                Thing result = DoRecycleBottle(t, c, ActType.Blend);
-                if (result != null)
+                if (PatchMain.Cf_Allow_Blend)
                 {
-                    PatchMain.Log("[PBR:WellBlend]result->" + result.NameSimple, 1);
+                    string title = "[PBR:WellBlend]";
+                    Thing usedT = t;
+                    PatchMain.Log(title + "Blend->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
+                    bool result = PatchMain.DoRecycleBottle(usedT, c, ActType.Blend);
+                    if (result)
+                    {
+                        PatchMain.Log(title + "Success", 1);
+                    }
                 }
+
             }//<<<<end method:TraitDrinkPatch
         }//<<<end class:PatchExe
     }//<<end namespaceSub
@@ -37,6 +40,19 @@ namespace s649PBR
 
 
 /*
+ * 
+ * 
+        {//>>>begin class:PatchExe
+            //private static Thing DoRecycleBottle(Thing t, Chara c, int at, bool broken = false) { return PatchMain.DoRecycleBottle(t, c, at, broken); }
+
+            //TraitWell.OnBlend実行時にも瓶を還元する
+
+                PatchMain.Log("[PBR:WellBlend]Used->" + t.NameSimple + " /C: " + c.NameSimple, 1);
+                Thing result = DoRecycleBottle(t, c, ActType.Blend);
+                if (result != null)
+                {
+                    PatchMain.Log("[PBR:WellBlend]result->" + result.NameSimple, 1);
+                }
                 string prod = "";
                 switch(t.id)
                 {
