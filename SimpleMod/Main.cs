@@ -348,6 +348,17 @@ namespace s649PBR
                 List<string> sList = JunkCanList;
                 return (sList != null) ? sList[Random.Range(0, sList.Count)] : "";
             }
+
+            internal static string GetStrings(List<RecycleThing> list)
+            {
+                string text = "";
+                foreach (RecycleThing thing in list) 
+                {
+                    text += thing.ToString() + "/";
+                }
+                return text;
+            }
+
             internal static void AddThingToList(List<RecycleThing> list, RecycleThing rt)
             {
                 //bool b = false;
@@ -448,6 +459,10 @@ namespace s649PBR
             {
                 this.num += n1;
             }
+            public void SetMulti(int n1)
+            {
+                this.num *= n1;
+            }
             public bool IsEqualID(RecycleThing t)
             {
                 return IsEqualID(t.name);
@@ -457,7 +472,7 @@ namespace s649PBR
                 return (tid == this.name) ? true : false;
             }
 
-            public void Decrease(RecycleThing rt ,int a)
+            public void Decrease(RecycleThing rt ,int a = 1)
             {
                 if (rt.IsValid() && IsEqualID(rt)) 
                     { AddNum(-a * rt.num); }
@@ -479,7 +494,20 @@ namespace s649PBR
     }//<<end namespaceSub
 }//<end namespaceMain
 /*
-//関連するレシピリスト・バニラ
+//関連するレシピリスト・
+除外リスト
+    初級錬金道具（レジンしか使ってないことになってしまうため）
+    渇きの壺(中に使われているのかもしれない)
+
+完成品にBIがあるもの
+・初級錬金道具のレシピ全般
+・石うす
+    //////////////////////////////////粘土    ポーション1    予測結果0～1
+    空き瓶  ポーション1     予測結果0
+    ・染料窯
+    染料    空き瓶1素材1    予測結果1～0
+完成品にBIが無いもの
+
     ・・クラフト（未対応）
     ・便利屋の机
     大窯    飲料20  予測結果20～0
@@ -487,25 +515,25 @@ namespace s649PBR
     染料窯  飲料20  予測結果20～0
     書道具　水1     予測結果1
     ・木工の机
-    ベッド　※まだ
-    奉納酒　※まだ
+    ベッド
+    奉納酒
     ・金属工の机
-        ※まだりすと　バーの椅子・カジノの椅子
+        バーの椅子・カジノの椅子
     バスタブ　飲料20    予測結果20～0
     トイレ      耐酸2   予測結果2
     ・彫刻
-    間欠泉　染料1　※まだ
+    間欠泉　染料1
     流し台  飲料4   予測結果4～0
     石のバスタブ    飲料20  予測結果20～0
     ・硝子工
     なし
     ・装飾台
-    パンプキンランプ　染料1　※まだ
+    パンプキンランプ　染料1
     ・裁縫
-        ※まだりすと　　椅子・ハートのクッション・お布団
+        椅子・ハートのクッション・お布団
     変な枕  媚薬1   予測結果1
     ・筆記用具
-    危ない本    乳1　※まだ
+    危ない本    乳1
     ・建材
     素材染料　カーペット・水の床・タイルの床・モダンなカーペット
     ・料理
@@ -514,9 +542,9 @@ namespace s649PBR
 ・・加工設備
     ・石うす
     粘土    ポーション1    予測結果0～1
-    空き瓶  ポーション1     予測結果0
+    /////////空き瓶  ポーション1     予測結果0
     ・染料窯
-    染料    空き瓶1素材1    予測結果1～0
+    /////////染料    空き瓶1素材1    予測結果1～0
 
 
 

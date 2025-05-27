@@ -8,6 +8,10 @@ using System.Diagnostics;
 using System.IO;
 using UnityEngine;
 using static Recipe;
+using static System.Net.Mime.MediaTypeNames;
+using static UnityEditor.PlayerSettings;
+
+
 //using static UnityEditor.MaterialProperty;
 //using static UnityEngine.ParticleSystem;
 using Debug = UnityEngine.Debug;
@@ -30,21 +34,52 @@ namespace s649PBR
                 this.queue = queue;
                 this.num = num;
             }
+            public override string ToString()
+            {
+                var text = "";
+                if(queue.Count > 0)
+                {
+                    foreach(RecycleThing rt in queue)
+                    {
+                        text += rt.ToString() + "/";
+                    }
+                    text += num.ToString();
+                }
+                return text;
+            }
             public void ExeRecycle()
             {
+                PatchMain.Log(title + "ExeRecycle:", 1);
                 if (num > 0 && queue.Count > 0)
                 {
-                    PatchMain.Log(title + "ExeRecycle", 1);
+                    
                     string text = "[recycle]";
                     foreach (RecycleThing rthing in queue)
                     {
-                        Thing t = ThingGen.Create(rthing.name, rthing.GetNum() * num);
+                        Thing t = ThingGen.Create(rthing.name).SetNum(rthing.GetNum() * num);
                         EClass._zone.AddCard(t, EClass.pc.pos);
                         text += "rt:" + rthing.name + "." + rthing.GetNum().ToString() +"*" + num.ToString() +  "/";
-                        text += "N:" + t.id + "." + t.Num.ToString();
+                        text += "Thing:" + t.id + "." + t.Num.ToString();
                     }
                     PatchMain.Log(text);
                 }
+            }
+            public void RemoveBI(RecycleThing rt, int num = 1)
+            {
+                PatchMain.Log(title + "RemoveBI", 1);
+                if (num > 0) { rt.SetMulti(num); }
+                if(queue.Count > 0)
+                {
+                    foreach (RecycleThing queueRT in queue)
+                    {
+                        if(queueRT.IsEqualID(rt))
+                        {
+                            queueRT.Decrease(rt);
+                            return;
+                        }
+                    }
+                }
+                PatchMain.Log(title + "RemoveDone:" + this.ToString(), 1);
             }
             public void RemoveAll()
             {
@@ -60,22 +95,16 @@ namespace s649PBR
             static readonly string title = "[PBR:Craft]";
             static RecycleQueue recycleQueue;
             internal static Thing lastMixedThing;
-
-            [HarmonyPostfix]
-            [HarmonyPatch(typeof(CraftUtil), "MixIngredients", new Type[] { typeof(string), typeof(List<Thing>), typeof(CraftUtil.MixType), typeof(int), typeof(Chara)})]
-            private static void CraftUtilMI_PostPatch(CraftUtil __instance, Thing __result)
-            {
-                PatchMain.Log(title + "MI_Called", 1);
-                lastMixedThing = __result;
-            }
-
+            
             [HarmonyPostfix]
             [HarmonyPatch(typeof(AI_UseCrafter), "OnStart")]
             private static void AI_UseCrafterOnStartPostPatch(AI_UseCrafter __instance)
             {
+                if (!PatchMain.Cf_Allow_Craft) { return; }
                 lastMixedThing = null;
                 TraitCrafter trait = __instance.crafter;
                 bool isFactory = trait is TraitFactory;
+                var recycleList = new List<RecycleThing>();
                 PatchMain.Log(title + "AI_UC/OnStart/iF:" + isFactory.ToString() + "/t:" + trait.ToString());
                 if (isFactory)
                 {
@@ -90,8 +119,8 @@ namespace s649PBR
                         var category = EClass.sources.things.map[id].category;
                         var unit = EClass.sources.things.map[id].unit;
                         var resultBI = PatchMain.GetBottleIngredient(id, category, unit);
-                        var recycleList = new List<RecycleThing>();
-                        int num = __instance.num;//製作個数？
+                        
+                        int num = __instance.num;//製作個数
                         //List<Thing> ings = __instance.ings;
                         
                         
@@ -143,7 +172,7 @@ namespace s649PBR
                         if (recycleList.Count > 0)
                         {
                             recycleQueue = new(recycleList);
-                            PatchMain.Log(title + "NewRecycleQueue", 1);
+                            PatchMain.Log(title + "NewRecycleQueue:" + recycleQueue.ToString(), 1);
                         }
                         else { PatchMain.Log(title + "NoRecycleQueue......", 1); }
                     }
@@ -152,33 +181,52 @@ namespace s649PBR
                 }
                 else //notFactory
                 {
-                
+                    //var recycleList = new List<RecycleThing>();
+                    Thing thing = __instance.ings[0];
+                    Thing thing2 = ((trait.numIng > 1) ? __instance.ings[1] : null);
+                    //List<Thing> ings = __instance.ings;
+                    //if (ings == null)
+                    //{
+                    //    PatchMain.Log(title + "[process]NoIngs");
+                    //    return;
+                    //}
+                    string text = "ings:";
+                    text += (thing != null) ? thing.ToString() : "";
+                    text += "/";
+                    text += (thing2 != null) ? thing2.ToString() : "";
+                    //foreach (Thing thing in ings)
+                    //{
+                    //    text += "[" + thing.NameSimple + ":" + bi.ToString() + ":" + thing.Num + "]";
+                    //   if (bi != "")
+                    //    {
+                    //        
+                    //        //result = DoRecycleBottle(t, ai.owner, ActType.Craft);
+                    //        PatchMain.AddThingToList(recycleList, new(bi, thing.Num));
+                    //    }
+                    //}
+                    //PatchMain.Log(title + text, 1);
+                    //PatchMain.Log(title + "recycleList:" + PatchMain.GetStrings(recycleList), 1);
                 }
             }
-
+            
             [HarmonyPostfix]
-            [HarmonyPatch(typeof(AI_UseCrafter), "Run")]
-            private static void AI_UseCrafterRunPostPatch(AI_UseCrafter __instance)
+            [HarmonyPatch(typeof(RecipeCard), "Craft")]
+            private static void RecipeCardCraftPostPatch(Thing __result, BlessedState blessed, bool sound, List<Thing> ings, TraitCrafter crafter, bool model)
             {
-                PatchMain.Log("[PBR:craft]AI_UseCrafter/Run");
-                TraitCrafter trait = __instance.crafter;
-                if (trait is TraitFactory) 
+                //PatchMain.Log(title + "RecipeCard/Craft");
+                if (__result != null)
                 {
-                    if (recycleQueue != null && lastMixedThing != null)
-                    {
-                        PatchMain.Log(title + "created:" + lastMixedThing.id + "." + lastMixedThing.Num + ":bi" + PatchMain.ReturnBottleIngredient(lastMixedThing).ToString());
-                    }
-                }
-                else
-                {
-                     
+                    lastMixedThing = __result;
+                    //PatchMain.Log(title + "result:" + __result.NameSimple);
                 }
             }
+               
 
             [HarmonyPostfix]
             [HarmonyPatch(typeof(AI_UseCrafter), "OnEnd")]
             private static void AI_UseCrafterOnEndPostPatch(AI_UseCrafter __instance)
             {
+                if (!PatchMain.Cf_Allow_Craft) { return; }
                 PatchMain.Log("[PBR:craft]AI_UseCrafter/OnEnd");
                 //List<Thing> ings = __instance.ings;
                 TraitCrafter trait = __instance.crafter;
@@ -186,18 +234,20 @@ namespace s649PBR
                 
                 if (trait is TraitFactory)
                 {   //作業台など
-                    /*
-                    if (recycleQueue != null)
+                    if (lastMixedThing != null && recycleQueue != null)
                     {
-                        if(lastMixedThing != null) 
+                        PatchMain.Log(title + "lastMixed:" + lastMixedThing.NameSimple + "/num:" + lastMixedThing.Num);
+                        
+                        if (lastMixedThing.id != "tool_alchemy" && lastMixedThing.id != "waterPot") //還元除外用
                         {
-                            
-                        }
-                        recycleQueue.ExeRecycle();
-                        recycleQueue.RemoveAll();
+                            recycleQueue.RemoveBI(new (PatchMain.GetBottleIngredient(lastMixedThing), lastMixedThing.trait.CraftNum));
+                            recycleQueue.ExeRecycle();
+                        } else { PatchMain.Log(title + "還元対象外です"); }
+                            //recycleQueue.ExeRecycle();
+                            recycleQueue.RemoveAll();
                         PatchMain.Log(title + "RecycleDone!", 1);
                     } else { PatchMain.Log(title + "QueueNothing", 1); }
-                    */
+                    
                 }
                 else 
                 {   //加工機械
@@ -481,10 +531,40 @@ else { text += "/ing:-"; }
             {
                 PatchMain.Log("[PBR:craft]Fook:Recipe/Craft");
             }
- 
+ lastMixedThing.sourceCard.category != "_tool"
  */
 //if (source != "") { text += "/sourceid:" + source; } else { text += "/sourceid:-"; }
 
 
 //text += "/cat:" + cat;
+/*
+               [HarmonyPostfix]
+               [HarmonyPatch(typeof(AI_UseCrafter), "Run")]
+               private static void AI_UseCrafterRunPostPatch(AI_UseCrafter __instance)
+               {
+                   PatchMain.Log("[PBR:craft]AI_UseCrafter/Run");
+                   TraitCrafter trait = __instance.crafter;
+                   if (trait is TraitFactory) 
+                   {
+                       if (recycleQueue != null && lastMixedThing != null)
+                       {
+                           PatchMain.Log(title + "created:" + lastMixedThing.id + "." + lastMixedThing.Num + ":bi" + PatchMain.ReturnBottleIngredient(lastMixedThing).ToString());
+                       }
+                   }
+                   else
+                   {
 
+                   }
+               }
+               */
+
+
+/*
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(CraftUtil), "MixIngredients", new Type[] { typeof(string), typeof(List<Thing>), typeof(CraftUtil.MixType), typeof(int), typeof(Chara)})]
+            private static void CraftUtilMI_PostPatch(CraftUtil __instance, Thing __result)
+            {
+                PatchMain.Log(title + "MI_Called", 1);
+                lastMixedThing = __result;
+            }
+            */
