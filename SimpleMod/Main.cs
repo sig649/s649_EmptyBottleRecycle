@@ -185,7 +185,7 @@ namespace s649PBR
                         return BottleIngredient.None;
                 }
             }
-            private static int ReturnBottleIngredient(Thing t)
+            public static int ReturnBottleIngredient(Thing t)
             {//>>>>begin method:ReturnBottleIngredient
                 //return ReturnBottleIngredient(t.trait);
              //description
@@ -353,7 +353,7 @@ namespace s649PBR
                 //bool b = false;
                 foreach (RecycleThing t in list)
                 {
-                    if (t.IsEqualName(rt))
+                    if (t.IsEqualID(rt))
                     {
                         t.AddNum(rt);//listにあったので加算
                         //b = true;
@@ -363,16 +363,16 @@ namespace s649PBR
                 list.Add(rt);//listになかったので追加
             }
 
-            internal static void RemoveFromList(List<RecycleThing> rlist, string rt, int rnum)
+            internal static void RemoveFromList(List<RecycleThing> rlist, RecycleThing rt, int rnum = 1)
             {
-                if(rt != "" && rnum > 0)
+                if(rt != null && rnum > 0)
                 {
                     foreach (RecycleThing rthing in rlist)
                     {
-                        if (rthing.IsEqualName(rt))
+                        if (rthing.IsEqualID(rt))
                         {
-                            rthing.Decrease(rnum);
-                            if (rthing.num <= 0)
+                            rthing.Decrease(rt, rnum);
+                            if (rthing.IsNotValid())
                             {
                                 rlist.Remove(rthing);
                             }
@@ -383,17 +383,18 @@ namespace s649PBR
                 }
                 
             }
+            /*
             internal static void ExeRecycle(List<RecycleThing> rlist, Chara c)
             {
                 string text = "[recycle]";
                 foreach (RecycleThing rthing in rlist)
                 {
-                    Thing t = ThingGen.Create(rthing.name, rthing.num);
+                    Thing t = ThingGen.Create(rthing.name, rthing.GetNum());
                     EClass._zone.AddCard(t, c.pos);
                     text += "N:" + t.NameSimple + "/n:" + t.Num.ToString();
                 }
                 Log(text, 1);
-            }
+            }*/
 
         }//<<<end class:Main
         
@@ -421,7 +422,7 @@ namespace s649PBR
         public class RecycleThing
         {
             public string name { get; }
-            public int num { get; set; }
+            private int num { get; set; }
 
             // Change the constructor's access modifier to 'public' to fix CS0122  
             public RecycleThing(string name, int num)
@@ -429,21 +430,48 @@ namespace s649PBR
                 this.name = name;
                 this.num = num;
             }
-            
-            public void AddNum(RecycleThing t)
-            { this.num += t.num; }
-            public bool IsEqualName(RecycleThing t)
+            public RecycleThing(string name)
             {
-                return IsEqualName(t.name);
+                this.name = name;
+                this.num = 1;
             }
-            public bool IsEqualName(string tid)
+            public int GetNum()
+            {
+                return num;
+            }
+            public void AddNum(RecycleThing t)
+            {
+                if (this.name == t.name) { AddNum(t.num); }
+                //this.num += t.num; 
+            }
+            private void AddNum(int n1)
+            {
+                this.num += n1;
+            }
+            public bool IsEqualID(RecycleThing t)
+            {
+                return IsEqualID(t.name);
+            }
+            public bool IsEqualID(string tid)
             {
                 return (tid == this.name) ? true : false;
             }
 
-            public void Decrease(int a)
+            public void Decrease(RecycleThing rt ,int a)
             {
-                this.num -= a;
+                AddNum(-a * rt.num);
+            }
+            public bool IsNotValid()
+            {
+                return !IsValid();  
+            }
+            public bool IsValid()
+            {
+                return name != "" && num > 0;
+            }
+            public override string ToString()
+            {
+                return this.name + "." + this.num.ToString();
             }
         }
 
