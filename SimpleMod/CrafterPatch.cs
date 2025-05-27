@@ -18,8 +18,10 @@ namespace s649PBR
     namespace CrafterPatchMain
     {//>>begin NamespaceSub
         
+        
         public class RecycleQueue 
         {
+            string title = "[PBR:RQ]";
             List<RecycleThing> queue;
             int num;
 
@@ -32,6 +34,7 @@ namespace s649PBR
             {
                 if (num > 0 && queue.Count > 0)
                 {
+                    PatchMain.Log(title + "ExeRecycle", 1);
                     string text = "[recycle]";
                     foreach (RecycleThing rthing in queue)
                     {
@@ -56,12 +59,21 @@ namespace s649PBR
         {//>>>begin class:PatchExe
             static readonly string title = "[PBR:Craft]";
             static RecycleQueue recycleQueue;
+            internal static Thing lastMixedThing;
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(CraftUtil), "MixIngredients", new Type[] { typeof(string), typeof(List<Thing>), typeof(CraftUtil.MixType), typeof(int), typeof(Chara)})]
+            private static void CraftUtilMI_PostPatch(CraftUtil __instance, Thing __result)
+            {
+                PatchMain.Log(title + "MI_Called", 1);
+                lastMixedThing = __result;
+            }
 
             [HarmonyPostfix]
             [HarmonyPatch(typeof(AI_UseCrafter), "OnStart")]
             private static void AI_UseCrafterOnStartPostPatch(AI_UseCrafter __instance)
             {
-                
+                lastMixedThing = null;
                 TraitCrafter trait = __instance.crafter;
                 bool isFactory = trait is TraitFactory;
                 PatchMain.Log(title + "AI_UC/OnStart/iF:" + isFactory.ToString() + "/t:" + trait.ToString());
@@ -145,6 +157,25 @@ namespace s649PBR
             }
 
             [HarmonyPostfix]
+            [HarmonyPatch(typeof(AI_UseCrafter), "Run")]
+            private static void AI_UseCrafterRunPostPatch(AI_UseCrafter __instance)
+            {
+                PatchMain.Log("[PBR:craft]AI_UseCrafter/Run");
+                TraitCrafter trait = __instance.crafter;
+                if (trait is TraitFactory) 
+                {
+                    if (recycleQueue != null && lastMixedThing != null)
+                    {
+                        PatchMain.Log(title + "created:" + lastMixedThing.id + "." + lastMixedThing.Num + ":bi" + PatchMain.ReturnBottleIngredient(lastMixedThing).ToString());
+                    }
+                }
+                else
+                {
+                     
+                }
+            }
+
+            [HarmonyPostfix]
             [HarmonyPatch(typeof(AI_UseCrafter), "OnEnd")]
             private static void AI_UseCrafterOnEndPostPatch(AI_UseCrafter __instance)
             {
@@ -152,32 +183,32 @@ namespace s649PBR
                 //List<Thing> ings = __instance.ings;
                 TraitCrafter trait = __instance.crafter;
                 //string tC = __instance.crafter.ToString();
-                /*
+                
                 if (trait is TraitFactory)
                 {   //作業台など
+                    /*
                     if (recycleQueue != null)
                     {
-                        PatchMain.Log(title + "ExeRecycle", 1);
+                        if(lastMixedThing != null) 
+                        {
+                            
+                        }
                         recycleQueue.ExeRecycle();
                         recycleQueue.RemoveAll();
                         PatchMain.Log(title + "RecycleDone!", 1);
                     } else { PatchMain.Log(title + "QueueNothing", 1); }
+                    */
                 }
                 else 
                 {   //加工機械
                     //PatchMain.Log("[PBR:craft]Crafter is not TraitFactory", 1);
-                }*/
+                }
                 
                 //Chara owner = __instance.owner;
                 //PatchMain.Log("[PBR:craft]chara:" + owner.NameSimple, 1);
             }
 
-            [HarmonyPostfix]
-            [HarmonyPatch(typeof(Recipe), "Craft")]
-            private static void RecipeCraftPostPatch(Thing __result, BlessedState blessed, bool sound, List<Thing> ings, TraitCrafter crafter, bool model)
-            {
-                PatchMain.Log("[PBR:craft]Fook:Recipe/Craft");
-            }
+            
 
 
 
@@ -442,7 +473,16 @@ private static void RecipeCardCraftPostPatch(Thing __result, BlessedState blesse
         if (ing != null) { text += ing.id + "." + ing.Num + ":"; }
     }
 }
-else { text += "/ing:-"; }*/
+else { text += "/ing:-"; }
+
+ [HarmonyPostfix]
+            [HarmonyPatch(typeof(Recipe), "Craft")]
+            private static void RecipeCraftPostPatch(Thing __result, BlessedState blessed, bool sound, List<Thing> ings, TraitCrafter crafter, bool model)
+            {
+                PatchMain.Log("[PBR:craft]Fook:Recipe/Craft");
+            }
+ 
+ */
 //if (source != "") { text += "/sourceid:" + source; } else { text += "/sourceid:-"; }
 
 

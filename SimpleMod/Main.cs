@@ -459,7 +459,8 @@ namespace s649PBR
 
             public void Decrease(RecycleThing rt ,int a)
             {
-                AddNum(-a * rt.num);
+                if (rt.IsValid() && IsEqualID(rt)) 
+                    { AddNum(-a * rt.num); }
             }
             public bool IsNotValid()
             {
