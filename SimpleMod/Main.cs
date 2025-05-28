@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
@@ -82,11 +81,7 @@ namespace s649PBR
                 var harmony = new Harmony("PatchMain");
                 new Harmony("PatchMain").PatchAll();
             }//<<<<end method:Start
-
-
-            //local----------------------------------------------------------------------------------------------------------------------------------------
-            //public static PlayerType playerType;//コンフィグのプレイヤー識別用
-
+            //internal method-------------------------------------------------------------------------------------------------
             internal static void Log(string text, int lv = 0)
             {
                 if (Cf_LogLevel >= lv)
@@ -94,7 +89,128 @@ namespace s649PBR
                     Debug.Log(text);
                 }
             }
-            
+
+            internal static string GetBottleIngredient(string id, string category, string unit)
+            {
+                return GetBottleIngredient(ReturnBottleIngredient(id, category, unit));
+            }
+
+            internal static string GetBottleIngredient(Thing t)
+            {
+                return GetBottleIngredient(ReturnBottleIngredient(t));
+            }
+
+            public static int ReturnBottleIngredient(Thing t)
+            {//>>>>begin method:ReturnBottleIngredient
+             //return ReturnBottleIngredient(t.trait);
+             //description
+             //return 1 : potion bottle
+             //return 2 : empty bucket
+             //return 0 : none
+             //return -1 : bottle junk
+             //return -2 : can junk
+             //return -3  : can not junk
+             //return -4 : drug bin
+             //return -999 : fumei
+             //description end
+
+                if (t == null) { return 0; }
+                Trait trait = t.trait;
+                string category = t.sourceCard.category;
+                string unit = t.source.unit;
+
+                //Log("[TCPB]t is " + trait.ToString() + "/cate:" + category + "/u:" + unit);
+                if (trait is TraitSnow) { return BottleIngredient.None; }
+                if (trait is TraitDye) { return BottleIngredient.Bottle_Empty; }
+                if (trait is TraitPotion || trait is TraitPotionRandom || trait is TraitPotionEmpty)
+                {
+                    if (category == "drug") { return BottleIngredient.Drug; } else { return BottleIngredient.Bottle_Empty; }
+                    //return 1;
+                }
+                if (trait is TraitPerfume) { return BottleIngredient.Junk_Bottles; }
+                if (trait is TraitDrinkMilk || trait is TraitDrinkMilkMother) { return BottleIngredient.None; }
+                if (trait is TraitDrink)
+                {
+                    if (category == "booze")
+                    {
+                        return BottleIngredient.Junk_Bottles;
+                    }
+                    else if (category == "_drink")
+                    {
+                        if (unit == "bucket") { return BottleIngredient.Bucket_Empty; }
+                        if (unit == "pot") { return BottleIngredient.Bottle_Empty; }
+                        if (unit == "bottle") { return BottleIngredient.Junk_Bottles; }
+                    }
+                }
+                return BottleIngredient.None;
+
+            }//<<<<end method:ReturnBottleIngredient
+
+            internal static bool DoRecycleBottle(Thing t, Chara c, int acttype, bool broken = false, Point p = null)
+            {
+                /*
+                * Thing t に使われるBottleIngをidで返す->リサイクル実行:成否をThingで返す
+               */
+                Thing result = null;
+                int bottleIng = ReturnBottleIngredient(t);
+                if (!IsEnableRecycleBottle(bottleIng, c, acttype)) { return false; }
+                //int oNum = t.Num;
+                //int prodN = ReturnBottleIngredient(t);
+                string resultid = GetBottleIngredient(bottleIng);
+                //Thing prodT = null;
+                //string prod = "";
+                if (broken) //破損処理
+                {
+                    switch (bottleIng)
+                    {
+                        case BottleIngredient.Bottle_Empty:
+                            resultid = "fragment";
+                            break;
+                        case BottleIngredient.Bucket_Empty:
+                            //resultid = "bucket_empty";
+                            break;
+                        case BottleIngredient.None://nothing
+                            break;
+                        case BottleIngredient.Junk_Bottles:
+                            resultid = "fragment";//bottle
+                            break;
+                        case BottleIngredient.Junk_Can:
+                            //resultid = GetRandomJunkCan();//can
+                            break;
+                        case BottleIngredient.Can:
+                            //resultid = "";//can not junk
+                            break;
+                        case BottleIngredient.Drug:
+                            resultid = "";
+                            //resultid = "";//(!broken) ? "231" : "";//drug bin
+                            break;
+                        default:
+                            //resultid = "";
+                            break;
+                    }
+                }
+
+
+                //if(prod == ""|| prod == "qqq"){return null;} else {return ThingGen.Create(prod);} 
+                //Thing result;
+                if (resultid != "")
+                {
+                    result = ThingGen.Create(resultid);
+                    if (c.IsPC) { c.Pick(result); }
+                    else
+                    {
+                        if (p == null) { p = c.pos; }
+                        EClass._zone.AddCard(result, p);
+                    }
+                    PatchMain.Log("[PBR:DRB]Create:" + result.id + ":" + result.NameSimple + "  -> " + c.NameSimple);
+                    return true;
+                }
+                return false;
+            }
+            //local----------------------------------------------------------------------------------------------------------------------------------------
+            //public static PlayerType playerType;//コンフィグのプレイヤー識別用
+            private static string ToTF(bool b) { return (b) ? "T" : "F"; }
+
             private static int TypeCharaPlaying(Card c)
             {
                 if (c == null) { return 0; }
@@ -147,13 +263,7 @@ namespace s649PBR
                 return result; 
             }
             
-            private static string ToTF(bool b){return (b)? "T": "F";}
-
-            internal static string GetBottleIngredient(string id, string category, string unit)
-            {
-                return GetBottleIngredient( ReturnBottleIngredient(id, category, unit));
-            }
-
+            
             private static int ReturnBottleIngredient(string id, string category, string unit)
             {
                 //ThingがCreateされておらず、idから呼び出す時に使う。ThingVには使えない？Foodは対応する
@@ -185,48 +295,7 @@ namespace s649PBR
                         return BottleIngredient.None;
                 }
             }
-            public static int ReturnBottleIngredient(Thing t)
-            {//>>>>begin method:ReturnBottleIngredient
-                //return ReturnBottleIngredient(t.trait);
-             //description
-             //return 1 : potion bottle
-             //return 2 : empty bucket
-             //return 0 : none
-             //return -1 : bottle junk
-             //return -2 : can junk
-             //return -3  : can not junk
-             //return -4 : drug bin
-             //return -999 : fumei
-             //description end
-             
-                if (t == null) { return 0; }
-                Trait trait = t.trait; 
-                string category = t.sourceCard.category;
-                string unit = t.source.unit;
-                    
-                //Log("[TCPB]t is " + trait.ToString() + "/cate:" + category + "/u:" + unit);
-                if(trait is TraitSnow){return BottleIngredient.None;}
-                if(trait is TraitDye){return BottleIngredient.Bottle_Empty;}
-                if(trait is TraitPotion || trait is TraitPotionRandom || trait is TraitPotionEmpty)
-                {
-                    if(category == "drug"){return BottleIngredient.Drug;} else {return BottleIngredient.Bottle_Empty; }
-                    //return 1;
-                }
-                if(trait is TraitPerfume){return BottleIngredient.Junk_Bottles;}
-                if(trait is TraitDrinkMilk || trait is TraitDrinkMilkMother){return BottleIngredient.None; }
-                if(trait is TraitDrink)
-                {
-                    if(category == "booze"){
-                        return BottleIngredient.Junk_Bottles;
-                    }else if(category == "_drink"){
-                        if(unit == "bucket"){return BottleIngredient.Bucket_Empty;}
-                        if(unit == "pot"){return BottleIngredient.Bottle_Empty; }
-                        if(unit == "bottle"){return BottleIngredient.Junk_Bottles; }
-                    }
-                }
-                return BottleIngredient.None;
-                    
-            }//<<<<end method:ReturnBottleIngredient
+            
             private static bool IsEnableRecycleBottle(int bottleIng, Chara c, int acttype)
             {
                 string text = "[IERB]bi:" + bottleIng.ToString() + "/C:" + c.NameSimple + "/at:" + acttype.ToString();
@@ -240,10 +309,7 @@ namespace s649PBR
                 //return false;
             }
 
-            internal static string GetBottleIngredient(Thing t)
-            {
-                return GetBottleIngredient(ReturnBottleIngredient(t));
-            }
+            
             private static string GetBottleIngredient(int bi)
             {
                 string resultid = null;
@@ -276,66 +342,7 @@ namespace s649PBR
                 }
                 return resultid;
             }
-            internal static bool DoRecycleBottle(Thing t, Chara c, int acttype, bool broken = false, Point p = null)
-            {
-                /*
-                * Thing t に使われるBottleIngをidで返す->リサイクル実行:成否をThingで返す
-               */
-                Thing result = null;
-                int bottleIng = ReturnBottleIngredient(t);
-                if (!IsEnableRecycleBottle(bottleIng, c, acttype)) { return false; }
-                //int oNum = t.Num;
-                //int prodN = ReturnBottleIngredient(t);
-                string resultid = GetBottleIngredient(bottleIng);
-                //Thing prodT = null;
-                //string prod = "";
-                if (broken) //破損処理
-                {
-                    switch (bottleIng)
-                    {
-                        case BottleIngredient.Bottle_Empty:
-                            resultid = "fragment";
-                            break;
-                        case BottleIngredient.Bucket_Empty:
-                            //resultid = "bucket_empty";
-                            break;
-                        case BottleIngredient.None://nothing
-                            break;
-                        case BottleIngredient.Junk_Bottles:
-                            resultid = "fragment";//bottle
-                            break;
-                        case BottleIngredient.Junk_Can:
-                            //resultid = GetRandomJunkCan();//can
-                            break;
-                        case BottleIngredient.Can:
-                            //resultid = "";//can not junk
-                            break;
-                        case BottleIngredient.Drug:
-                            resultid = "";
-                            //resultid = "";//(!broken) ? "231" : "";//drug bin
-                            break;
-                        default:
-                            //resultid = "";
-                            break;
-                    }
-                }
-                
-
-                //if(prod == ""|| prod == "qqq"){return null;} else {return ThingGen.Create(prod);} 
-                //Thing result;
-                if (resultid != "")
-                {
-                    result = ThingGen.Create(resultid);
-                    if (c.IsPC) { c.Pick(result); } else 
-                    { 
-                        if(p == null) { p = c.pos; }
-                        EClass._zone.AddCard(result, p);
-                    }
-                    PatchMain.Log("[PBR:DRB]Create:" + result.id + ":"+ result.NameSimple + "  -> " + c.NameSimple);
-                    return true;
-                }
-                return false;
-            }
+            
             public static List<string> JunkBottleList = new List<string> { "726", "727", "728" };
             public static string GetRandomJunkBottle()
             {
@@ -409,16 +416,19 @@ namespace s649PBR
 
         }//<<<end class:Main
         
+        /// <summary>------------------------------------------------------------------------------------------------------------
+        /// Other Classes
+        /// </summary>-----------------------------------------------------------------------------------------------------------
         public class ActType
-        {//class:PlayerType
+        {//class:ActType
             //public int value;
             public const int None = 0;
             public const int Use = 1;
             public const int Blend = 2;
             public const int Throw = 3;
             public const int Craft = 4;
-            
-        }//class:PlayerType
+
+        }//class:ActType
         public class BottleIngredient
         {//class:BottleIng
             public const int None = 0;
@@ -435,7 +445,6 @@ namespace s649PBR
             public string name { get; }
             private int num { get; set; }
 
-            // Change the constructor's access modifier to 'public' to fix CS0122  
             public RecycleThing(string name, int num)
             {
                 this.name = name;
@@ -491,6 +500,75 @@ namespace s649PBR
             }
         }
 
+        public class RecycleQueue
+        {
+            private readonly string title = "[PBR:RQ]";
+            private List<RecycleThing> queue;
+            private int num;
+
+            public RecycleQueue(List<RecycleThing> queue, int num = 1)
+            {
+                this.queue = queue;
+                this.num = num;
+            }
+            public override string ToString()
+            {
+                var text = "";
+                if (queue.Count > 0)
+                {
+                    foreach (RecycleThing rt in queue)
+                    {
+                        text += rt.ToString() + "/";
+                    }
+                    text += num.ToString();
+                }
+                return text;
+            }
+            public void ExeRecycle()
+            {
+                PatchMain.Log(title + "ExeRecycle:", 1);
+                if (num > 0 && queue.Count > 0)
+                {
+
+                    string text = "[recycle]";
+                    foreach (RecycleThing rthing in queue)
+                    {
+                        Thing t = ThingGen.Create(rthing.name).SetNum(rthing.GetNum() * num);
+                        EClass._zone.AddCard(t, EClass.pc.pos);
+                        text += "rt:" + rthing.name + "." + rthing.GetNum().ToString() + "*" + num.ToString() + "/";
+                        text += "Thing:" + t.id + "." + t.Num.ToString();
+                    }
+                    PatchMain.Log(title + text);
+                }
+            }
+            public void SetQueueNum(int n1)
+            {
+                this.num = n1;
+            }
+            public void RemoveBI(RecycleThing rt, int num = 1)
+            {
+                PatchMain.Log(title + "RemoveBI", 1);
+                if (num > 0) { rt.SetMulti(num); }
+                if (queue.Count > 0)
+                {
+                    foreach (RecycleThing queueRT in queue)
+                    {
+                        if (queueRT.IsEqualID(rt))
+                        {
+                            queueRT.Decrease(rt);
+                            return;
+                        }
+                    }
+                }
+                PatchMain.Log(title + "RemoveDone:" + this.ToString(), 1);
+            }
+            public void RemoveAll()
+            {
+                queue.Clear();
+                this.num = 1;
+                PatchMain.Log("[PBR:RQ]RecycleQueue:Cleared", 1);
+            }
+        }
     }//<<end namespaceSub
 }//<end namespaceMain
 /*

@@ -8,104 +8,36 @@ using System.Diagnostics;
 using System.IO;
 using UnityEngine;
 using static Recipe;
-using static System.Net.Mime.MediaTypeNames;
-using static UnityEditor.PlayerSettings;
-
-
-//using static UnityEditor.MaterialProperty;
-//using static UnityEngine.ParticleSystem;
 using Debug = UnityEngine.Debug;
-//using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 namespace s649PBR
 {//>begin NamespaceMain
     namespace CrafterPatchMain
     {//>>begin NamespaceSub
         
-        
-        public class RecycleQueue 
-        {
-            string title = "[PBR:RQ]";
-            List<RecycleThing> queue;
-            int num;
-
-            public RecycleQueue(List<RecycleThing> queue, int num = 1)
-            {
-                this.queue = queue;
-                this.num = num;
-            }
-            public override string ToString()
-            {
-                var text = "";
-                if(queue.Count > 0)
-                {
-                    foreach(RecycleThing rt in queue)
-                    {
-                        text += rt.ToString() + "/";
-                    }
-                    text += num.ToString();
-                }
-                return text;
-            }
-            public void ExeRecycle()
-            {
-                PatchMain.Log(title + "ExeRecycle:", 1);
-                if (num > 0 && queue.Count > 0)
-                {
-                    
-                    string text = "[recycle]";
-                    foreach (RecycleThing rthing in queue)
-                    {
-                        Thing t = ThingGen.Create(rthing.name).SetNum(rthing.GetNum() * num);
-                        EClass._zone.AddCard(t, EClass.pc.pos);
-                        text += "rt:" + rthing.name + "." + rthing.GetNum().ToString() +"*" + num.ToString() +  "/";
-                        text += "Thing:" + t.id + "." + t.Num.ToString();
-                    }
-                    PatchMain.Log(text);
-                }
-            }
-            public void RemoveBI(RecycleThing rt, int num = 1)
-            {
-                PatchMain.Log(title + "RemoveBI", 1);
-                if (num > 0) { rt.SetMulti(num); }
-                if(queue.Count > 0)
-                {
-                    foreach (RecycleThing queueRT in queue)
-                    {
-                        if(queueRT.IsEqualID(rt))
-                        {
-                            queueRT.Decrease(rt);
-                            return;
-                        }
-                    }
-                }
-                PatchMain.Log(title + "RemoveDone:" + this.ToString(), 1);
-            }
-            public void RemoveAll()
-            {
-                queue.Clear();
-                this.num = 1;
-                PatchMain.Log("[PBR:RQ]RecycleQueue:Cleared", 1);
-            }
-        }
 
     [HarmonyPatch]
         internal class PatchExe
         {//>>>begin class:PatchExe
             static readonly string title = "[PBR:Craft]";
             static RecycleQueue recycleQueue;
-            internal static Thing lastMixedThing;
+            static Thing lastMixedThing;
+            static int lastCraftCount;
             
             [HarmonyPostfix]
             [HarmonyPatch(typeof(AI_UseCrafter), "OnStart")]
             private static void AI_UseCrafterOnStartPostPatch(AI_UseCrafter __instance)
             {
-                if (!PatchMain.Cf_Allow_Craft) { return; }
+                recycleQueue = null;
                 lastMixedThing = null;
+                lastCraftCount = 0;
+                if (!PatchMain.Cf_Allow_Craft) { return; }
+                
+                var recycleList = new List<RecycleThing>();
                 TraitCrafter trait = __instance.crafter;
                 bool isFactory = trait is TraitFactory;
-                var recycleList = new List<RecycleThing>();
                 PatchMain.Log(title + "AI_UC/OnStart/iF:" + isFactory.ToString() + "/t:" + trait.ToString());
+
                 if (isFactory)
                 {
                     //PatchMain.Log("[PBR:craft]Crafter is TraitFactory", 1);
@@ -182,18 +114,19 @@ namespace s649PBR
                 else //notFactory
                 {
                     //var recycleList = new List<RecycleThing>();
-                    Thing thing = __instance.ings[0];
-                    Thing thing2 = ((trait.numIng > 1) ? __instance.ings[1] : null);
+                    
+                    //Thing thing = __instance.ings[0];
+                    //Thing thing2 = ((trait.numIng > 1) ? __instance.ings[1] : null);
                     //List<Thing> ings = __instance.ings;
                     //if (ings == null)
                     //{
                     //    PatchMain.Log(title + "[process]NoIngs");
                     //    return;
                     //}
-                    string text = "ings:";
-                    text += (thing != null) ? thing.ToString() : "";
-                    text += "/";
-                    text += (thing2 != null) ? thing2.ToString() : "";
+                    //string text = "ings:";
+                    //text += (thing != null) ? thing.ToString() : "";
+                    //text += "/";
+                    //text += (thing2 != null) ? thing2.ToString() : "";
                     //foreach (Thing thing in ings)
                     //{
                     //    text += "[" + thing.NameSimple + ":" + bi.ToString() + ":" + thing.Num + "]";
@@ -204,7 +137,7 @@ namespace s649PBR
                     //        PatchMain.AddThingToList(recycleList, new(bi, thing.Num));
                     //    }
                     //}
-                    //PatchMain.Log(title + text, 1);
+                    PatchMain.Log(title + "processor:" + lastCraftCount.ToString(), 1);
                     //PatchMain.Log(title + "recycleList:" + PatchMain.GetStrings(recycleList), 1);
                 }
             }
@@ -220,14 +153,60 @@ namespace s649PBR
                     //PatchMain.Log(title + "result:" + __result.NameSimple);
                 }
             }
-               
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(TraitCrafter), "Craft")]
+            private static void TraitCrafterCraftPostPatch(TraitCrafter __instance, AI_UseCrafter ai, Thing __result)
+            {//>>>>begin method:PostPatch
+                if (!PatchMain.Cf_Allow_Craft) { return; }
+                //PatchMain.Log("[PBR:craft]Fook:TraitCrafter/Craft");
+                string title = "[PBR:Craft:TCC]";
+                if (__result == null)
+                {
+                    PatchMain.Log(title + "NoResult");
+                    return;
+                }
+                //PatchMain.Log("[PBR:craft]Fook:TraitCrafter/Craft", 1);
+
+                if (lastCraftCount == 0)
+                {
+                    string text = "ings:";
+                    //string resultBI = "";
+                    var recycleList = new List<RecycleThing>();
+                    List<Thing> ings = ai.ings;
+                    if (ings == null)
+                    {
+                        PatchMain.Log(title + "NoIngs");
+                        return;
+                    }
+                    foreach (Thing thing in ings)
+                    {
+                        string bi = PatchMain.GetBottleIngredient(thing);
+                        text += "[" + thing.NameSimple + ":" + bi.ToString() + ":" + thing.Num + "]";
+                        if (bi != "")
+                        {
+                            //result = DoRecycleBottle(t, ai.owner, ActType.Craft);
+                            PatchMain.AddThingToList(recycleList, new(bi, thing.Num));
+                        }
+                    }
+                    PatchMain.Log(text, 1);
+
+                    string resultBI = PatchMain.GetBottleIngredient(__result);
+                    //productにbottleingが含まれている場合はリターンを減産する
+                    PatchMain.RemoveFromList(recycleList, new RecycleThing(resultBI), __result.Num);
+                    recycleQueue = new RecycleQueue(recycleList);
+                    PatchMain.Log(title + "QueueSet:" + recycleQueue.ToString(), 1);
+                    //PatchMain.ExeRecycle(recycleList, EClass.pc);
+                }
+                lastCraftCount++;
+                
+            }//<<<<end method:PostPatch
 
             [HarmonyPostfix]
             [HarmonyPatch(typeof(AI_UseCrafter), "OnEnd")]
             private static void AI_UseCrafterOnEndPostPatch(AI_UseCrafter __instance)
             {
                 if (!PatchMain.Cf_Allow_Craft) { return; }
-                PatchMain.Log("[PBR:craft]AI_UseCrafter/OnEnd");
+                PatchMain.Log(title + "AI_UseCrafter/OnEnd", 1);
                 //List<Thing> ings = __instance.ings;
                 TraitCrafter trait = __instance.crafter;
                 //string tC = __instance.crafter.ToString();
@@ -252,6 +231,16 @@ namespace s649PBR
                 else 
                 {   //加工機械
                     //PatchMain.Log("[PBR:craft]Crafter is not TraitFactory", 1);
+                    if (lastCraftCount != 0 && recycleQueue != null) 
+                    {
+                        PatchMain.Log(title + "lastCraftCount:" + lastCraftCount.ToString());
+                        recycleQueue.SetQueueNum(lastCraftCount);
+                        PatchMain.Log(title + "RQ:" + recycleQueue.ToString());
+                        
+                        recycleQueue.ExeRecycle();
+                        recycleQueue.RemoveAll();
+                        PatchMain.Log(title + "RecycleDone!", 1);
+                    }
                 }
                 
                 //Chara owner = __instance.owner;
@@ -263,85 +252,7 @@ namespace s649PBR
 
 
 
-            [HarmonyPostfix]
-            [HarmonyPatch(typeof(TraitCrafter), "Craft")]
-            private static void TraitCrafterCraftPostPatch(TraitCrafter __instance, AI_UseCrafter ai, Thing __result)
-            {//>>>>begin method:PostPatch
-                PatchMain.Log("[PBR:craft]Fook:TraitCrafter/Craft");
-                /*
-                if (__result == null)
-                {
-                    PatchMain.Log("[PBR:Craft]NoResult");
-                    return;
-                }
-                //PatchMain.Log("[PBR:craft]Fook:TraitCrafter/Craft", 1);
-
-                if (Func_Craft_Allowed)
-                {
-                    string text = "[PBR:craft]ings:";
-                    //string resultBI = "";
-                    var recycleList = new List<RecycleThing>();
-                    List<Thing> ings = ai.ings;
-                    if (ings == null) 
-                    {
-                        PatchMain.Log("[PBR:Craft]NoIngs");
-                        return;
-                    }
-                    foreach (Thing thing in ings)
-                    {
-                        string bi = GetBottleIngredient(thing);
-                        text += "[" + thing.NameSimple + ":" + bi.ToString() + ":" + thing.Num + "]";
-                        if (bi != "")
-                        {
-                            //result = DoRecycleBottle(t, ai.owner, ActType.Craft);
-                            PatchMain.AddThingToList(recycleList, new(bi, thing.Num));
-                        }
-                    }
-                    PatchMain.Log(text, 1);
-
-                    string resultBI = GetBottleIngredient(__result);
-                    //productにbottleingが含まれている場合はリターンを減産する
-                    PatchMain.RemoveFromList(recycleList, resultBI, __result.Num);
-                    PatchMain.ExeRecycle(recycleList, EClass.pc);
-                }*/
-
-                //description
-                //ai.ings ：素材リスト
-                //ingsの要素Thing tにおいて、TCPBがtrueを返すならresNumをtの個数分加算
-                //__resultにもTCPBがtrueを返すなら、resNumを__result.Num分減算
-                //resNum > 0ならクリエイトしてスポーンさせる
-                /*
-                if (Func_Craft_Allowed)
-                {//>>>>>if
-                    List<Thing> ings = ai.ings;
-                    string text = "[PBR:craft]";
-                    string result = "";
-                    var recycleList = new List<RecycleThing>();
-                    foreach (Thing t in ings)
-                    {   
-                        int prodType = ReturnBottleIngredient(t);
-                        int prodNum = (prodType != 0) ? t.Num : 0;
-                        text += "[ings]";
-                        if (prodType != 0)
-                        {
-                            result = DoRecycleBottle(t, ai.owner, ActType.Craft);
-                            PatchMain.AddThingToList(recycleList, new(result, prodNum));
-                        }
-                        text += "N:" + t.id.ToString() + "/T:" + prodType.ToString() + "/n:"  + prodNum.ToString();
-                    }
-                    int rt = ReturnBottleIngredient(__result);
-                    text += "[result]N:" + __result.NameSimple;
-                    text += "/T:" + rt.ToString();
-                    text += "/n:" + __result.Num.ToString();
-                    PatchMain.Log(text, 1);
-                    //productにbottleingが含まれている場合はリターンを減産する
-                    PatchMain.RemoveFromList(recycleList, DoRecycleBottle(__result, ai.owner, ActType.Craft), __result.Num);
-                    PatchMain.ExeRecycle(recycleList, ai.owner);
-                    //string text2 = "[PBR:return]" + recycleList.ToString() + "[C:" + ai.owner.NameSimple + "]";
-                    //PatchMain.Log(text2, 1); 
-                }//<<<<<end if
-                */
-            }//<<<<end method:PostPatch
+            
         }//<<<end class:PatchExe
     }//<<end namespaceSub
 }//<end namespaceMain
@@ -568,3 +479,39 @@ else { text += "/ing:-"; }
                 lastMixedThing = __result;
             }
             */
+//description
+//ai.ings ：素材リスト
+//ingsの要素Thing tにおいて、TCPBがtrueを返すならresNumをtの個数分加算
+//__resultにもTCPBがtrueを返すなら、resNumを__result.Num分減算
+//resNum > 0ならクリエイトしてスポーンさせる
+/*
+if (Func_Craft_Allowed)
+{//>>>>>if
+    List<Thing> ings = ai.ings;
+    string text = "[PBR:craft]";
+    string result = "";
+    var recycleList = new List<RecycleThing>();
+    foreach (Thing t in ings)
+    {   
+        int prodType = ReturnBottleIngredient(t);
+        int prodNum = (prodType != 0) ? t.Num : 0;
+        text += "[ings]";
+        if (prodType != 0)
+        {
+            result = DoRecycleBottle(t, ai.owner, ActType.Craft);
+            PatchMain.AddThingToList(recycleList, new(result, prodNum));
+        }
+        text += "N:" + t.id.ToString() + "/T:" + prodType.ToString() + "/n:"  + prodNum.ToString();
+    }
+    int rt = ReturnBottleIngredient(__result);
+    text += "[result]N:" + __result.NameSimple;
+    text += "/T:" + rt.ToString();
+    text += "/n:" + __result.Num.ToString();
+    PatchMain.Log(text, 1);
+    //productにbottleingが含まれている場合はリターンを減産する
+    PatchMain.RemoveFromList(recycleList, DoRecycleBottle(__result, ai.owner, ActType.Craft), __result.Num);
+    PatchMain.ExeRecycle(recycleList, ai.owner);
+    //string text2 = "[PBR:return]" + recycleList.ToString() + "[C:" + ai.owner.NameSimple + "]";
+    //PatchMain.Log(text2, 1); 
+}//<<<<<end if
+*/
