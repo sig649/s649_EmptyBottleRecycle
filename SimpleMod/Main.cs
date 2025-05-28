@@ -164,7 +164,7 @@ namespace s649PBR
                     switch (bottleIng)
                     {
                         case BottleIngredient.Bottle_Empty:
-                            resultid = "fragment";
+                            resultid = "glass";
                             break;
                         case BottleIngredient.Bucket_Empty:
                             //resultid = "bucket_empty";
