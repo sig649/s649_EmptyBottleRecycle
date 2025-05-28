@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net.NetworkInformation;
 using UnityEngine;
 using static Recipe;
 using Debug = UnityEngine.Debug;
@@ -23,6 +24,8 @@ namespace s649PBR
             static RecycleQueue recycleQueue;
             static Thing lastMixedThing;
             static int lastCraftCount;
+            static int recycleSet;
+            static List<RecycleThing> processRecycleList;
             
             [HarmonyPostfix]
             [HarmonyPatch(typeof(AI_UseCrafter), "OnStart")]
@@ -31,6 +34,8 @@ namespace s649PBR
                 recycleQueue = null;
                 lastMixedThing = null;
                 lastCraftCount = 0;
+                recycleSet = 0;
+                processRecycleList = null;
                 if (!PatchMain.Cf_Allow_Craft) { return; }
                 
                 var recycleList = new List<RecycleThing>();
@@ -149,33 +154,110 @@ namespace s649PBR
                     //PatchMain.Log(title + "result:" + __result.NameSimple);
                 }
             }
+
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(TraitCrafter), "Craft")]
+            private static bool TraitCrafterCraftPrePatch(TraitCrafter __instance, AI_UseCrafter ai)
+            {
+                if (!PatchMain.Cf_Allow_Craft) { return true; }
+                string title = "[PBR:TC.C:Pre]";
+                /*if (__result == null)
+                {
+                    PatchMain.Log(title + "NoResult");
+                    return true;
+                }*/
+                if (recycleSet == PhaseRecycle.None)
+                {
+                    PatchMain.Log(title + "SetStart", 1);
+                   // string text = "ings:";
+                    //string resultBI = "";
+                    processRecycleList = new List<RecycleThing>();
+                    if (ai == null)
+                    {
+                        PatchMain.Log(title + "NoAI");
+                        return true;
+                    }
+                    else { PatchMain.Log(title + "AI:Found", 1); }
+                    List<Thing> ings = ai.ings;
+                    if (ings == null || ings.Count <= 0)
+                    {
+                        PatchMain.Log(title + "NoIngs");
+                        return true;
+                    }
+                    else { PatchMain.Log(title + "ai.ings:Found", 1); }
+                    foreach (Thing thing in ings)
+                    {
+                        if (thing == null) { break; }
+
+                        var bi = PatchMain.ReturnBottleIngredient(thing);
+                        PatchMain.Log(title + "BIcheck:" + thing.NameSimple + "/bi:" +bi.ToString() , 1);
+                        //text += "[" + thing.NameSimple + ":" + bi + ":" + thing.Num + "]";
+                        if (bi != 0)
+                        {
+                            string thingBI = PatchMain.GetBottleIngredient(thing);
+                            //result = DoRecycleBottle(t, ai.owner, ActType.Craft);
+                            bool b = PatchMain.AddThingToList(processRecycleList, new(thingBI, thing.Num));
+                            if (b) 
+                            {
+                                PatchMain.Log(title + "processRLSet:Success/" + PatchMain.GetStrings(processRecycleList), 1);
+                            } else 
+                            {
+                                PatchMain.Log(title + "processRLSet:Failed....../" + PatchMain.GetStrings(processRecycleList), 1);
+                            }
+                            
+                        }
+                        else { PatchMain.Log(title + "processRLSet:Canceled......", 1); }
+                        //PatchMain.Log(text, 1);
+                    }
+                    recycleSet++;
+                    
+
+                    //string resultBI = PatchMain.GetBottleIngredient(__result);
+                    //productにbottleingが含まれている場合はリターンを減産する
+                    //PatchMain.RemoveFromList(recycleList, new RecycleThing(resultBI), __result.Num);
+                    //recycleQueue = new RecycleQueue(recycleList);
+                    //PatchMain.Log(title + "QueueSet:" + recycleQueue.ToString(), 1);
+                    //PatchMain.ExeRecycle(recycleList, EClass.pc);
+                }
+                else { PatchMain.Log(title + "SetSkipped", 2); }
+                return true;
+            }
+
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitCrafter), "Craft")]
             private static void TraitCrafterCraftPostPatch(TraitCrafter __instance, AI_UseCrafter ai, Thing __result)
             {//>>>>begin method:PostPatch
+                string title = "[PBR:TC.C:Post]";
                 if (!PatchMain.Cf_Allow_Craft) { return; }
                 //PatchMain.Log("[PBR:craft]Fook:TraitCrafter/Craft");
-                string title = "[PBR:Craft:TCC]";
                 if (__result == null)
                 {
                     PatchMain.Log(title + "NoResult");
                     return;
                 }
+                if (ai == null)
+                {
+                    PatchMain.Log(title + "NoAI");
+                    return;
+                }
                 //PatchMain.Log("[PBR:craft]Fook:TraitCrafter/Craft", 1);
 
-                if (lastCraftCount == 0)
+                if (recycleSet == PhaseRecycle.IngSet)
                 {
-                    string text = "ings:";
+                    //string text = "ings:";
                     //string resultBI = "";
-                    var recycleList = new List<RecycleThing>();
-                    List<Thing> ings = ai.ings;
-                    if (ings == null)
+                    //var recycleList = new List<RecycleThing>();
+
+                    //List<Thing> ings = ai.ings;
+                    /*
+                    if (ings == null || ings.Count <= 0)
                     {
                         PatchMain.Log(title + "NoIngs");
                         return;
                     }
                     foreach (Thing thing in ings)
                     {
+                        if (thing == null) { break; }
                         string bi = PatchMain.GetBottleIngredient(thing);
                         text += "[" + thing.NameSimple + ":" + bi.ToString() + ":" + thing.Num + "]";
                         if (bi != "")
@@ -184,17 +266,44 @@ namespace s649PBR
                             PatchMain.AddThingToList(recycleList, new(bi, thing.Num));
                         }
                     }
-                    PatchMain.Log(text, 1);
+                    */
+                    //recycleSet = true;
+                    //PatchMain.Log(text, 1);
+                    if (PatchMain.IsValid(processRecycleList))
+                    {
+                        string resultBI = PatchMain.GetBottleIngredient(__result);
+                        var bi = PatchMain.ReturnBottleIngredient(__result);
+                        PatchMain.Log(title + "BIcheck:" + __result.NameSimple + "/bi:" + bi.ToString(), 1);
+                        //productにbottleingが含まれている場合はリターンを減産する
+                        if (bi != 0)
+                        {
+                            bool b = PatchMain.RemoveFromList(processRecycleList, new RecycleThing(resultBI), __result.Num);
+                            if (b)
+                            {
+                                PatchMain.Log(title + "Remove:Success" + PatchMain.GetStrings(processRecycleList).ToString(), 1);
+                            }
+                            else { PatchMain.Log(title + "Remove:Fail" + PatchMain.GetStrings(processRecycleList), 1); }
+                        }
+                        else
+                        { PatchMain.Log(title + "Result:NoBI" + PatchMain.GetStrings(processRecycleList), 1); }
 
-                    string resultBI = PatchMain.GetBottleIngredient(__result);
-                    //productにbottleingが含まれている場合はリターンを減産する
-                    PatchMain.RemoveFromList(recycleList, new RecycleThing(resultBI), __result.Num);
-                    recycleQueue = new RecycleQueue(recycleList);
-                    PatchMain.Log(title + "QueueSet:" + recycleQueue.ToString(), 1);
+                        if (PatchMain.IsValid(processRecycleList))
+                        {
+                            recycleQueue = new RecycleQueue(processRecycleList);
+                            PatchMain.Log(title + "QueueSet:" + recycleQueue.ToString(), 1);
+                        }
+                        else { PatchMain.Log(title + "QueueSet:Fail", 1); }
+                    }
+                    else { PatchMain.Log(title + "pRL is Invalid, so QueueSetFinish" + PatchMain.GetStrings(processRecycleList), 1); }
+                    
+
+                    recycleSet++;
                     //PatchMain.ExeRecycle(recycleList, EClass.pc);
                 }
+                else { PatchMain.Log(title + "Skipped:", 2); }
                 lastCraftCount++;
-                
+                PatchMain.Log(title + "Count:" + lastCraftCount.ToString(), 2);
+
             }//<<<<end method:PostPatch
 
             [HarmonyPostfix]
@@ -227,7 +336,7 @@ namespace s649PBR
                 else 
                 {   //加工機械
                     //PatchMain.Log("[PBR:craft]Crafter is not TraitFactory", 1);
-                    if (lastCraftCount != 0 && recycleQueue != null) 
+                    if (lastCraftCount != 0 && recycleQueue != null && recycleSet == PhaseRecycle.Done) 
                     {
                         PatchMain.Log(title + "lastCraftCount:" + lastCraftCount.ToString());
                         recycleQueue.SetQueueNum(lastCraftCount);
@@ -250,6 +359,17 @@ namespace s649PBR
 
             
         }//<<<end class:PatchExe
+
+        public class PhaseRecycle
+        {//class:ActType
+            //public int value;
+            public const int None = 0;
+            public const int IngSet = 1;
+            public const int Done = 2;
+            //public const int Throw = 3;
+            //public const int Craft = 4;
+
+        }//class:ActType
     }//<<end namespaceSub
 }//<end namespaceMain
 

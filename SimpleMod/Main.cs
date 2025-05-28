@@ -364,22 +364,25 @@ namespace s649PBR
                 return text;
             }
 
-            internal static void AddThingToList(List<RecycleThing> list, RecycleThing rt)
+            internal static bool AddThingToList(List<RecycleThing> list, RecycleThing rt)
             {
                 //bool b = false;
+                if (rt == null || rt.IsNotValid()) { return false; }
+                //if (rt.IsNotValid()) { return; }
                 foreach (RecycleThing t in list)
                 {
                     if (t.IsEqualID(rt))
                     {
                         t.AddNum(rt);//listにあったので加算
                         //b = true;
-                        return;
+                        return true; ;
                     }
                 }
                 list.Add(rt);//listになかったので追加
+                return true;
             }
 
-            internal static void RemoveFromList(List<RecycleThing> rlist, RecycleThing rt, int rnum = 1)
+            internal static bool RemoveFromList(List<RecycleThing> rlist, RecycleThing rt, int rnum = 1)
             {
                 if(rt != null && rnum > 0)
                 {
@@ -392,12 +395,21 @@ namespace s649PBR
                             {
                                 rlist.Remove(rthing);
                             }
-                            return;
+                            return true; ;
                         }
 
                     }
                 }
+                return false;
                 
+            }
+            public static bool IsValid(List<RecycleThing> listRT) 
+            {
+                foreach(RecycleThing rt in listRT)
+                {
+                    if (rt.IsValid()) { return true; }
+                }
+                return false;
             }
             /*
             internal static void ExeRecycle(List<RecycleThing> rlist, Chara c)
@@ -440,23 +452,28 @@ namespace s649PBR
         }//class:BottleIngredient
         public class RecycleThing
         {
+            private static readonly string title = "[RQ]";
             public string name { get; }
             private int num { get; set; }
+            private bool isValid { get; set; }
 
             public RecycleThing(string name, int num)
             {
                 this.name = name;
                 this.num = num;
+                isValid = true;
             }
             public RecycleThing(string name)
             {
                 this.name = name;
                 this.num = 1;
+                isValid = true;
             }
             public int GetNum()
             {
                 return num;
             }
+
             public void AddNum(RecycleThing t)
             {
                 if (this.name == t.name) { AddNum(t.num); }
@@ -464,25 +481,29 @@ namespace s649PBR
             }
             private void AddNum(int n1)
             {
-                this.num += n1;
+                if (IsValid()) { this.num += n1; }
             }
             public void SetMulti(int n1)
             {
-                this.num *= n1;
+                if (IsValid()) { this.num *= n1; }
             }
+            
             public bool IsEqualID(RecycleThing t)
             {
-                return IsEqualID(t.name);
+                return IsValid() && IsEqualID(t.name);
             }
             public bool IsEqualID(string tid)
             {
-                return (tid == this.name) ? true : false;
+                return IsValid() && (tid == this.name) ? true : false;
             }
 
             public void Decrease(RecycleThing rt ,int a = 1)
             {
                 if (rt.IsValid() && IsEqualID(rt)) 
-                    { AddNum(-a * rt.num); }
+                    { 
+                    AddNum(-a * rt.num);
+                    if (this.num <= 0) { isValid = false; }
+                    }
             }
             public bool IsNotValid()
             {
@@ -490,11 +511,15 @@ namespace s649PBR
             }
             public bool IsValid()
             {
-                return name != "" && num > 0;
+                //PatchMain.Log(title + "Str:" + ToString());
+                return (name != "") && (num > 0) && isValid;
             }
             public override string ToString()
             {
-                return this.name + "." + this.num.ToString();
+                //if (IsNotValid()) { return ""; }
+                string text = name;
+                text += "." + this.num.ToString();
+                return text;
             }
         }
 
@@ -522,22 +547,49 @@ namespace s649PBR
                 }
                 return text;
             }
+            public bool IsValid(List<RecycleThing> listRT)
+            {
+                foreach (RecycleThing rt in listRT)
+                {
+                    if (rt.IsValid())
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
             public void ExeRecycle()
             {
-                PatchMain.Log(title + "ExeRecycle:", 1);
+                PatchMain.Log(title + "ExeRecycle:" + PatchMain.GetStrings(queue), 1);
                 if (num > 0 && queue.Count > 0)
                 {
+                    //string text = "[recycle]";
+                    if (!IsValid(queue))
+                    {
+                        PatchMain.Log(title + "queue is Not Valid......", 1);
+                        return;
+                    }
+                    else { PatchMain.Log(title + "queue is Valid", 1); }
 
-                    string text = "[recycle]";
                     foreach (RecycleThing rthing in queue)
                     {
-                        Thing t = ThingGen.Create(rthing.name).SetNum(rthing.GetNum() * num);
-                        EClass._zone.AddCard(t, EClass.pc.pos);
-                        text += "rt:" + rthing.name + "." + rthing.GetNum().ToString() + "*" + num.ToString() + "/";
-                        text += "Thing:" + t.id + "." + t.Num.ToString();
+                        PatchMain.Log(title + "rthing:" + rthing.ToString() + "/V:" + rthing.IsValid().ToString(), 1);
+                        if (rthing.IsValid())
+                        {
+                            PatchMain.Log(title + "rthingisValid", 1);
+                            Thing t = ThingGen.Create(rthing.name).SetNum(rthing.GetNum() * num);
+                            PatchMain.Log(title + "CreateThing:" + t.id + "." + t.Num.ToString(), 1);
+                            EClass._zone.AddCard(t, EClass.pc.pos);
+                            //text += "rt:" + rthing.name + "." + rthing.GetNum().ToString() + "*" + num.ToString() + "/";
+                            //text += "Thing:" + t.id + "." + t.Num.ToString();
+                        }
+                        else { PatchMain.Log(title + "rthingisNotValid", 1); }
                     }
-                    PatchMain.Log(title + text);
+
+
                 }
+                else { PatchMain.Log(title + "ExeRecycle:Skip", 1); }
+                PatchMain.Log(title + "ExeRecycle:Done", 1);
             }
             public void SetQueueNum(int n1)
             {
