@@ -100,7 +100,7 @@ namespace s649PBR
                 return GetBottleIngredient(ReturnBottleIngredient(t));
             }
 
-            public static int ReturnBottleIngredient(Thing t)
+            internal static int ReturnBottleIngredient(Thing t)
             {//>>>>begin method:ReturnBottleIngredient
              //return ReturnBottleIngredient(t.trait);
              //description
@@ -263,7 +263,6 @@ namespace s649PBR
                 return result; 
             }
             
-            
             private static int ReturnBottleIngredient(string id, string category, string unit)
             {
                 //ThingがCreateされておらず、idから呼び出す時に使う。ThingVには使えない？Foodは対応する
@@ -309,7 +308,6 @@ namespace s649PBR
                 //return false;
             }
 
-            
             private static string GetBottleIngredient(int bi)
             {
                 string resultid = null;
@@ -342,18 +340,18 @@ namespace s649PBR
                 }
                 return resultid;
             }
-            
-            public static List<string> JunkBottleList = new List<string> { "726", "727", "728" };
+            //list関連-----------------------------------------------------------------------------------------------------
+            private static List<string> JunkBottleList = new List<string> { "726", "727", "728" };
             public static string GetRandomJunkBottle()
             {
-                List<string> sList = JunkBottleList;
-                return (sList != null) ? sList[Random.Range(0, sList.Count)] : "";
+                //List<string> sList = JunkBottleList;
+                return JunkBottleList[Random.Range(0, JunkBottleList.Count)];
             }
-            public static List<string> JunkCanList = new List<string> { "236", "529", "1170" };
+            private static List<string> JunkCanList = new List<string> { "236", "529", "1170" };
             public static string GetRandomJunkCan()
             {
-                List<string> sList = JunkCanList;
-                return (sList != null) ? sList[Random.Range(0, sList.Count)] : "";
+                //List<string> sList = JunkCanList;
+                return JunkCanList[Random.Range(0, JunkCanList.Count)];
             }
 
             internal static string GetStrings(List<RecycleThing> list)

@@ -51,28 +51,24 @@ namespace s649PBR
                         var category = EClass.sources.things.map[id].category;
                         var unit = EClass.sources.things.map[id].unit;
                         var resultBI = PatchMain.GetBottleIngredient(id, category, unit);
-                        
                         int num = __instance.num;//製作個数
-                        //List<Thing> ings = __instance.ings;
-                        
-                        
+
                         string text = "";
-                        
                         text += "recipe:" + recipe.GetName();
                         text += "/id:" + id;
                         text += "/category:" + category;
                         text += "/unit:" + unit;
                         text += "/num:" + num.ToString();
                         PatchMain.Log(title + text, 1);
+
                         text = "/ingre:";
                         foreach (Ingredient ing in ingredients)
                         {
                             if (ing != null)
                             {
-                                text += ing.id + "." + ing.req + ":";
-                                //var ingbi = PatchMain.ReturnBottleIngredient(ing.thing);
                                 var bi = PatchMain.ReturnBottleIngredient(ing.thing);
-                                text += "bi:" + bi.ToString();
+                                text += ing.id + "." + ing.req + ":bi-" + bi.ToString(); ;
+                                
                                 if (bi != BottleIngredient.None)
                                 {
                                     PatchMain.AddThingToList(recycleList, new(PatchMain.GetBottleIngredient(ing.thing), ing.req));
@@ -222,8 +218,8 @@ namespace s649PBR
                             recycleQueue.RemoveBI(new (PatchMain.GetBottleIngredient(lastMixedThing), lastMixedThing.trait.CraftNum));
                             recycleQueue.ExeRecycle();
                         } else { PatchMain.Log(title + "還元対象外です"); }
-                            //recycleQueue.ExeRecycle();
-                            recycleQueue.RemoveAll();
+                        //recycleQueue.ExeRecycle();
+                        recycleQueue.RemoveAll();
                         PatchMain.Log(title + "RecycleDone!", 1);
                     } else { PatchMain.Log(title + "QueueNothing", 1); }
                     
