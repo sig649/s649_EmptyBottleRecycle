@@ -20,7 +20,7 @@ namespace s649PBR
     [HarmonyPatch]
         internal class PatchExe
         {//>>>begin class:PatchExe
-            static readonly string title = "[PBR:Craft]";
+            static string title = "[PBR:Craft]";
             static RecycleQueue recycleQueue;
             static Thing lastMixedThing;
             static int lastCraftCount;
@@ -31,6 +31,7 @@ namespace s649PBR
             [HarmonyPatch(typeof(AI_UseCrafter), "OnStart")]
             private static void AI_UseCrafterOnStartPostPatch(AI_UseCrafter __instance)
             {
+                title = "[PBR:Craft/AIUC/OS]";
                 recycleQueue = null;
                 lastMixedThing = null;
                 lastCraftCount = 0;
@@ -41,7 +42,7 @@ namespace s649PBR
                 var recycleList = new List<RecycleThing>();
                 TraitCrafter trait = __instance.crafter;
                 bool isFactory = trait is TraitFactory;
-                PatchMain.Log(title + "AI_UC/OnStart/iF:" + isFactory.ToString() + "/t:" + trait.ToString());
+                PatchMain.Log(title + "iF:" + isFactory.ToString() + "/t:" + trait.ToString());
 
                 if (isFactory)
                 {
@@ -66,7 +67,7 @@ namespace s649PBR
                         text += "/num:" + num.ToString();
                         PatchMain.Log(title + text, 1);
 
-                        text = "/ingre:";
+                        text = "ingre:";
                         foreach (Ingredient ing in ingredients)
                         {
                             if (ing != null)
@@ -159,8 +160,9 @@ namespace s649PBR
             [HarmonyPatch(typeof(TraitCrafter), "Craft")]
             private static bool TraitCrafterCraftPrePatch(TraitCrafter __instance, AI_UseCrafter ai)
             {
+                title = "[PBR:Craft/TC.C/Pre]";
                 if (!PatchMain.Cf_Allow_Craft) { return true; }
-                string title = "[PBR:TC.C:Pre]";
+                //string title = "[PBR:TC.C:Pre]";
                 /*if (__result == null)
                 {
                     PatchMain.Log(title + "NoResult");
@@ -227,7 +229,7 @@ namespace s649PBR
             [HarmonyPatch(typeof(TraitCrafter), "Craft")]
             private static void TraitCrafterCraftPostPatch(TraitCrafter __instance, AI_UseCrafter ai, Thing __result)
             {//>>>>begin method:PostPatch
-                string title = "[PBR:TC.C:Post]";
+                title = "[PBR:TC.C:Post]";
                 if (!PatchMain.Cf_Allow_Craft) { return; }
                 //PatchMain.Log("[PBR:craft]Fook:TraitCrafter/Craft");
                 if (__result == null)
@@ -296,7 +298,6 @@ namespace s649PBR
                     }
                     else { PatchMain.Log(title + "pRL is Invalid, so QueueSetFinish" + PatchMain.GetStrings(processRecycleList), 1); }
                     
-
                     recycleSet++;
                     //PatchMain.ExeRecycle(recycleList, EClass.pc);
                 }
@@ -310,6 +311,7 @@ namespace s649PBR
             [HarmonyPatch(typeof(AI_UseCrafter), "OnEnd")]
             private static void AI_UseCrafterOnEndPostPatch(AI_UseCrafter __instance)
             {
+                title = "[PBR:Craft/AIUC.OE:Post]";
                 if (!PatchMain.Cf_Allow_Craft) { return; }
                 PatchMain.Log(title + "AI_UseCrafter/OnEnd", 1);
                 //List<Thing> ings = __instance.ings;

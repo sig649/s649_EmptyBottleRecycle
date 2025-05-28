@@ -118,31 +118,9 @@ namespace s649PBR
                 Trait trait = t.trait;
                 string category = t.sourceCard.category;
                 string unit = t.source.unit;
-
+                return ReturnBottleIngredient(t.id, category, unit, trait);
                 //Log("[TCPB]t is " + trait.ToString() + "/cate:" + category + "/u:" + unit);
-                if (trait is TraitSnow) { return BottleIngredient.None; }
-                if (trait is TraitDye) { return BottleIngredient.Bottle_Empty; }
-                if (trait is TraitPotion || trait is TraitPotionRandom || trait is TraitPotionEmpty)
-                {
-                    if (category == "drug") { return BottleIngredient.Drug; } else { return BottleIngredient.Bottle_Empty; }
-                    //return 1;
-                }
-                if (trait is TraitPerfume) { return BottleIngredient.Junk_Bottles; }
-                if (trait is TraitDrinkMilk || trait is TraitDrinkMilkMother) { return BottleIngredient.None; }
-                if (trait is TraitDrink)
-                {
-                    if (category == "booze")
-                    {
-                        return BottleIngredient.Junk_Bottles;
-                    }
-                    else if (category == "_drink")
-                    {
-                        if (unit == "bucket") { return BottleIngredient.Bucket_Empty; }
-                        if (unit == "pot") { return BottleIngredient.Bottle_Empty; }
-                        if (unit == "bottle") { return BottleIngredient.Junk_Bottles; }
-                    }
-                }
-                return BottleIngredient.None;
+                
 
             }//<<<<end method:ReturnBottleIngredient
 
@@ -184,6 +162,10 @@ namespace s649PBR
                             resultid = "";
                             //resultid = "";//(!broken) ? "231" : "";//drug bin
                             break;
+                        case BottleIngredient.Junk_Glass:
+                            resultid = "glass";
+                            //resultid = "";//(!broken) ? "231" : "";//drug bin
+                            break;
                         default:
                             //resultid = "";
                             break;
@@ -196,13 +178,23 @@ namespace s649PBR
                 if (resultid != "")
                 {
                     result = ThingGen.Create(resultid);
-                    if (c.IsPC) { c.Pick(result); }
+                    if (p == null)
+                    {
+                        if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
+                        PatchMain.Log("[PBR:DRB]Create:" + result.id + ":" + result.NameSimple + "  -> " + c.NameSimple);
+                    }
+                    else { 
+                        EClass._zone.AddCard(result, p);
+                        PatchMain.Log("[PBR:DRB]Create:" + result.id + ":" + result.NameSimple + "  -> " + p.ToString());
+                    }
+
+                    /*    if (c.IsPC) { c.Pick(result); }
                     else
                     {
                         if (p == null) { p = c.pos; }
                         EClass._zone.AddCard(result, p);
-                    }
-                    PatchMain.Log("[PBR:DRB]Create:" + result.id + ":" + result.NameSimple + "  -> " + c.NameSimple);
+                    }*/
+                    
                     return true;
                 }
                 return false;
@@ -262,10 +254,9 @@ namespace s649PBR
                 //Log(text, 1);
                 return result; 
             }
-            
-            private static int ReturnBottleIngredient(string id, string category, string unit)
+            ///BottleIng----------------------------------------------------------------------------------------------------------
+            private static int ReturnBottleIngredient(string id, string category, string unit, Trait trait = null)
             {
-                //ThingがCreateされておらず、idから呼び出す時に使う。ThingVには使えない？Foodは対応する
                 //description
                 //return 1 : potion bottle
                 //return 2 : empty bucket
@@ -277,37 +268,65 @@ namespace s649PBR
                 //return -999 : fumei
                 //description end
                 if (id == "") { return 0; }
-                switch (category) 
-                {
-                    case "_drink" ://雪・汚水・水・水バケツ・ポーション・香水・飲料
-                        if (unit == "bucket") { return BottleIngredient.Bucket_Empty; }
-                        if (unit == "handful") { return BottleIngredient.None; }
-                        if (unit == "pot") { return BottleIngredient.Bottle_Empty; }
-                        if (unit == "bottle") { return BottleIngredient.Junk_Bottles; }
-                        if (id == "perfume") { return BottleIngredient.Junk_Bottles; }
-                        return BottleIngredient.Bottle_Empty;//random potion
-                    case "drug" ://薬
-                        return BottleIngredient.None;
-                    case "milk" ://乳・ミルク缶・
-                        return BottleIngredient.None;
-                    default:
-                        return BottleIngredient.None;
+
+                if (trait != null) 
+                {   //trait持ち
+                    if (trait is TraitSnow) { return BottleIngredient.None; }
+                    if (trait is TraitDye) { return BottleIngredient.Bottle_Empty; }
+                    if (trait is TraitPotion || trait is TraitPotionRandom || trait is TraitPotionEmpty)
+                    {
+                        if (category == "drug") { return BottleIngredient.Drug; } else { return BottleIngredient.Bottle_Empty; }
+                        //return 1;
+                    }
+                    if (trait is TraitPerfume) { return BottleIngredient.Junk_Bottles; }
+                    if (trait is TraitDrinkMilk || trait is TraitDrinkMilkMother) 
+                    {
+                        if (unit == "cup") { return BottleIngredient.Junk_Bottles; }//kofi:718 etc
+                        if (unit == "bowl") { return BottleIngredient.Junk_Bowl; }//coconut j:789 etc
+                        return BottleIngredient.None; 
+                    }
+                    if (trait is TraitDrink)
+                    {
+                        if (category == "booze")
+                        {
+                            if (unit == "jug") { return BottleIngredient.Junk_Glass; }//ビア:58
+                            if (unit == "glass") { return BottleIngredient.Junk_Glass; }//ワイン:732 etc
+                            return BottleIngredient.Junk_Bottles;
+                        }
+                        else if (category == "_drink")
+                        {
+                            if (unit == "bucket") { return BottleIngredient.Bucket_Empty; }
+                            if (unit == "pot") { return BottleIngredient.Bottle_Empty; }
+                            if (unit == "bottle") { return BottleIngredient.Junk_Bottles; }
+                            if (unit == "jar") { return BottleIngredient.Junk_Bottles; }//ビン:59
+                            if (unit == "cup") { return BottleIngredient.Junk_Cup; }//お茶:503
+                            if (unit == "can") { return BottleIngredient.Junk_Can; }//缶ジュース:504,505
+                        }
+                        //else if (category == "milk") { }
+                    }
+                    return BottleIngredient.None;
+                }
+                else //ThingがCreateされておらず、idから呼び出す時に使う。ThingVには使えない？Foodは対応する
+                {   //traitナシ・TraitFactoryから呼び出すときのみ・ThingやFoodなど
+                    switch (category)
+                    {
+                        case "_drink"://雪・汚水・水・水バケツ・ポーション・香水・飲料
+                            if (unit == "bucket") { return BottleIngredient.Bucket_Empty; }
+                            if (unit == "handful") { return BottleIngredient.None; }
+                            if (unit == "pot") { return BottleIngredient.Bottle_Empty; }
+                            if (unit == "bottle") { return BottleIngredient.Junk_Bottles; }
+                            if (id == "perfume") { return BottleIngredient.Junk_Bottles; }
+                            return BottleIngredient.Bottle_Empty;//random potion
+                        case "drug"://薬
+                            return BottleIngredient.Drug;
+                        case "milk"://乳・ミルク缶・
+                            return BottleIngredient.None;
+                        default:
+                            return BottleIngredient.None;
+                    }
                 }
             }
             
-            private static bool IsEnableRecycleBottle(int bottleIng, Chara c, int acttype)
-            {
-                string text = "[IERB]bi:" + bottleIng.ToString() + "/C:" + c.NameSimple + "/at:" + acttype.ToString();
-               // Log("[IERB]bi:" + bottleIng.ToString() + "/" + c.NameSimple + "/" + acttype.ToString());
-                //regulateを参照して実行できるかどうかを返す
-                bool isJunk = (bottleIng < 0) ? true : false;
-                bool result = (bottleIng != 0) ? GetRegulation(c, acttype, isJunk) : false;
-                text += "/iJ:" + ToTF(isJunk) + "/rs:" + ToTF(result);
-                //Log(text , 1);
-                return result;
-                //return false;
-            }
-
             private static string GetBottleIngredient(int bi)
             {
                 string resultid = null;
@@ -334,12 +353,34 @@ namespace s649PBR
                     case BottleIngredient.Drug:
                         resultid = "";//(!broken) ? "231" : "";//drug bin
                         break;
+                    case BottleIngredient.Junk_Glass:
+                        resultid = GetRandomJunkBottle();//(!broken) ? "231" : "";//drug bin
+                        break;
+                    case BottleIngredient.Junk_Bowl:
+                        resultid = "176";//(!broken) ? "231" : "";
+                        break;
+                    case BottleIngredient.Junk_Cup:
+                        resultid = "202";//(!broken) ? "231" : "";
+                        break;
                     default:
                         resultid = "";
                         break;
                 }
                 return resultid;
             }
+            private static bool IsEnableRecycleBottle(int bottleIng, Chara c, int acttype)
+            {
+                string text = "[IERB]bi:" + bottleIng.ToString() + "/C:" + c.NameSimple + "/at:" + acttype.ToString();
+                // Log("[IERB]bi:" + bottleIng.ToString() + "/" + c.NameSimple + "/" + acttype.ToString());
+                //regulateを参照して実行できるかどうかを返す
+                bool isJunk = (bottleIng < 0) ? true : false;
+                bool result = (bottleIng != 0) ? GetRegulation(c, acttype, isJunk) : false;
+                text += "/iJ:" + ToTF(isJunk) + "/rs:" + ToTF(result);
+                //Log(text , 1);
+                return result;
+                //return false;
+            }
+
             //list関連-----------------------------------------------------------------------------------------------------
             private static List<string> JunkBottleList = new List<string> { "726", "727", "728" };
             public static string GetRandomJunkBottle()
@@ -448,6 +489,9 @@ namespace s649PBR
             public const int Junk_Can = -2;
             public const int Can = -3;
             public const int Drug = -4;
+            public const int Junk_Glass = -5;
+            public const int Junk_Bowl = -6;
+            public const int Junk_Cup = -7;
             public const int Other = -999;
         }//class:BottleIngredient
         public class RecycleThing
