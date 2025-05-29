@@ -180,15 +180,17 @@ namespace s649PBR
                 bool regulation = CheckRegulation(bi.isJunk, c, acttype);
                 //bool isEnableRecycle = bi.IsEnableRecycle();
                 //int bottleIng = ReturnID(t);
-                if (regulation && bi.IsValid())
+                if (regulation && bi.IsEnableRecycle())
                 {
                     if (broken) //破損処理
                     {
                         bi.TryBrake();
                     }
-                    if (bi.IsValid())//再チェック
+                    if (acttype == ActType.Use) { bi.TryConsume(); }//薬の消費処理
+                    if (bi.IsEnableRecycle())//再チェック
                     {
-                        string resultID = bi.id; 
+                        string resultID = bi.id;
+                        if (bi.isBroken || bi.isConsumed) { resultID = bi.GetChangedID(); }
                         result = ThingGen.Create(resultID);
                         if (p == null)
                         {
@@ -343,6 +345,7 @@ namespace s649PBR
             
 
             //list関連-----------------------------------------------------------------------------------------------------
+            /*
             internal static string GetStrings(List<RecycleThing> list)
             {
                 string text = "";
@@ -352,7 +355,7 @@ namespace s649PBR
                 }
                 return text;
             }
-
+            
             internal static bool AddThingToList(List<RecycleThing> list, RecycleThing rt)
             {
                 //bool b = false;
@@ -370,7 +373,7 @@ namespace s649PBR
                 list.Add(rt);//listになかったので追加
                 return true;
             }
-
+            
             internal static bool RemoveFromList(List<RecycleThing> rlist, RecycleThing rt, int rnum = 1)
             {
                 if(rt != null && rnum > 0)
@@ -396,10 +399,10 @@ namespace s649PBR
             {
                 foreach(RecycleThing rt in listRT)
                 {
-                    if (rt.IsValid()) { return true; }
+                    if (rt.IsEnableRecycle()) { return true; }
                 }
                 return false;
-            }
+            }*/
             /*
             internal static void ExeRecycle(List<RecycleThing> rlist, Chara c)
             {

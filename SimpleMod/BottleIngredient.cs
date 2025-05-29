@@ -42,32 +42,70 @@ namespace s649PBR
             public const int Other = -999;
 
             public string id { get; private set; }
+            private string resultID { get; set; }
             public string orgID { get; private set; }
             // Change the `idIngredient` property to include a private setter to allow assignment within the class.
             public int idIngredient { get; private set; }
             public static string orgCategory { get; private set; }
             public static string orgUnit { get; private set; }
+            public Thing orgThing;
+            public int num;
+            public bool isBroken;//壊れた？
+            public bool isConsumed;//消費された？
+            public bool isProhibition;//還元禁止・ing用
+            //public bool ConsumeIng;//還元禁止・result用
 
             public bool isJunk { get; private set; }
 
             //private bool isJunk { get; }
             //private Thing orgThing { get; }
 
-            public BottleIngredient(Thing thing)
+            public BottleIngredient(Thing thing, int n1 = 1)
             {
                 //orgThing = thing;
-                orgID = thing.id;
+                //orgID = thing.id;
                 //orgTrait = thing.trait;
-                orgCategory = thing.sourceCard.category;
-                orgUnit = thing.source.unit;
+                //orgCategory = thing.sourceCard.category;
+                //orgUnit = thing.source.unit;
+                orgThing = thing;
+                isBroken = false;
+                isConsumed = false;
+                
                 int intID = GetIDIngredient(thing);
                 idIngredient = intID;
                 id = GetStringID(intID);
+                resultID = id;
                 isJunk = (intID < 0) ? true : false;
+                num = n1;
+                isProhibition = IsProhibition();
                 //isJunk = false;
             }
-            
-            public int GetIDIngredient(Thing t)
+            /*
+            public BottleIngredient(string argID, string argCategory, string argUnit, int n1 = 1)
+            {
+                //orgThing = thing;
+                orgID = argID;
+                //orgTrait = thing.trait;
+                orgCategory = argCategory;
+                orgUnit = argUnit;
+                int intID = GetIDIngredient(argID);
+                idIngredient = intID;
+                id = GetStringID(intID);
+                isJunk = (intID < 0) ? true : false;
+                num = n1;
+                //isJunk = false;
+            }*/
+            private bool IsProhibition() 
+            {
+                /*
+                var trait = orgThing.trait;
+                if (trait is TraitAlchemyBench || trait is TraitToolWaterPot)
+                {
+                    return true;
+                }
+                else*/ { return false; }
+            }
+            private int GetIDIngredient(Thing t)
             {
                 if (t == null) { return 0; }
                 //Trait trait = t.trait;
@@ -76,11 +114,11 @@ namespace s649PBR
                 return GetIDIngredient(t.id, t.trait);
             }
 
-            private static int GetIDIngredient(string id, Trait trait = null)
+            private static int GetIDIngredient(string tid, Trait trait = null)
             {
                 string category = orgCategory;
                 string unit = orgUnit;
-                if (id == "") { return 0; }
+                if (tid == "") { return 0; }
 
                 if (trait != null)
                 {   //trait持ち
@@ -88,7 +126,8 @@ namespace s649PBR
                     if (trait is TraitDye) { return BottleIngredient.Bottle_Empty; }
                     if (trait is TraitPotion || trait is TraitPotionRandom || trait is TraitPotionEmpty)
                     {
-                        if (category == "drug") { return BottleIngredient.Drug; } else { return BottleIngredient.Bottle_Empty; }
+                        if (category == "drug") { return BottleIngredient.Drug; } 
+                        else { return BottleIngredient.Bottle_Empty; }
                         //return 1;
                     }
                     if (trait is TraitPerfume) { return BottleIngredient.Junk_Bottles; }
@@ -128,7 +167,7 @@ namespace s649PBR
                             if (unit == "handful") { return BottleIngredient.None; }
                             if (unit == "pot") { return BottleIngredient.Bottle_Empty; }
                             if (unit == "bottle") { return BottleIngredient.Junk_Bottles; }
-                            if (id == "perfume") { return BottleIngredient.Junk_Bottles; }
+                            if (tid == "perfume") { return BottleIngredient.Junk_Bottles; }
                             return BottleIngredient.Bottle_Empty;//random potion
                         case "drug"://薬
                             return BottleIngredient.Drug;
@@ -146,7 +185,7 @@ namespace s649PBR
             
             private static string GetStringID(int bi)
             {
-                string resultid = null;
+                string resultid = "";
 
                 switch (bi)
                 {
@@ -185,44 +224,96 @@ namespace s649PBR
                 }
                 return resultid;
             }
-            public bool IsEnableRecycle()
+            public string GetChangedID() 
             {
-                return IsValid();
+                return resultID;
             }
+            //public bool IsEnableRecycle()
+            //{
+            //    return IsValid();
+            //}
             public bool TryBrake() 
             {
+
                 switch (idIngredient)
                 {
                     case BottleIngredient.Bottle_Empty:
-                        id = "glass";
+                        isBroken = true;
+                        resultID = "glass";
+                        //id = "glass";
                         return true;
                     case BottleIngredient.Bucket_Empty:
                         break;
                     case BottleIngredient.None:
                         break;
                     case BottleIngredient.Junk_Bottles:
-                        id = "fragment";
+                        isBroken = true;
+                        resultID = "fragment";
                         return true;
                     case BottleIngredient.Junk_Can:
                         break;
                     case BottleIngredient.Can:
                         break;
                     case BottleIngredient.Drug:
-                        id = "";
+                        isBroken = true;
+                        isConsumed = true;
+                        resultID = "";
                         return true;
                     case BottleIngredient.Junk_Glass:
-                        id = "glass";
+                        isBroken = true;
+                        //id = "glass";
                         return true;
                     default:
                         break;
                 }
                 return false;
             }
-            public bool IsValid() 
+            public void TryConsume() 
             {
-                return (id == "" || idIngredient == 0) ? false : true;
+                if (idIngredient == BottleIngredient.Drug)
+                {
+                    isConsumed = true;
+                }
             }
-            
+            public bool IsEnableRecycle() 
+            {
+                return IsValid() && num > 1;
+            }
+            private bool IsValid() 
+            {
+                return (id == "" || idIngredient == 0 || num <= 0 ) ? false : true;
+            }
+            public bool IsEqualID(BottleIngredient bi)
+            {
+                if (!bi.IsValid()) { return false; }
+                return this.IsValid() && IsEqualID(bi.idIngredient);
+            }
+            public bool IsEqualID(int biID)
+            {
+                return (biID == this.idIngredient) ? true : false;
+            }
+            public void AddNum(BottleIngredient bi)
+            {
+                if (!bi.IsValid()) { return; }
+                AddNum(bi.num);
+                //this.num += t.num; 
+            }
+            private void AddNum(int n1)
+            {
+                this.num += n1;
+            }
+            public void SetMultiNum(int n1)
+            {
+                this.num *= n1;
+            }
+            public void Decrease(BottleIngredient bi)
+            {
+                if (this.IsValid() && bi.IsValid() && IsEqualID(bi))
+                {
+                    AddNum(-bi.num);
+                    //if (this.num <= 0) { isValid = false; }
+                }
+            }
             private static List<string> JunkBottleList = new List<string> { "726", "727", "728" };
             private static List<string> JunkCanList = new List<string> { "236", "529", "1170" };
             public static string GetRandomJunkBottle()
@@ -237,10 +328,12 @@ namespace s649PBR
             }
             
         }//class:BottleIngredient
+        /*
         public class RecycleThing
         {
             private static readonly string title = "[RQ]";
-            public string name { get; }
+            //public string name { get; }
+            private BottleIngredient bottleIngredient;
             private int num { get; set; }
             private bool isValid { get; set; }
 
@@ -261,37 +354,13 @@ namespace s649PBR
                 return num;
             }
 
-            public void AddNum(RecycleThing t)
-            {
-                if (this.name == t.name) { AddNum(t.num); }
-                //this.num += t.num; 
-            }
-            private void AddNum(int n1)
-            {
-                if (IsValid()) { this.num += n1; }
-            }
             public void SetMulti(int n1)
             {
                 if (IsValid()) { this.num *= n1; }
             }
+            
 
-            public bool IsEqualID(RecycleThing t)
-            {
-                return IsValid() && IsEqualID(t.name);
-            }
-            public bool IsEqualID(string tid)
-            {
-                return IsValid() && (tid == this.name) ? true : false;
-            }
-
-            public void Decrease(RecycleThing rt, int a = 1)
-            {
-                if (rt.IsValid() && IsEqualID(rt))
-                {
-                    AddNum(-a * rt.num);
-                    if (this.num <= 0) { isValid = false; }
-                }
-            }
+            
             public bool IsNotValid()
             {
                 return !IsValid();
@@ -313,14 +382,23 @@ namespace s649PBR
         public class RecycleQueue
         {
             private readonly string title = "[PBR:RQ]";
-            private List<RecycleThing> queue;
+            //private List<RecycleThing> queue;
+            //private Dictionary<BottleIngredient, int> queue;
+            private BottleIngredient bottleIngredient;
             private int num;
 
-            public RecycleQueue(List<RecycleThing> queue, int num = 1)
+            //private int num;
+            public RecycleQueue(BottleIngredient bi, int num) 
             {
-                this.queue = queue;
+                bottleIngredient = bi;
                 this.num = num;
             }
+
+            //public RecycleQueue(List<RecycleThing> queue, int num = 1)
+            //{
+            //    this.queue = queue;
+            //    this.num = num;
+            //}
             public override string ToString()
             {
                 var text = "";
@@ -405,7 +483,7 @@ namespace s649PBR
                 this.num = 1;
                 PatchMain.Log("[PBR:RQ]RecycleQueue:Cleared", 1);
             }
-        }
+        }*/
     }//<<end namespaceSub
 }//>end namespaceMain
 
