@@ -5,11 +5,11 @@ using s649PBR.Main;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.UIElements.UxmlAttributeDescription;
+//using static UnityEngine.UIElements.UxmlAttributeDescription;
 //using System.IO;
 //using System.Diagnostics;
 using Debug = UnityEngine.Debug;
-
+using s649PBR.BIClass;
 
 namespace s649PBR
 {//>begin namespaceMain
@@ -24,14 +24,14 @@ namespace s649PBR
             {//begin method:TraitDrinkPatch
                 if (PatchMain.Cf_Allow_Throw)
                 {
-                    string title = "[PBR:Throw]";
+                    string title = "[PBR:AT.T]";
                     Thing usedT = t;
                     Chara usedC = c.Chara;
                     PatchMain.Log(title + "Throw->" + usedT.NameSimple + " :by " + usedC.NameSimple, 1);
-                    bool result = PatchMain.DoRecycleBottle(usedT, usedC, ActType.Throw, true, p);
+                    bool result = PatchMain.TryRecycle(usedT, usedC, ActType.Throw, true, p);
                     if (result)
                     {
-                        PatchMain.Log(title + "Success", 1);
+                        PatchMain.Log(title + "Success", 2);
                     }
                 }
             }//<<<<end method:TraitDrinkPatch

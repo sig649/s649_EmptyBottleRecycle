@@ -1,14 +1,14 @@
 using BepInEx;
-using HarmonyLib;
-
-using UnityEngine;
 using BepInEx.Configuration;
+using HarmonyLib;
+using s649PBR.BIClass;
+using s649PBR.Main;
+using System.Collections.Generic;
+using UnityEngine;
+using static UnityEngine.UIElements.UxmlAttributeDescription;
 //using System.IO;
 //using System.Diagnostics;
 using Debug = UnityEngine.Debug;
-using System.Collections.Generic;
-using s649PBR.Main;
-using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 
 namespace s649PBR
@@ -16,7 +16,7 @@ namespace s649PBR
     namespace TraitDyePatch
     {//>>begin namespaceSub
         [HarmonyPatch]
-        internal class PatchExe  //v0.1.1 new
+        internal class PatchExe
         {//>>>begin class:PatchExe
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDye), "OnUse")]
@@ -24,13 +24,12 @@ namespace s649PBR
             {//>>>>begin method:OnUsePostPatch
                 if (PatchMain.Cf_Allow_Use)
                 {
-                    string title = "[PBR:Dye]";
+                    string title = "[PBR:TDye.OU]";
                     Thing usedT = __instance.owner.Thing;
-                    PatchMain.Log(title + "Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
-                    bool result = PatchMain.DoRecycleBottle(usedT, c, ActType.Use);
-                    if (result)
+                    bool b = PatchMain.TryRecycle(usedT, c, ActType.Use);
+                    if (b)
                     {
-                        PatchMain.Log(title + "Success", 1);
+                        PatchMain.Log(title + "Success", 2);
                     }
                 }
             }//<<<<end method:OnUsePostPatch
@@ -41,19 +40,15 @@ namespace s649PBR
             {//>>>>begin method:OnUsePostPatch
                 if (PatchMain.Cf_Allow_Blend)
                 {
-                    string title = "[PBR:Dye]";
+                    string title = "[PBR:TDye.OB]";
                     Thing usedT = __instance.owner.Thing;
-                    PatchMain.Log(title + "Blend->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
-                    bool result = PatchMain.DoRecycleBottle(usedT, c, ActType.Blend);
-                    if (result)
+                    bool b = PatchMain.TryRecycle(usedT, c, ActType.Blend);
+                    if (b)
                     {
-                        PatchMain.Log(title + "Success", 1);
+                        PatchMain.Log(title + "Success", 2);
                     }
                 }
-                // }//<5end if(Func_Allowed)
             }//<<<<end method:OnUsePostPatch
-
-
         }//<<<end class:PatchExe
     }//<<end namespaceSub
 }//<end namespaceMain
@@ -62,7 +57,30 @@ namespace s649PBR
 
 
 //trash box
-
+/*
+                if (PatchMain.Cf_Allow_Blend)
+                {
+                    string title = "[PBR:Dye]";
+                    Thing usedT = __instance.owner.Thing;
+                    PatchMain.Log(title + "Blend->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
+                    bool result = PatchMain.DoRecycleBottle(usedT, c, ActType.Blend);
+                    if (result)
+                    {
+                        PatchMain.Log(title + "Success", 1);
+                    }
+                }*/
+/*
+                if (PatchMain.Cf_Allow_Use)
+                {
+                    string title = "[PBR:Dye]";
+                    Thing usedT = __instance.owner.Thing;
+                    PatchMain.Log(title + "Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
+                    bool result = PatchMain.DoRecycleBottle(usedT, c, ActType.Use);
+                    if (result)
+                    {
+                        PatchMain.Log(title + "Success", 1);
+                    }
+                }*/
 //Thing usedT = __instance.owner.Thing;
 //PatchMain.Log("[PBR:Dye]Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
 //DoRecycleBottle(usedT, c, ActType.Use);

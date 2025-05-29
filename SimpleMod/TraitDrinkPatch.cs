@@ -8,6 +8,7 @@ using BepInEx.Configuration;
 using Debug = UnityEngine.Debug;
 using System.Collections.Generic;
 using s649PBR.Main;
+using s649PBR.BIClass;
 
 
 namespace s649PBR
@@ -23,13 +24,12 @@ namespace s649PBR
             {//>>>>begin method:TraitDrinkPatch
                 if (PatchMain.Cf_Allow_Use) 
                 {
-                    string title = "[PBR:Drink]";
+                    string title = "[PBR:TD.OD]";
                     Thing usedT = __instance.owner.Thing;
-                    PatchMain.Log(title + "Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
-                    bool result = PatchMain.DoRecycleBottle(usedT, c, ActType.Use);
-                    if (result)
+                    bool b = PatchMain.TryRecycle(usedT, c, ActType.Use);
+                    if (b)
                     {
-                        PatchMain.Log(title + "Success", 1);
+                        PatchMain.Log(title + "Success", 2);
                     }
                 }
             }//<<<<end method:TraitDrinkPatch
@@ -40,7 +40,16 @@ namespace s649PBR
 
 //trash
 
-
+/*
+                    string title = "[PBR:Drink]";
+                    Thing usedT = __instance.owner.Thing;
+                    PatchMain.Log(title + "Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
+                    bool result = PatchMain.DoRecycleBottle(usedT, c, ActType.Use);
+                    if (result)
+                    {
+                        PatchMain.Log(title + "Success", 1);
+                    }
+                    */
 /*
                    string prod = "";
                    switch(prodN){

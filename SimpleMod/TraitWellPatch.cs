@@ -1,6 +1,7 @@
 using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
+using s649PBR.BIClass;
 using s649PBR.Main;
 using System.Collections.Generic;
 using UnityEngine;
@@ -22,6 +23,28 @@ namespace s649PBR
             {//>>>>begin method:TraitDrinkPatch
                 if (PatchMain.Cf_Allow_Blend)
                 {
+                    string title = "[PBR:TW.OB]";
+                    bool b = PatchMain.TryRecycle(t, c, ActType.Blend);
+                    if (b)
+                    {
+                        PatchMain.Log(title + "Success", 2);
+                    }
+                }
+            }//<<<<end method:TraitDrinkPatch
+        }//<<<end class:PatchExe
+    }//<<end namespaceSub
+}//<end namespaceMain
+
+
+
+
+
+
+
+
+/*
+                if (PatchMain.Cf_Allow_Blend)
+                {
                     string title = "[PBR:WellBlend]";
                     Thing usedT = t;
                     PatchMain.Log(title + "Blend->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
@@ -31,14 +54,7 @@ namespace s649PBR
                         PatchMain.Log(title + "Success", 1);
                     }
                 }
-
-            }//<<<<end method:TraitDrinkPatch
-        }//<<<end class:PatchExe
-    }//<<end namespaceSub
-}//<end namespaceMain
-
-
-
+                */
 /*
  * 
  * 

@@ -10,6 +10,7 @@ using System.Net.NetworkInformation;
 using UnityEngine;
 using static Recipe;
 using Debug = UnityEngine.Debug;
+using s649PBR.BIClass;
 
 namespace s649PBR
 {//>begin NamespaceMain
@@ -56,7 +57,7 @@ namespace s649PBR
                         if (!EClass.sources.things.map.ContainsKey(id)) { PatchMain.Log(title + "*error* idが無いよ"); return; }
                         var category = EClass.sources.things.map[id].category;
                         var unit = EClass.sources.things.map[id].unit;
-                        var resultBI = PatchMain.GetBottleIngredient(id, category, unit);
+                        var resultBI = PatchMain.GetStringID(id, category, unit);
                         int num = __instance.num;//製作個数
 
                         string text = "";
@@ -72,12 +73,12 @@ namespace s649PBR
                         {
                             if (ing != null)
                             {
-                                var bi = PatchMain.ReturnBottleIngredient(ing.thing);
+                                var bi = PatchMain.ReturnID(ing.thing);
                                 text += ing.id + "." + ing.req + ":bi-" + bi.ToString(); ;
                                 
                                 if (bi != BottleIngredient.None)
                                 {
-                                    PatchMain.AddThingToList(recycleList, new(PatchMain.GetBottleIngredient(ing.thing), ing.req));
+                                    PatchMain.AddThingToList(recycleList, new(PatchMain.GetStringID(ing.thing), ing.req));
                                 }
                                 text += "/";
                             }
@@ -191,12 +192,12 @@ namespace s649PBR
                     {
                         if (thing == null) { break; }
 
-                        var bi = PatchMain.ReturnBottleIngredient(thing);
+                        var bi = PatchMain.ReturnID(thing);
                         PatchMain.Log(title + "BIcheck:" + thing.NameSimple + "/bi:" +bi.ToString() , 1);
                         //text += "[" + thing.NameSimple + ":" + bi + ":" + thing.Num + "]";
                         if (bi != 0)
                         {
-                            string thingBI = PatchMain.GetBottleIngredient(thing);
+                            string thingBI = PatchMain.GetStringID(thing);
                             //result = DoRecycleBottle(t, ai.owner, ActType.Craft);
                             bool b = PatchMain.AddThingToList(processRecycleList, new(thingBI, thing.Num));
                             if (b) 
@@ -214,7 +215,7 @@ namespace s649PBR
                     recycleSet++;
                     
 
-                    //string resultBI = PatchMain.GetBottleIngredient(__result);
+                    //string resultBI = PatchMain.GetStringID(__result);
                     //productにbottleingが含まれている場合はリターンを減産する
                     //PatchMain.RemoveFromList(recycleList, new RecycleThing(resultBI), __result.Num);
                     //recycleQueue = new RecycleQueue(recycleList);
@@ -260,7 +261,7 @@ namespace s649PBR
                     foreach (Thing thing in ings)
                     {
                         if (thing == null) { break; }
-                        string bi = PatchMain.GetBottleIngredient(thing);
+                        string bi = PatchMain.GetStringID(thing);
                         text += "[" + thing.NameSimple + ":" + bi.ToString() + ":" + thing.Num + "]";
                         if (bi != "")
                         {
@@ -273,8 +274,8 @@ namespace s649PBR
                     //PatchMain.Log(text, 1);
                     if (PatchMain.IsValid(processRecycleList))
                     {
-                        string resultBI = PatchMain.GetBottleIngredient(__result);
-                        var bi = PatchMain.ReturnBottleIngredient(__result);
+                        string resultBI = PatchMain.GetStringID(__result);
+                        var bi = PatchMain.ReturnID(__result);
                         PatchMain.Log(title + "BIcheck:" + __result.NameSimple + "/bi:" + bi.ToString(), 1);
                         //productにbottleingが含まれている場合はリターンを減産する
                         if (bi != 0)
@@ -326,7 +327,7 @@ namespace s649PBR
                         
                         if (lastMixedThing.id != "tool_alchemy" && lastMixedThing.id != "waterPot") //還元除外用
                         {
-                            recycleQueue.RemoveBI(new (PatchMain.GetBottleIngredient(lastMixedThing), lastMixedThing.trait.CraftNum));
+                            recycleQueue.RemoveBI(new (PatchMain.GetStringID(lastMixedThing), lastMixedThing.trait.CraftNum));
                             recycleQueue.ExeRecycle();
                         } else { PatchMain.Log(title + "還元対象外です"); }
                         //recycleQueue.ExeRecycle();
@@ -472,7 +473,7 @@ private static void RecipeCraftPostPatch(Thing __result, BlessedState blessed, b
         var recycleList = new List<RecycleThing>();
         foreach (Thing thing in ings)
         {
-            string bi = GetBottleIngredient(thing);
+            string bi = GetStringID(thing);
             text += "[" + thing.NameSimple + ":" + bi.ToString() + ":" + thing.Num + "]";
             if (bi != "")
             {
@@ -482,7 +483,7 @@ private static void RecipeCraftPostPatch(Thing __result, BlessedState blessed, b
         }
         PatchMain.Log(text, 1);
 
-        string resultBI = GetBottleIngredient(__result);
+        string resultBI = GetStringID(__result);
         //productにbottleingが含まれている場合はリターンを減産する
         PatchMain.RemoveFromList(recycleList, resultBI, __result.Num);
         PatchMain.ExeRecycle(recycleList, EClass.pc);
@@ -526,7 +527,7 @@ private static void RecipeCardCraftPostPatch(Thing __result, BlessedState blesse
 
         foreach (Thing thing in ings)
         {
-            string bi = GetBottleIngredient(thing);
+            string bi = GetStringID(thing);
             text += "[" + thing.NameSimple + ":" + bi.ToString() + ":" + thing.Num + "]";
             if (bi != "")
             {
@@ -536,7 +537,7 @@ private static void RecipeCardCraftPostPatch(Thing __result, BlessedState blesse
         }
         PatchMain.Log(text, 1);
 
-        string resultBI = GetBottleIngredient(__result);
+        string resultBI = GetStringID(__result);
         //productにbottleingが含まれている場合はリターンを減産する
         PatchMain.RemoveFromList(recycleList, resultBI, __result.Num);
         PatchMain.ExeRecycle(recycleList, EClass.pc);

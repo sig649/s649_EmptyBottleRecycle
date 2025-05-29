@@ -1,12 +1,14 @@
 using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
+using s649PBR.BIClass;
 using s649PBR.Main;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using UnityEngine;
+using static Recipe;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
 
@@ -89,52 +91,180 @@ namespace s649PBR
                     Debug.Log(text);
                 }
             }
-
-            internal static string GetBottleIngredient(string id, string category, string unit)
+            private static int ReturnWCC(int acttype) 
             {
-                return GetBottleIngredient(ReturnBottleIngredient(id, category, unit));
+                switch(acttype)
+                {
+                    case ActType.None:
+                        return 0;
+                    case ActType.Use:
+                        return CE_WhichCharaCreatesWhenDrink.Value;
+                    case ActType.Blend:
+                        return CE_WhichCharaCreatesWhenBlend.Value;
+                    case ActType.Throw:
+                        return CE_WhichCharaCreatesWhenThrow.Value;
+                    case ActType.Craft:
+                        return 999;
+                    default:
+                        return 999;
+                }
             }
-
-            internal static string GetBottleIngredient(Thing t)
+            private static int TypeCharaPlaying(Card c)
             {
-                return GetBottleIngredient(ReturnBottleIngredient(t));
+                if (c == null) { return 0; }
+                if (c.IsPC)
+                {
+                    return 1;
+                }
+                else if (!c.IsPC && c.IsPCParty)
+                {
+                    return 2;
+                }
+                else
+                {
+                    return 3;
+                }
             }
-
-            internal static int ReturnBottleIngredient(Thing t)
-            {//>>>>begin method:ReturnBottleIngredient
-             //return ReturnBottleIngredient(t.trait);
-             //description
-             //return 1 : potion bottle
-             //return 2 : empty bucket
-             //return 0 : none
-             //return -1 : bottle junk
-             //return -2 : can junk
-             //return -3  : can not junk
-             //return -4 : drug bin
-             //return -999 : fumei
-             //description end
-
-                if (t == null) { return 0; }
-                Trait trait = t.trait;
-                string category = t.sourceCard.category;
-                string unit = t.source.unit;
-                return ReturnBottleIngredient(t.id, category, unit, trait);
-                //Log("[TCPB]t is " + trait.ToString() + "/cate:" + category + "/u:" + unit);
+            private static bool GetCharaRegulation(Chara c, int acttype) 
+            {
+                int tcp = TypeCharaPlaying(c);
+                return tcp <= ReturnWCC(acttype);
+            }
+            private static bool GetCharaJunkRegulation(Chara c)
+            {
+                int tcp = TypeCharaPlaying(c);
+                return tcp <= CE_WhichCharaCreatesJunkBottles.Value;
+            }
+            public static bool CheckRegulation(bool isJunk, Chara c, int acttype) 
+            {
+                //string text = "[BI:IERB]bi:" + this.orgid + "/C:" + c.NameSimple + "/at:" + acttype.ToString();
+                // Log("[IERB]bi:" + bottleIng.ToString() + "/" + c.NameSimple + "/" + acttype.ToString());
+                //regulateを参照して実行できるかどうかを返す
+                //bool isJunk = (bottleIng < 0) ? true : false;
+                //bool isJunk = this.IsJunk;
                 
+                //int wcc = PatchMain.ReturnWCC(acttype);
+                bool regJunk = PatchMain.Cf_Reg_JunkBottle;
+                //bool regChara = TypeCharaPlaying(c) <= wcc;
+                bool regChara = PatchMain.GetCharaRegulation(c, acttype);
+                bool regCharaJunk = PatchMain.GetCharaJunkRegulation(c);
+                bool result = (!isJunk) ? regChara : (regChara && regJunk && regCharaJunk);
+                //bool result = (bottleIng != 0) ? GetRegulation(c, acttype, isJunk) : false;
+                //text += "/iJ:" + ToTF(isJunk) + "/rs:" + ToTF(result);
+                //Log(text , 1);
+                return result;
+                //return false;
+            }
 
-            }//<<<<end method:ReturnBottleIngredient
+            internal static bool TryRecycle(Thing t, Chara c, int acttype, bool broken = false, Point p = null)
+            {
+                string title = "[PBR:Main:TR]";
+                //Thing usedT = trait.owner.Thing;
+                Log(title + "Used->" + t.NameSimple + " :by " + c.NameSimple, 1);
+                bool result = DoRecycleBottle(t, c, acttype, broken, p);
+                if (result)
+                {
+                    PatchMain.Log(title + "Success", 2);
+                }
+                else { return false; }
+                return true;
+            }
 
-            internal static bool DoRecycleBottle(Thing t, Chara c, int acttype, bool broken = false, Point p = null)
+            private static bool DoRecycleBottle(Thing t, Chara c, int acttype, bool broken = false, Point p = null)
             {
                 /*
-                * Thing t に使われるBottleIngをidで返す->リサイクル実行:成否をThingで返す
-               */
+                * Thing t に使われるBottleIngをidで返す->リサイクル実行:成否をboolで返す
+                */
                 Thing result = null;
-                int bottleIng = ReturnBottleIngredient(t);
-                if (!IsEnableRecycleBottle(bottleIng, c, acttype)) { return false; }
+                BottleIngredient bi = new BottleIngredient(t);
+                bool regulation = CheckRegulation(bi.isJunk, c, acttype);
+                //bool isEnableRecycle = bi.IsEnableRecycle();
+                //int bottleIng = ReturnID(t);
+                if (regulation && bi.IsValid())
+                {
+                    if (broken) //破損処理
+                    {
+                        bi.TryBrake();
+                    }
+                    if (bi.IsValid())//再チェック
+                    {
+                        string resultID = bi.id; 
+                        result = ThingGen.Create(resultID);
+                        if (p == null)
+                        {
+                            if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
+                            PatchMain.Log("[PBR:DRB]Create:" + result.id + ":" + result.NameSimple + "  -> " + c.NameSimple);
+                        }
+                        else
+                        {
+                            EClass._zone.AddCard(result, p);
+                            PatchMain.Log("[PBR:DRB]Create:" + result.id + ":" + result.NameSimple + "  -> " + p.ToString());
+                        }
+                        return true;
+                    }
+                    return false;
+                }
+                return false;
+                //if (!IsEnableRecycle(bottleIng, c, acttype)) { return false; }
                 //int oNum = t.Num;
-                //int prodN = ReturnBottleIngredient(t);
-                string resultid = GetBottleIngredient(bottleIng);
+                //int prodN = ReturnID(t);
+                //string resultid = bi.id;
+                //Thing prodT = null;
+                //string prod = "";
+                /*
+                if (broken) //破損処理
+                {
+                    bi.TryBrake();
+                    
+                    switch (bi.idIngredient)
+                    {
+                        case BottleIngredient.Bottle_Empty:
+                            resultid = "glass";
+                            break;
+                        case BottleIngredient.Bucket_Empty:
+                            //resultid = "bucket_empty";
+                            break;
+                        case BottleIngredient.None://nothing
+                            break;
+                        case BottleIngredient.Junk_Bottles:
+                            resultid = "fragment";//bottle
+                            break;
+                        case BottleIngredient.Junk_Can:
+                            //resultid = GetRandomJunkCan();//can
+                            break;
+                        case BottleIngredient.Can:
+                            //resultid = "";//can not junk
+                            break;
+                        case BottleIngredient.Drug:
+                            resultid = "";
+                            //resultid = "";//(!broken) ? "231" : "";//drug bin
+                            break;
+                        case BottleIngredient.Junk_Glass:
+                            resultid = "glass";
+                            //resultid = "";//(!broken) ? "231" : "";//drug bin
+                            break;
+                        default:
+                            //resultid = "";
+                            break;
+                    }
+                    
+                }*/
+                //if(prod == ""|| prod == "qqq"){return null;} else {return ThingGen.Create(prod);} 
+                //Thing result;
+                
+            }
+            /*
+            internal static bool DoRecycleBottle(Thing t, Chara c, int acttype, bool broken = false, Point p = null)
+            {
+                
+                // Thing t に使われるBottleIngをidで返す->リサイクル実行:成否をThingで返す
+               
+                Thing result = null;
+                int bottleIng = ReturnID(t);
+                if (!IsEnableRecycle(bottleIng, c, acttype)) { return false; }
+                //int oNum = t.Num;
+                //int prodN = ReturnID(t);
+                string resultid = GetStringID(bottleIng);
                 //Thing prodT = null;
                 //string prod = "";
                 if (broken) //破損処理
@@ -183,218 +313,36 @@ namespace s649PBR
                         if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }
                         PatchMain.Log("[PBR:DRB]Create:" + result.id + ":" + result.NameSimple + "  -> " + c.NameSimple);
                     }
-                    else { 
+                    else 
+                    { 
                         EClass._zone.AddCard(result, p);
                         PatchMain.Log("[PBR:DRB]Create:" + result.id + ":" + result.NameSimple + "  -> " + p.ToString());
                     }
 
-                    /*    if (c.IsPC) { c.Pick(result); }
+                       if (c.IsPC) { c.Pick(result); }
                     else
                     {
                         if (p == null) { p = c.pos; }
                         EClass._zone.AddCard(result, p);
-                    }*/
+                    }
                     
                     return true;
                 }
                 return false;
             }
+    */
             //local----------------------------------------------------------------------------------------------------------------------------------------
             //public static PlayerType playerType;//コンフィグのプレイヤー識別用
             private static string ToTF(bool b) { return (b) ? "T" : "F"; }
-
-            private static int TypeCharaPlaying(Card c)
-            {
-                if (c == null) { return 0; }
-                if (c.IsPC)
-                {
-                    return 1;
-                } else if(!c.IsPC && c.IsPCParty)
-                {
-                    return 2;
-                } else
-                {
-                    return 3;
-                }
+            public static string GetStr(bool b) {
+                return ToTF(b);
             }
-            private static bool GetRegulation(Chara c, int at, bool isJunk = false)
-            {
-                int wcc = 0;
-                int tcp = TypeCharaPlaying(c);
-                //bool allow_Func;
-                bool reg_chara;
-                bool reg_junk = Cf_Reg_JunkBottle && (isJunk) ? (tcp <= CE_WhichCharaCreatesJunkBottles.Value) : true;
-                switch (at)
-                {
-                    case ActType.None: return false;
-                    case ActType.Use:
-                        wcc = CE_WhichCharaCreatesWhenDrink.Value;
-                        //allow_Func = Cf_Allow_Use;
-                        break;
-                    case ActType.Blend:
-                        wcc = CE_WhichCharaCreatesWhenBlend.Value;
-                        //allow_Func = Cf_Allow_Blend;
-                        break;
-                    case ActType.Throw:
-                        wcc = CE_WhichCharaCreatesWhenThrow.Value;
-                        //allow_Func = Cf_Allow_Throw;
-                        break;
-                    case ActType.Craft: return Cf_Allow_Craft;
-                    default: return false;
-                }
-                reg_chara = TypeCharaPlaying(c) <= wcc;
 
-                bool result = (!isJunk) ? reg_chara : (reg_chara && reg_junk);
-                string text = "[PBR:GR]";
-                text += "TCP:" + tcp.ToString() + "/";
-                //text += "Func:" + ToTF(allow_Func) + "/";
-                text += "RC:" + ToTF(reg_chara) + "/";
-                text += (isJunk)? ("RJ:" + ToTF(reg_junk) + "/") : "RJ:-/";
-                text += "rs:" + ToTF(result) + "/";
-                //Log(text, 1);
-                return result; 
-            }
-            ///BottleIng----------------------------------------------------------------------------------------------------------
-            private static int ReturnBottleIngredient(string id, string category, string unit, Trait trait = null)
-            {
-                //description
-                //return 1 : potion bottle
-                //return 2 : empty bucket
-                //return 0 : none
-                //return -1 : bottle junk
-                //return -2 : can junk
-                //return -3  : can not junk
-                //return -4 : drug bin
-                //return -999 : fumei
-                //description end
-                if (id == "") { return 0; }
-
-                if (trait != null) 
-                {   //trait持ち
-                    if (trait is TraitSnow) { return BottleIngredient.None; }
-                    if (trait is TraitDye) { return BottleIngredient.Bottle_Empty; }
-                    if (trait is TraitPotion || trait is TraitPotionRandom || trait is TraitPotionEmpty)
-                    {
-                        if (category == "drug") { return BottleIngredient.Drug; } else { return BottleIngredient.Bottle_Empty; }
-                        //return 1;
-                    }
-                    if (trait is TraitPerfume) { return BottleIngredient.Junk_Bottles; }
-                    if (trait is TraitDrinkMilk || trait is TraitDrinkMilkMother) 
-                    {
-                        if (unit == "cup") { return BottleIngredient.Junk_Bottles; }//kofi:718 etc
-                        if (unit == "bowl") { return BottleIngredient.Junk_Bowl; }//coconut j:789 etc
-                        return BottleIngredient.None; 
-                    }
-                    if (trait is TraitDrink)
-                    {
-                        if (category == "booze")
-                        {
-                            if (unit == "jug") { return BottleIngredient.Junk_Glass; }//ビア:58
-                            if (unit == "glass") { return BottleIngredient.Junk_Glass; }//ワイン:732 etc
-                            return BottleIngredient.Junk_Bottles;
-                        }
-                        else if (category == "_drink")
-                        {
-                            if (unit == "bucket") { return BottleIngredient.Bucket_Empty; }
-                            if (unit == "pot") { return BottleIngredient.Bottle_Empty; }
-                            if (unit == "bottle") { return BottleIngredient.Junk_Bottles; }
-                            if (unit == "jar") { return BottleIngredient.Junk_Bottles; }//ビン:59
-                            if (unit == "cup") { return BottleIngredient.Junk_Cup; }//お茶:503
-                            if (unit == "can") { return BottleIngredient.Junk_Can; }//缶ジュース:504,505
-                        }
-                        //else if (category == "milk") { }
-                    }
-                    return BottleIngredient.None;
-                }
-                else //ThingがCreateされておらず、idから呼び出す時に使う。ThingVには使えない？Foodは対応する
-                {   //traitナシ・TraitFactoryから呼び出すときのみ・ThingやFoodなど
-                    switch (category)
-                    {
-                        case "_drink"://雪・汚水・水・水バケツ・ポーション・香水・飲料
-                            if (unit == "bucket") { return BottleIngredient.Bucket_Empty; }
-                            if (unit == "handful") { return BottleIngredient.None; }
-                            if (unit == "pot") { return BottleIngredient.Bottle_Empty; }
-                            if (unit == "bottle") { return BottleIngredient.Junk_Bottles; }
-                            if (id == "perfume") { return BottleIngredient.Junk_Bottles; }
-                            return BottleIngredient.Bottle_Empty;//random potion
-                        case "drug"://薬
-                            return BottleIngredient.Drug;
-                        case "milk"://乳・ミルク缶・
-                            return BottleIngredient.None;
-                        default:
-                            return BottleIngredient.None;
-                    }
-                }
-            }
             
-            private static string GetBottleIngredient(int bi)
-            {
-                string resultid = null;
-                
-                switch (bi)
-                {
-                    case BottleIngredient.Bottle_Empty:
-                        resultid = "potion_empty";
-                        break;
-                    case BottleIngredient.Bucket_Empty:
-                        resultid = "bucket_empty";
-                        break;
-                    case BottleIngredient.None://nothing
-                        break;
-                    case BottleIngredient.Junk_Bottles:
-                        resultid = GetRandomJunkBottle();//bottle
-                        break;
-                    case BottleIngredient.Junk_Can:
-                        resultid = GetRandomJunkCan();//can
-                        break;
-                    case BottleIngredient.Can:
-                        resultid = "";//can not junk
-                        break;
-                    case BottleIngredient.Drug:
-                        resultid = "";//(!broken) ? "231" : "";//drug bin
-                        break;
-                    case BottleIngredient.Junk_Glass:
-                        resultid = GetRandomJunkBottle();//(!broken) ? "231" : "";//drug bin
-                        break;
-                    case BottleIngredient.Junk_Bowl:
-                        resultid = "176";//(!broken) ? "231" : "";
-                        break;
-                    case BottleIngredient.Junk_Cup:
-                        resultid = "202";//(!broken) ? "231" : "";
-                        break;
-                    default:
-                        resultid = "";
-                        break;
-                }
-                return resultid;
-            }
-            private static bool IsEnableRecycleBottle(int bottleIng, Chara c, int acttype)
-            {
-                string text = "[IERB]bi:" + bottleIng.ToString() + "/C:" + c.NameSimple + "/at:" + acttype.ToString();
-                // Log("[IERB]bi:" + bottleIng.ToString() + "/" + c.NameSimple + "/" + acttype.ToString());
-                //regulateを参照して実行できるかどうかを返す
-                bool isJunk = (bottleIng < 0) ? true : false;
-                bool result = (bottleIng != 0) ? GetRegulation(c, acttype, isJunk) : false;
-                text += "/iJ:" + ToTF(isJunk) + "/rs:" + ToTF(result);
-                //Log(text , 1);
-                return result;
-                //return false;
-            }
+            
+            
 
             //list関連-----------------------------------------------------------------------------------------------------
-            private static List<string> JunkBottleList = new List<string> { "726", "727", "728" };
-            public static string GetRandomJunkBottle()
-            {
-                //List<string> sList = JunkBottleList;
-                return JunkBottleList[Random.Range(0, JunkBottleList.Count)];
-            }
-            private static List<string> JunkCanList = new List<string> { "236", "529", "1170" };
-            public static string GetRandomJunkCan()
-            {
-                //List<string> sList = JunkCanList;
-                return JunkCanList[Random.Range(0, JunkCanList.Count)];
-            }
-
             internal static string GetStrings(List<RecycleThing> list)
             {
                 string text = "";
@@ -467,202 +415,7 @@ namespace s649PBR
 
         }//<<<end class:Main
         
-        /// <summary>------------------------------------------------------------------------------------------------------------
-        /// Other Classes
-        /// </summary>-----------------------------------------------------------------------------------------------------------
-        public class ActType
-        {//class:ActType
-            //public int value;
-            public const int None = 0;
-            public const int Use = 1;
-            public const int Blend = 2;
-            public const int Throw = 3;
-            public const int Craft = 4;
-
-        }//class:ActType
-        public class BottleIngredient
-        {//class:BottleIng
-            public const int None = 0;
-            public const int Bottle_Empty = 1;
-            public const int Bucket_Empty = 2;
-            public const int Junk_Bottles = -1;
-            public const int Junk_Can = -2;
-            public const int Can = -3;
-            public const int Drug = -4;
-            public const int Junk_Glass = -5;
-            public const int Junk_Bowl = -6;
-            public const int Junk_Cup = -7;
-            public const int Other = -999;
-        }//class:BottleIngredient
-        public class RecycleThing
-        {
-            private static readonly string title = "[RQ]";
-            public string name { get; }
-            private int num { get; set; }
-            private bool isValid { get; set; }
-
-            public RecycleThing(string name, int num)
-            {
-                this.name = name;
-                this.num = num;
-                isValid = true;
-            }
-            public RecycleThing(string name)
-            {
-                this.name = name;
-                this.num = 1;
-                isValid = true;
-            }
-            public int GetNum()
-            {
-                return num;
-            }
-
-            public void AddNum(RecycleThing t)
-            {
-                if (this.name == t.name) { AddNum(t.num); }
-                //this.num += t.num; 
-            }
-            private void AddNum(int n1)
-            {
-                if (IsValid()) { this.num += n1; }
-            }
-            public void SetMulti(int n1)
-            {
-                if (IsValid()) { this.num *= n1; }
-            }
-            
-            public bool IsEqualID(RecycleThing t)
-            {
-                return IsValid() && IsEqualID(t.name);
-            }
-            public bool IsEqualID(string tid)
-            {
-                return IsValid() && (tid == this.name) ? true : false;
-            }
-
-            public void Decrease(RecycleThing rt ,int a = 1)
-            {
-                if (rt.IsValid() && IsEqualID(rt)) 
-                    { 
-                    AddNum(-a * rt.num);
-                    if (this.num <= 0) { isValid = false; }
-                    }
-            }
-            public bool IsNotValid()
-            {
-                return !IsValid();  
-            }
-            public bool IsValid()
-            {
-                //PatchMain.Log(title + "Str:" + ToString());
-                return (name != "") && (num > 0) && isValid;
-            }
-            public override string ToString()
-            {
-                //if (IsNotValid()) { return ""; }
-                string text = name;
-                text += "." + this.num.ToString();
-                return text;
-            }
-        }
-
-        public class RecycleQueue
-        {
-            private readonly string title = "[PBR:RQ]";
-            private List<RecycleThing> queue;
-            private int num;
-
-            public RecycleQueue(List<RecycleThing> queue, int num = 1)
-            {
-                this.queue = queue;
-                this.num = num;
-            }
-            public override string ToString()
-            {
-                var text = "";
-                if (queue.Count > 0)
-                {
-                    foreach (RecycleThing rt in queue)
-                    {
-                        text += rt.ToString() + "/";
-                    }
-                    text += num.ToString();
-                }
-                return text;
-            }
-            public bool IsValid(List<RecycleThing> listRT)
-            {
-                foreach (RecycleThing rt in listRT)
-                {
-                    if (rt.IsValid())
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            }
-            public void ExeRecycle()
-            {
-                PatchMain.Log(title + "ExeRecycle:" + PatchMain.GetStrings(queue), 1);
-                if (num > 0 && queue.Count > 0)
-                {
-                    //string text = "[recycle]";
-                    if (!IsValid(queue))
-                    {
-                        PatchMain.Log(title + "queue is Not Valid......", 1);
-                        return;
-                    }
-                    else { PatchMain.Log(title + "queue is Valid", 1); }
-
-                    foreach (RecycleThing rthing in queue)
-                    {
-                        PatchMain.Log(title + "rthing:" + rthing.ToString() + "/V:" + rthing.IsValid().ToString(), 1);
-                        if (rthing.IsValid())
-                        {
-                            PatchMain.Log(title + "rthingisValid", 1);
-                            Thing t = ThingGen.Create(rthing.name).SetNum(rthing.GetNum() * num);
-                            PatchMain.Log(title + "CreateThing:" + t.id + "." + t.Num.ToString(), 1);
-                            EClass._zone.AddCard(t, EClass.pc.pos);
-                            //text += "rt:" + rthing.name + "." + rthing.GetNum().ToString() + "*" + num.ToString() + "/";
-                            //text += "Thing:" + t.id + "." + t.Num.ToString();
-                        }
-                        else { PatchMain.Log(title + "rthingisNotValid", 1); }
-                    }
-
-
-                }
-                else { PatchMain.Log(title + "ExeRecycle:Skip", 1); }
-                PatchMain.Log(title + "ExeRecycle:Done", 1);
-            }
-            public void SetQueueNum(int n1)
-            {
-                this.num = n1;
-            }
-            public void RemoveBI(RecycleThing rt, int num = 1)
-            {
-                PatchMain.Log(title + "RemoveBI", 1);
-                if (num > 0) { rt.SetMulti(num); }
-                if (queue.Count > 0)
-                {
-                    foreach (RecycleThing queueRT in queue)
-                    {
-                        if (queueRT.IsEqualID(rt))
-                        {
-                            queueRT.Decrease(rt);
-                            return;
-                        }
-                    }
-                }
-                PatchMain.Log(title + "RemoveDone:" + this.ToString(), 1);
-            }
-            public void RemoveAll()
-            {
-                queue.Clear();
-                this.num = 1;
-                PatchMain.Log("[PBR:RQ]RecycleQueue:Cleared", 1);
-            }
-        }
+        
     }//<<end namespaceSub
 }//<end namespaceMain
 /*
@@ -856,6 +609,32 @@ if(PatchMain.configDebugLogging)
 
 //////trash box//////////////////////////////////////////////////////////////////////////////////////////////////
 ///
+
+/*
+            internal static string GetStringID(string id, string category, string unit)
+            {
+                return GetStringID(ReturnID(id, category, unit));
+            }
+
+            internal static string GetStringID(Thing t)
+            {
+                return GetStringID(ReturnID(t));
+            }
+            */
+/*
+internal static bool TryRecycle(TraitDrink trait, Chara c)
+{
+    string title = "[PBR:Main:TR]";
+    Thing usedT = trait.owner.Thing;
+    Log(title + "Used->" + usedT.NameSimple + " :by " + c.NameSimple, 1);
+    bool result = DoRecycleBottle(usedT, c, ActType.Use);
+    if (result)
+    {
+        PatchMain.Log(title + "Success", 1);
+    }
+    else { return false; }
+    return true;
+}*/
 /*
     [HarmonyPatch(typeof(Zone))]
     [HarmonyPatch(nameof(Zone.Activate))]
@@ -1309,7 +1088,62 @@ public class PreExe{
             }
             
         }//class:PlayerType
+private static bool GetRegulation(Chara c, int at, bool isJunk = false)
+            {
+                int wcc = 0;
+                int tcp = TypeCharaPlaying(c);
+                //bool allow_Func;
+                bool reg_chara;
+                bool reg_junk = Cf_Reg_JunkBottle && (isJunk) ? (tcp <= CE_WhichCharaCreatesJunkBottles.Value) : true;
+                switch (at)
+                {
+                    case ActType.None: return false;
+                    case ActType.Use:
+                        wcc = CE_WhichCharaCreatesWhenDrink.Value;
+                        //allow_Func = Cf_Allow_Use;
+                        break;
+                    case ActType.Blend:
+                        wcc = CE_WhichCharaCreatesWhenBlend.Value;
+                        //allow_Func = Cf_Allow_Blend;
+                        break;
+                    case ActType.Throw:
+                        wcc = CE_WhichCharaCreatesWhenThrow.Value;
+                        //allow_Func = Cf_Allow_Throw;
+                        break;
+                    case ActType.Craft: return Cf_Allow_Craft;
+                    default: return false;
+                }
+                reg_chara = TypeCharaPlaying(c) <= wcc;
+
+                bool result = (!isJunk) ? reg_chara : (reg_chara && reg_junk);
+                string text = "[PBR:GR]";
+                text += "TCP:" + tcp.ToString() + "/";
+                //text += "Func:" + ToTF(allow_Func) + "/";
+                text += "RC:" + ToTF(reg_chara) + "/";
+                text += (isJunk)? ("RJ:" + ToTF(reg_junk) + "/") : "RJ:-/";
+                text += "rs:" + ToTF(result) + "/";
+                //Log(text, 1);
+                return result; 
+            }
         */
+///BottleIng----------------------------------------------------------------------------------------------------------
+
+
+/*
+private static bool IsEnableRecycle(int bottleIng, Chara c, int acttype)
+{
+    string text = "[IERB]bi:" + bottleIng.ToString() + "/C:" + c.NameSimple + "/at:" + acttype.ToString();
+    // Log("[IERB]bi:" + bottleIng.ToString() + "/" + c.NameSimple + "/" + acttype.ToString());
+    //regulateを参照して実行できるかどうかを返す
+    bool isJunk = (bottleIng < 0) ? true : false;
+    bool result = (bottleIng != 0) ? GetRegulation(c, acttype, isJunk) : false;
+    text += "/iJ:" + ToTF(isJunk) + "/rs:" + ToTF(result);
+    //Log(text , 1);
+    return result;
+    //return false;
+}
+*/
+
 //操作キャラごとの制御のコンフィグ
 
 //private static bool Cf_Reg_Use_PC => Cf_Allow_Use && PlayerType.ContainPC(CE_WhichCharaCreatesWhenDrink.Value);
