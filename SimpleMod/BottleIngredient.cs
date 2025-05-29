@@ -43,12 +43,12 @@ namespace s649PBR
 
             public string id { get; private set; }
             private string resultID { get; set; }
-            public string orgID { get; private set; }
+            //public string orgID { get; private set; }
             // Change the `idIngredient` property to include a private setter to allow assignment within the class.
             public int idIngredient { get; private set; }
-            public static string orgCategory { get; private set; }
-            public static string orgUnit { get; private set; }
-            public Thing orgThing;
+            //public static string orgCategory { get; private set; }
+            //public static string orgUnit { get; private set; }
+            public static Thing orgThing;
             public int num;
             public bool isBroken;//âÛÇÍÇΩÅH
             public bool isConsumed;//è¡îÔÇ≥ÇÍÇΩÅH
@@ -116,8 +116,9 @@ namespace s649PBR
 
             private static int GetIDIngredient(string tid, Trait trait = null)
             {
-                string category = orgCategory;
-                string unit = orgUnit;
+                //string category = orgCategory;
+                string category = orgThing.sourceCard.category;
+                string unit = orgThing.source.unit;
                 if (tid == "") { return 0; }
 
                 if (trait != null)
