@@ -9,7 +9,7 @@ using Debug = UnityEngine.Debug;
 using System.Collections.Generic;
 using s649PBR.Main;
 using s649PBR.BIClass;
-
+using static s649PBR.Main.PatchMain;
 
 namespace s649PBR
 {//>begin namespaceMain
@@ -22,23 +22,118 @@ namespace s649PBR
             [HarmonyPatch(typeof(TraitDrink), "OnDrink")]
             private static void TraitDrinkPostPatch(TraitDrink __instance, Chara c)
             {//>>>>begin method:TraitDrinkPatch
-                if (PatchMain.Cf_Allow_Use) 
+                if (!IsThrown)
                 {
-                    string title = "[PBR:TD.OD]";
-                    Thing usedT = __instance.owner.Thing;
-                    bool b = PatchMain.TryRecycle(usedT, c, ActType.Use);
+                    string title = "[PBR:TD.OD:iT]:";
+                    bool b = TryUse(__instance, c);
                     if (b)
                     {
-                        PatchMain.Log(title + "Success", 2);
+                        Log(title + "Success", 1);
                     }
+                    else
+                    { Log(title + "NotDone", 1); }
+                    
                 }
+                else //投げられて飲まされた判定
+                {
+                    string title = "[PBR:TD.OD:!iT]";
+                    bool b = TryThrown(__instance, lastThrower, c.pos, true);
+                    if (b)
+                    {
+                        Log(title + "Success", 1);
+                    }
+                    else
+                    { Log(title + "NotDone", 1); }
+                }
+                //return true;
             }//<<<<end method:TraitDrinkPatch
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(TraitDrink), "OnThrowGround")]
+            private static void OnThrowGroundPostPatch(TraitDrink __instance, Chara c, Point p)
+            {//begin method:TraitDrinkPatch
+                string title = "[PBR:TD.OTG]";
+                bool b = TryThrown(__instance, c, p, true);
+                if (b)
+                {
+                    Log(title + "Success", 1);
+                }
+                else
+                { Log(title + "NotDone", 1); }
+            }//<<<<end method:TraitDrinkPatch
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(TraitDrink), "OnBlend")]
+            private static void OnBlendPostPatch(TraitDrink __instance, Thing t, Chara c)
+            {//>>>>begin method:OnUsePostPatch
+                string title = "[PBR:TDye.OB]";
+                bool b = TryBlend(__instance, c);
+                if (b)
+                {
+                    Log(title + "Success", 1);
+                }
+                else
+                { Log(title + "NotDone", 1); }
+            }//<<<<end method:OnUsePostPatch
         }//<<<end class:PatchExe
     }//<<end namespaceSub
 }//<end namespaceMain
 
 
 //trash
+
+/*
+                    
+                    //string text = "";
+                    if (Cf_Allow_Use)
+                    {
+                        if (__instance == null) { Log(title + "*Error* NoInstance");  return; }
+                        if (__instance.owner == null) { Log(title + "*Error* NoOwner"); return; }
+                        Thing usedT = __instance.owner.Thing;
+                        Log(title + "Try/" + GetStr(usedT) +":C" + GetStr(c), 1);
+                        bool b = TryRecycle(usedT, c, ActType.Use);
+                        if (b)
+                        {
+                            Log(title + "Success", 1);
+                        }
+                        else
+                        { Log(title + "NotDone", 1); }
+                    } */
+/*
+                if (PatchMain.Cf_Allow_Throw)
+                {
+                    string title = "[PBR:TD.OTG]";
+                    Thing usedT = __instance.owner.Thing;
+                    //Chara usedC = c;
+                    bool result = PatchMain.TryRecycle(usedT, c, ActType.Throw, true, p);
+                    if (result)
+                    {
+                        PatchMain.Log(title + "Success", 1);
+                    }
+                    else { PatchMain.Log(title + "NotDone", 1); }
+                }
+                return true;
+                */
+//if (PatchMain.Cf_Allow_Throw)
+//{
+/*
+//Thing usedT = __instance.owner.Thing;
+Chara c_thrower = lastThrower;
+if (c_thrower == null) { Log(title + "*Error* NoThrower"); return; }
+BottleIngredient bi = lastCreatedBI;
+if (bi == null) { Log(title + "NoBI"); return; }
+bi.TryBrake();
+//Chara thrownC = PatchMain.lastThrower;
+//bool result = PatchMain.TryRecycle(usedT, PatchMain.lastThrower, ActType.Throw, true, c.pos);
+bool result = DoRecycle(bi, c_thrower, ActType.Throw, c.pos);
+if (result)
+{
+    PatchMain.Log(title + "Success!", 1);
+}
+else { PatchMain.Log(title + "NotDone", 1); }
+*/
+
+//}
 
 /*
                     string title = "[PBR:Drink]";

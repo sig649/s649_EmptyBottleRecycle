@@ -10,6 +10,8 @@ using UnityEngine;
 //using System.Diagnostics;
 using Debug = UnityEngine.Debug;
 using s649PBR.BIClass;
+using static s649PBR.Main.PatchMain;
+
 
 namespace s649PBR
 {//>begin namespaceMain
@@ -22,24 +24,26 @@ namespace s649PBR
             [HarmonyPatch(typeof(ActThrow), "Throw", new Type[] { typeof(Card), typeof(Point), typeof(Card), typeof(Thing), typeof(ThrowMethod) })]
             private static void ThrowPostPatch(ActThrow __instance, Card c, Point p, Card target, Thing t, ThrowMethod method)
             {//begin method:TraitDrinkPatch
-                if (PatchMain.Cf_Allow_Throw)
-                {
-                    string title = "[PBR:AT.T]";
-                    Thing usedT = t;
-                    Chara usedC = c.Chara;
-                    PatchMain.Log(title + "Throw->" + usedT.NameSimple + " :by " + usedC.NameSimple, 1);
-                    bool result = PatchMain.TryRecycle(usedT, usedC, ActType.Throw, true, p);
-                    if (result)
-                    {
-                        PatchMain.Log(title + "Success", 2);
-                    }
-                }
+                string title = "[PBR:AT.T]IsThrownSet";
+                IsThrown = true;
+                lastThrower = c.Chara;
+                lastThrownThing = t;
+                //lastCreatedBI = CreateBI(t);
+
+                PatchMain.Log(title + "Done", 2);
             }//<<<<end method:TraitDrinkPatch
         }//<<<end class:PatchExe
     }//<<end namespaceSub
 }//<end namespaceMain
 
-
+//Thing usedT = t;
+//Chara usedC = c.Chara;
+//bool result = PatchMain.TryRecycle(usedT, usedC, ActType.Throw, true, p);
+//if (result)
+//{
+//    PatchMain.Log(title + "Success", 1);
+//}
+// else { PatchMain.Log(title + "NotDone", 1); }
 //Thing result;
 //int prodN = TypeContainsPotionBottle(usedT);
 //if (prodT != "")
@@ -49,6 +53,10 @@ namespace s649PBR
 //    PatchMain.Log("[PBR:Throw]Used->" + result.NameSimple + " :-> " + p.ToString());
 //}
 
+//string text = "Throw->" + usedT.NameSimple;
+//text += " :by " + usedC.NameSimple;
+//text += " :pos: " + p.ToString();
+//PatchMain.Log(title + text, 1);
 /*
  * 
             //internal int TypeContainsPotionBottle(Thing t){return PatchMain.TypeContainsPotionBottle(t);}

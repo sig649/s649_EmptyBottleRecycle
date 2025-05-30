@@ -5,11 +5,11 @@ using s649PBR.BIClass;
 using s649PBR.Main;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.UIElements.UxmlAttributeDescription;
+//using static UnityEngine.UIElements.UxmlAttributeDescription;
 //using System.IO;
 //using System.Diagnostics;
 using Debug = UnityEngine.Debug;
-
+using static s649PBR.Main.PatchMain;
 
 namespace s649PBR
 {//>begin namespaceMain
@@ -20,35 +20,61 @@ namespace s649PBR
         {//>>>begin class:PatchExe
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDye), "OnUse")]
-            private static void OnUsePostPatch(TraitDye __instance, Chara c)
+            private static void OnUsePostPatch(TraitDye __instance, Chara c, Card tg)
             {//>>>>begin method:OnUsePostPatch
-                if (PatchMain.Cf_Allow_Use)
+                string title = "[PBR:TDye.OD]";
+                if (!IsThrown)
                 {
-                    string title = "[PBR:TDye.OU]";
-                    Thing usedT = __instance.owner.Thing;
-                    bool b = PatchMain.TryRecycle(usedT, c, ActType.Use);
+                    title += "iT";
+                    bool b = TryUse(__instance, c);
                     if (b)
                     {
-                        PatchMain.Log(title + "Success", 2);
+                        Log(title + "Success", 1);
                     }
+                    else
+                    { Log(title + "NotDone", 1); }
+                }
+                else //投げられて飲まされた判定
+                {
+                    title = "!iT";
+                    bool b = TryThrown(__instance, lastThrower, c.pos, true);
+                    if (b)
+                    {
+                        Log(title + "/Success", 1);
+                    }
+                    else
+                    { Log(title + "/NotDone", 1); }
                 }
             }//<<<<end method:OnUsePostPatch
 
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDye), "OnBlend")]
-            private static void OnBlendPostPatch(TraitDye __instance, Chara c)
+            private static void OnBlendPostPatch(TraitDye __instance, Thing t, Chara c)
             {//>>>>begin method:OnUsePostPatch
-                if (PatchMain.Cf_Allow_Blend)
+                string title = "[PBR:TDye.OB]";
+                bool b = TryBlend(__instance, c);
+                if (b)
                 {
-                    string title = "[PBR:TDye.OB]";
-                    Thing usedT = __instance.owner.Thing;
-                    bool b = PatchMain.TryRecycle(usedT, c, ActType.Blend);
-                    if (b)
-                    {
-                        PatchMain.Log(title + "Success", 2);
-                    }
+                    Log(title + "Success", 1);
                 }
+                else
+                { Log(title + "NotDone", 1); }
             }//<<<<end method:OnUsePostPatch
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(TraitDye), "OnThrowGround")]
+            private static void OnThrowGroundPostPatch(TraitDye __instance, Chara c, Point p) 
+            {
+                string title = "[PBR:TD.OD:!iT]";
+                bool b = TryThrown(__instance, c, p, true);
+                if (b)
+                {
+                    Log(title + "Success", 1);
+                }
+                else
+                { Log(title + "NotDone", 1); }
+            }
+        
         }//<<<end class:PatchExe
     }//<<end namespaceSub
 }//<end namespaceMain
@@ -57,6 +83,20 @@ namespace s649PBR
 
 
 //trash box
+
+/*
+                string title = "[PBR:TDye.OB]";
+                if (PatchMain.Cf_Allow_Blend)
+                {
+                    
+                    Thing usedT = __instance.owner.Thing;
+                    bool b = PatchMain.TryRecycle(usedT, c, ActType.Blend);
+                    if (b)
+                    {
+                        PatchMain.Log(title + "Success", 2);
+                    }
+                }
+                */
 /*
                 if (PatchMain.Cf_Allow_Blend)
                 {

@@ -9,6 +9,7 @@ using System.IO;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
+using static s649PBR.Main.PatchMain;
 //using s649PBR.Main;
 
 namespace s649PBR
@@ -25,7 +26,43 @@ namespace s649PBR
             public const int Blend = 2;
             public const int Throw = 3;
             public const int Craft = 4;
-
+            public int id { get; private set; }
+            public ActType(int arg = 0)
+            {
+                id = arg;
+            }
+            public bool IsValid() 
+            {
+                if (id > 0 && id <= 4)
+                { return true; }
+                else { return false; }
+            }
+            public override string ToString()
+            {
+                string text = "";
+                switch (id)
+                {
+                    case ActType.None:
+                        text = "None";
+                        break;
+                    case ActType.Use:
+                        text = "Use";
+                        break;
+                    case ActType.Blend:
+                        text = "Blend";
+                        break;
+                    case ActType.Throw:
+                        text = "Throw";
+                        break;
+                    case ActType.Craft:
+                        text = "Craft";
+                        break;
+                    default:
+                        text = "";
+                        break;
+                }
+                return text;
+            }
         }//class:ActType
         public class BottleIngredient
         {//class:BottleIng
@@ -42,13 +79,13 @@ namespace s649PBR
             public const int Other = -999;
 
             public string id { get; private set; }
-            private string resultID { get; set; }
+            public string resultID { get; private set; }
             //public string orgID { get; private set; }
             // Change the `idIngredient` property to include a private setter to allow assignment within the class.
             public int idIngredient { get; private set; }
-            //public static string orgCategory { get; private set; }
-            //public static string orgUnit { get; private set; }
-            public static Thing orgThing;
+            public string orgCategory { get; private set; }
+            public string orgUnit { get; private set; }
+            public Thing orgThing;
             public int num;
             public bool isBroken;//壊れた？
             public bool isConsumed;//消費された？
@@ -65,8 +102,8 @@ namespace s649PBR
                 //orgThing = thing;
                 //orgID = thing.id;
                 //orgTrait = thing.trait;
-                //orgCategory = thing.sourceCard.category;
-                //orgUnit = thing.source.unit;
+                orgCategory = thing.sourceCard.category;
+                orgUnit = thing.source.unit;
                 orgThing = thing;
                 isBroken = false;
                 isConsumed = false;
@@ -97,13 +134,14 @@ namespace s649PBR
             }*/
             private bool IsProhibition() 
             {
+                return false;
                 /*
                 var trait = orgThing.trait;
                 if (trait is TraitAlchemyBench || trait is TraitToolWaterPot)
                 {
                     return true;
                 }
-                else*/ { return false; }
+                else*/
             }
             private int GetIDIngredient(Thing t)
             {
@@ -114,11 +152,12 @@ namespace s649PBR
                 return GetIDIngredient(t.id, t.trait);
             }
 
-            private static int GetIDIngredient(string tid, Trait trait = null)
+            private int GetIDIngredient(string tid, Trait trait = null)
             {
-                //string category = orgCategory;
-                string category = orgThing.sourceCard.category;
-                string unit = orgThing.source.unit;
+                string category = orgCategory;
+                string unit = orgUnit;
+                //string category = orgThing.sourceCard.category;
+                //string unit = orgThing.source.unit;
                 if (tid == "") { return 0; }
 
                 if (trait != null)
@@ -161,6 +200,7 @@ namespace s649PBR
                 }
                 else //ThingがCreateされておらず、idから呼び出す時に使う。ThingVには使えない？Foodは対応する
                 {   //traitナシ・TraitFactoryから呼び出すときのみ・ThingやFoodなど
+                    /*
                     switch (category)
                     {
                         case "_drink"://雪・汚水・水・水バケツ・ポーション・香水・飲料
@@ -176,7 +216,8 @@ namespace s649PBR
                             return BottleIngredient.None;
                         default:
                             return BottleIngredient.None;
-                    }
+                    }*/
+                    return 0;
                 }
             }
             //private static bool IsJunk
@@ -184,7 +225,7 @@ namespace s649PBR
             //    return idIngredient < 0;
             //}
             
-            private static string GetStringID(int bi)
+            private string GetStringID(int bi)
             {
                 string resultid = "";
 
@@ -235,13 +276,12 @@ namespace s649PBR
             //}
             public bool TryBrake() 
             {
-
+                if (!IsValid()) { return false; }
                 switch (idIngredient)
                 {
                     case BottleIngredient.Bottle_Empty:
                         isBroken = true;
                         resultID = "glass";
-                        //id = "glass";
                         return true;
                     case BottleIngredient.Bucket_Empty:
                         break;
@@ -262,27 +302,33 @@ namespace s649PBR
                         return true;
                     case BottleIngredient.Junk_Glass:
                         isBroken = true;
-                        //id = "glass";
+                        resultID = "glass";
                         return true;
                     default:
                         break;
                 }
                 return false;
             }
-            public void TryConsume() 
+            public bool TryConsume() 
             {
                 if (idIngredient == BottleIngredient.Drug)
                 {
                     isConsumed = true;
+                    return true;
                 }
+                return false;
             }
             public bool IsEnableRecycle() 
             {
-                return IsValid() && num > 1;
+                //string title = "[PBR:BI.IER]";
+                //bool b1 = IsValid();
+                //bool b2 = num >= 1;
+                //PatchMain.Log(title + GetStr(b1) + "/" + GetStr(b2), 2);
+                return IsValid() && num >= 1;
             }
-            private bool IsValid() 
+            public bool IsValid() 
             {
-                return (id == "" || idIngredient == 0 || num <= 0 ) ? false : true;
+                return (id != "" && idIngredient != 0) ? true : false;
             }
             public bool IsEqualID(BottleIngredient bi)
             {
@@ -315,16 +361,18 @@ namespace s649PBR
                     //if (this.num <= 0) { isValid = false; }
                 }
             }
-            private static List<string> JunkBottleList = new List<string> { "726", "727", "728" };
-            private static List<string> JunkCanList = new List<string> { "236", "529", "1170" };
-            public static string GetRandomJunkBottle()
+            //private static List<string> JunkBottleList = new List<string> { "726", "727", "728" };
+            //private static List<string> JunkCanList = new List<string> { "236", "529", "1170" };
+            public string GetRandomJunkBottle()
             {
                 //List<string> sList = JunkBottleList;
+                List<string> JunkBottleList = new List<string> { "726", "727", "728" };
                 return JunkBottleList[Random.Range(0, JunkBottleList.Count)];
             }
-            public static string GetRandomJunkCan()
+            public string GetRandomJunkCan()
             {
                 //List<string> sList = JunkCanList;
+                List<string> JunkCanList = new List<string> { "236", "529", "1170" };
                 return JunkCanList[Random.Range(0, JunkCanList.Count)];
             }
             
@@ -508,7 +556,7 @@ namespace s649PBR
                 {
                     case ActType.None: return false;
                     case ActType.Use:
-                        wcc = CE_WhichCharaCreatesWhenDrink.Value;
+                        wcc = CE_WhichCharaCreatesWhenUse.Value;
                         //allow_Func = Cf_Allow_Use;
                         break;
                     case ActType.Blend:

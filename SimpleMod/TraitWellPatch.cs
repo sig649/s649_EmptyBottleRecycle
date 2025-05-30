@@ -9,6 +9,7 @@ using UnityEngine;
 //using System.IO;
 //using System.Diagnostics;
 using Debug = UnityEngine.Debug;
+using static s649PBR.Main.PatchMain;
 
 namespace s649PBR
 {//>begin namespaceMain
@@ -21,15 +22,15 @@ namespace s649PBR
             [HarmonyPatch(typeof(TraitWell), "OnBlend")]
             private static void TraitWellPostPatch(TraitWell __instance, Thing t, Chara c)
             {//>>>>begin method:TraitDrinkPatch
-                if (PatchMain.Cf_Allow_Blend)
+                string title = "[PBR:TW.OB]";
+                if (t.trait == null) { Log(title + "*Error* NoTrait", 1); return; }
+                bool b = TryBlend(t.trait, c);
+                if (b)
                 {
-                    string title = "[PBR:TW.OB]";
-                    bool b = PatchMain.TryRecycle(t, c, ActType.Blend);
-                    if (b)
-                    {
-                        PatchMain.Log(title + "Success", 2);
-                    }
+                    Log(title + "Success", 1);
                 }
+                else
+                { Log(title + "NotDone", 1); }
             }//<<<<end method:TraitDrinkPatch
         }//<<<end class:PatchExe
     }//<<end namespaceSub
@@ -41,7 +42,17 @@ namespace s649PBR
 
 
 
-
+/*
+                if (PatchMain.Cf_Allow_Blend)
+                {
+                    string title = "[PBR:TW.OB]";
+                    bool b = PatchMain.TryRecycle(t, c, ActType.Blend);
+                    if (b)
+                    {
+                        PatchMain.Log(title + "Success", 2);
+                    }
+                }
+                */
 /*
                 if (PatchMain.Cf_Allow_Blend)
                 {
