@@ -27,16 +27,16 @@ namespace s649PBR
             public const int Throw = 3;
             public const int Craft = 4;
             public int id { get; private set; }
-            public ActType(int arg = 0)
+            public ActType(int arg)
             {
                 id = arg;
             }
-            public bool IsValid() 
-            {
-                if (id > 0 && id <= 4)
-                { return true; }
-                else { return false; }
-            }
+            //public bool IsValid() 
+            //{
+            //    if (id > 0 && id <= 4)
+            //    { return true; }
+            //    else { return false; }
+            //}
             public override string ToString()
             {
                 string text = "";
@@ -83,13 +83,14 @@ namespace s649PBR
 
             private string id { get; set; }
             private string resultID { get; set; }
-            private string orgID { get; set; }
+            private string _ThingID { get; set; }
             // Change the `idIngredient` property to include a private setter to allow assignment within the class.
             public int idIngredient { get; private set; }
-            private string orgCategory { get; set; }
-            private string orgUnit { get; set; }
-            public Thing orgThing { get; private set; }
-            public int num;
+            private string _ThingCategory { get; set; }
+            private string _ThingUnit { get; set; }
+            private Thing _Thing { get; set; }
+            private Trait _Trait { get; set; }
+            public int num { get; private set; }
             public bool isBroken;//壊れた？
             public bool isConsumed;//消費された？
             public bool isProhibition;//還元禁止・ing用※未実装
@@ -107,23 +108,26 @@ namespace s649PBR
                 //orgID = thing.id;
                 //orgTrait = thing.trait;
                 //init
-                orgCategory = thing.sourceCard.category;
-                orgUnit = thing.source.unit;
-                orgThing = thing;
-                orgID = thing.id;
+                _Thing = thing;
+                _Trait = thing.trait;
+                _ThingID = thing.id;
+                _ThingCategory = (thing.sourceCard != null)? thing.sourceCard.category : "";
+                _ThingUnit = (thing.source != null) ? thing.source.unit : "";
+                
                 isBroken = false;
                 isConsumed = false;
                 isInstalled = false;
                 isProhibition = false;
                 idIngredient = 0;
                 id = "";
+                resultID = "";
                 num = 1;
 
                 //set
                 SetIDIngredient(thing);
                 //idIngredient = intID;
                 SetStringID();
-                resultID = id;
+                //resultID = id;
                 isJunk = (idIngredient < 0) ? true : false;
                 SetProhibition();
                 num *= n1;
@@ -132,7 +136,7 @@ namespace s649PBR
            
             private void SetProhibition() 
             {
-                if (idIngredient == BottleIngredient.Snow) { isProhibition = true; }
+                if (idIngredient == BottleIngredient.Snow) { isProhibition = true; }//koregayobarerukotohanai
                 //return false;
                 /*
                 var trait = orgThing.trait;
@@ -144,25 +148,121 @@ namespace s649PBR
             }
             private void SetIDIngredient(Thing t)
             {
+                string title = "[PBR-BI:SIDI]";
+                
                 //idIngredientをsetしつつ結果をリターン
-                if (t == null) { return; }
+                if (t == null) { Log(title + "*Error* NoThing", 2); return; }
                 //Trait trait = t.trait;
                 //string category = t.sourceCard.category;
                 //string unit = t.source.unit;
-                SetIDIngredient(t.id, t.trait);
-            }
-
-            private void SetIDIngredient(string tid, Trait trait = null)
-            {
-                int result;
-                string category = orgCategory;
-                string unit = orgUnit;
+                int result = BottleIngredient.None;
+                string category = _ThingCategory;
+                string unit = _ThingUnit;
+                Trait trait = _Trait;
+                string tid = _ThingID;
                 //string category = orgThing.sourceCard.category;
                 //string unit = orgThing.source.unit;
-                if (tid == "") { return; }
+                if (tid == "") { Log(title + "*Error* NoThingID", 2); return; }
 
                 if (trait != null)
-                {   //trait持ち
+                {
+                    switch (trait) 
+                    {
+                        //case TraitSnow ://WellのOnBlendで呼ばれるがTryBlendで除外できる
+                        //    break;
+                        case TraitDye:
+                            result = BottleIngredient.Bottle_Empty;
+                            break;
+                        case TraitDrink:
+                            {
+                                switch (trait) //追加分岐
+                                {
+                                    case TraitPotionEmpty:
+                                        result = BottleIngredient.Bottle_Empty;
+                                        break;
+                                    case TraitPotion:
+                                        result = BottleIngredient.Bottle_Empty;
+                                        break;
+                                    case TraitDrug:
+                                        result = BottleIngredient.Drug;
+                                        break;
+                                    case TraitDrinkMilk:
+                                        //if (trait is TraitDrinkMilkMother) { }
+                                        switch (unit) 
+                                        {
+                                            case "cup":
+                                                result = BottleIngredient.Junk_Bottles;
+                                                break;
+                                            case "bowl":
+                                                result = BottleIngredient.Junk_Bowl;
+                                                break;
+                                            default:
+                                                result = BottleIngredient.Milk;
+                                                break;
+                                        }
+                                        break;
+                                    default:
+                                        switch (category) //追加分岐2
+                                        {
+                                            case "booze":
+                                                switch (unit)
+                                                {
+                                                    case "jug":
+                                                        result = BottleIngredient.Junk_Glass;
+                                                        break;
+                                                    case "glass":
+                                                        result = BottleIngredient.Junk_Glass;
+                                                        break;
+                                                    default:
+                                                        result = BottleIngredient.Junk_Bottles;
+                                                        break;
+                                                }
+                                                break;
+                                            case "_drink":
+                                                switch (unit) 
+                                                {
+                                                    case "bucket":
+                                                        result = BottleIngredient.Bucket_Empty;
+                                                        break;
+                                                    case "pot":
+                                                        result = BottleIngredient.Bottle_Empty;
+                                                        break;
+                                                    case "bottle":
+                                                        result = BottleIngredient.Junk_Bottles;
+                                                        break;
+                                                    case "jar":
+                                                        result = BottleIngredient.Junk_Glass;
+                                                        break;
+                                                    case "cup":
+                                                        result = BottleIngredient.Junk_Cup;
+                                                        break;
+                                                    case "can":
+                                                        result = BottleIngredient.Junk_Can;
+                                                        break;
+                                                    default:
+                                                        //result = BottleIngredient.Junk_Bottles;
+                                                        break;
+                                                }
+                                                break;
+                                            default:
+                                                break;
+                                        }
+                                        //result = BottleIngredient.Bottle_Empty;
+                                        break;
+                                        
+                                }
+                            }
+                            break;
+                        default:
+                            if (tid == "toolAlchemy")
+                            {
+                                result = Bottle_Empty;
+                                isInstalled = true;
+                                num = 4;
+                            }
+                            break;
+                    }
+                    /*
                     if (trait is TraitSnow) { result = BottleIngredient.Snow; }
                     else if (trait is TraitDye) { result = BottleIngredient.Bottle_Empty; }
                     else if (trait is TraitPotion || trait is TraitPotionRandom || trait is TraitPotionEmpty)
@@ -197,7 +297,7 @@ namespace s649PBR
                         }
                         //else if (category == "milk") { }
                     }
-                    else if (tid == "toolAlchemy") 
+                    else if (tid == "toolAlchemy")
                     {
                         result = Bottle_Empty;
                         isInstalled = true;
@@ -206,12 +306,16 @@ namespace s649PBR
 
 
                     result = BottleIngredient.None;
+                    */
                     idIngredient = result;
+                    Log(title + "IDing => " + GetStr(result), 2);
                     return;
                 }
+                { Log(title + "*Error* NoTrait", 2); return; }
+                /*
                 else //ThingがCreateされておらず、idから呼び出す時に使う。ThingVには使えない？Foodは対応する
                 {   //traitナシ・TraitFactoryから呼び出すときのみ・ThingやFoodなど
-                    /*
+                    
                     switch (category)
                     {
                         case "_drink"://雪・汚水・水・水バケツ・ポーション・香水・飲料
@@ -227,10 +331,16 @@ namespace s649PBR
                             return BottleIngredient.None;
                         default:
                             return BottleIngredient.None;
-                    }*/
+                    }
                     return;
-                }
+                }*/
             }
+
+            //private void SetIDIngredient()
+            //{
+            //    string title = "[PBR-BI:SIDI]";
+            //    
+            //}
             //private static bool IsJunk
             //{
             //    return idIngredient < 0;
@@ -275,7 +385,9 @@ namespace s649PBR
                         resultid = "";
                         break;
                 }
-                resultID =  resultid;
+                //set
+                id =  resultid;
+                resultID = resultid;
             }
             public string GetID() 
             {
@@ -381,8 +493,25 @@ namespace s649PBR
             {
                 string text = id;
                 if (IsChanged()) { text += ":" + resultID; }
-                text += "(" + orgID + ")";
+                text += "(" + _ThingID + ")";
                 if (num > 1) { text += "." + num.ToString(); }
+                return text;
+            }
+            public string GetDetail() 
+            {
+                string text = "";
+                text += "IDI:" + GetStr(idIngredient);
+                text += "/id:" + GetStr(id);
+                text += "/num:" + GetStr(num) + ":";
+                text += "/Flag:" + GetStr(isBroken);
+                text += ":" + GetStr(isConsumed);
+                text += ":" + GetStr(isInstalled);
+                text += ":" + GetStr(isProhibition) + "/";
+                text += "org:" + _ThingID;
+                text += ":" + GetStr(_Thing);
+                text += ":" + GetStr(_Trait);
+                text += ":" + _ThingCategory;
+                text += ":" + _ThingUnit;
                 return text;
             }
             //private static List<string> JunkBottleList = new List<string> { "726", "727", "728" };

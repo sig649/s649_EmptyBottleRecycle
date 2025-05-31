@@ -24,7 +24,7 @@ namespace s649PBR
             {//>>>>begin method:TraitDrinkPatch
                 if (!IsThrown)
                 {
-                    string title = "[PBR:TD.OD:iT]:";
+                    string title = "[PBR:TD.OD:Drinked]:";
                     bool b = TryUse(__instance, c);
                     if (b)
                     {
@@ -36,7 +36,7 @@ namespace s649PBR
                 }
                 else //投げられて飲まされた判定
                 {
-                    string title = "[PBR:TD.OD:!iT]";
+                    string title = "[PBR:TD.OD:Thrown]";
                     bool b = TryThrown(__instance, lastThrower, c.pos, true);
                     if (b)
                     {
@@ -46,20 +46,6 @@ namespace s649PBR
                     { Log(title + "NotDone", 1); }
                 }
                 //return true;
-            }//<<<<end method:TraitDrinkPatch
-
-            [HarmonyPostfix]
-            [HarmonyPatch(typeof(TraitDrink), "OnThrowGround")]
-            private static void OnThrowGroundPostPatch(TraitDrink __instance, Chara c, Point p)
-            {//begin method:TraitDrinkPatch
-                string title = "[PBR:TD.OTG]";
-                bool b = TryThrown(__instance, c, p, true);
-                if (b)
-                {
-                    Log(title + "Success", 1);
-                }
-                else
-                { Log(title + "NotDone", 1); }
             }//<<<<end method:TraitDrinkPatch
 
             [HarmonyPostfix]
@@ -75,6 +61,21 @@ namespace s649PBR
                 else
                 { Log(title + "NotDone", 1); }
             }//<<<<end method:OnUsePostPatch
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(TraitDrink), "OnThrowGround")]
+            private static void OnThrowGroundPostPatch(TraitDrink __instance, Chara c, Point p)
+            {//begin method:TraitDrinkPatch
+                string title = "[PBR:TD.OTG]";
+                bool b = TryThrown(__instance, c, p, true);
+                if (b)
+                {
+                    Log(title + "Success", 1);
+                }
+                else
+                { Log(title + "NotDone", 1); }
+            }//<<<<end method:TraitDrinkPatch
+
         }//<<<end class:PatchExe
     }//<<end namespaceSub
 }//<end namespaceMain

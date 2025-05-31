@@ -132,6 +132,31 @@ namespace s649PBR
                     return 3;
                 }
             }
+
+            //bi-------------------------------------------------------------------------
+            public static BottleIngredient CreateBI(Thing t)
+            {
+                string title = "[PBR-Main:CreateBI]";
+                Log(title + "Start");
+                if (t == null) { Log(title + "*Error* NoThing"); return null; }
+                var bi = new BottleIngredient(t);
+                if (bi != null) { CheckBI(bi); }
+                if (bi.IsValid()) { return bi; } else { return null; }
+            }
+            public static Thing ThingGenFromBI(BottleIngredient bi)
+            {
+                if (!bi.IsEnableRecycle()) { return null; }
+                Thing result = ThingGen.Create(bi.GetID()).SetNum(bi.num);
+                return result;
+            }
+            private static bool CheckBI(BottleIngredient bi) 
+            {
+                string title = "[PBR:Main:CheckBI]";
+                if (bi == null) { Log(title + "bi is null"); return false; }
+                Log(title + "Detail->" + bi.GetDetail(), 2);
+                return bi.IsValid();
+            }
+            //regulation-------------------------------------------------------
             private static bool GetCharaRegulation(Chara c, int acttype) 
             {
                 string title = "[PBR:Main:GCR]";
@@ -174,30 +199,38 @@ namespace s649PBR
                 return result;
                 //return false;
             }
+            //recycle--------------------------------------------------------
             internal static Thing DoRecycle(BottleIngredient bi, Chara c, ActType acttype, Point p = null) 
             {
                 string title = "[PBR:Main:DR]";
-                if (bi != null && !bi.IsEnableRecycle()) { Log(title + "NoBI or CannotRecycle"); return null; }
-                if (c == null) { Log(title + "*Error*NoChara"); return null; }
-                if (acttype.IsValid()) { Log(title + "*Error*NoChara"); return null; }
-                string text = GetStr(acttype);
-                text += "/bi:" + GetStr(bi);
-                text += "/C:" + GetStr(c);
+                if (bi == null || !bi.IsEnableRecycle()) { Log(title + "NoBI or CannotRecycle"); return null; }
+                if (c == null) { Log(title + "*Error* NoChara"); return null; }
+                if (acttype == null) { Log(title + "*Error* ActType is Invalid"); return null; }
+                
+                string text = GetStr(acttype) + ":";
+                text += "BI:" + GetStr(bi);
+                text += "/C:" + c.NameSimple;
                 text += "/P:" + GetStr(p);
+                PatchMain.Log(title + "ArgCheck/" + text, 2);
+                
+               // text = GetStr(acttype);
+                //text += "/bi:" + GetStr(bi);
+                //text += "/C:" + GetStr(c);
+                //text += "/P:" + GetStr(p);
                 
                 //text += "/rsID:" + GetID();
                 Thing result = ThingGen.Create(bi.GetID()).SetNum(bi.num);
-                text += "/rs:" + result.NameSimple;
+                text = "rs:" + result.NameSimple;
                 if (p == null)
                 {
                     if (c.IsPC)
                     {
-                        text += "/p:-/isPC:T";
+                        text += "/isPC:T";
                         c.Pick(result);
                     }
                     else
                     {
-                        text += "/p:-/isPC:F";
+                        text += "/isPC:F";
                         EClass._zone.AddCard(result, c.pos);
                     }
                     PatchMain.Log(title + "Create:" + text);
@@ -213,29 +246,46 @@ namespace s649PBR
             internal static bool TryRecycle(Thing t, Chara c, ActType acttype, Point p = null, bool broken = false)
             {
                 string title = "[PBR:Main:TrRe]";
+                Log(title + "Start", 1);
                 if (t == null) { Log(title + "*Error* NoThing"); return false; }
                 if (c == null) { Log(title + "*Error* NoChara"); return false; }
-                if (acttype == null || !acttype.IsValid()) { Log(title + "*Error* ActType is Not Valid"); return false; }
+                if (acttype == null) { Log(title + "*Error* ActType is Not Valid"); return false; }
 
                 string text = GetStr(acttype) + ":";
-                text += "/T:" + t.NameSimple;
-                text += "/C" + c.NameSimple;
+                text += "T:" + t.NameSimple;
+                text += "/C:" + c.NameSimple;
                 //text += "/Br:" + GetStr(broken);
                 text += "/P:" + GetStr(p);
                 //Thing usedT = trait.owner.Thing;
                 //Log(title + "Thing->" + t.NameSimple + " :by " + c.NameSimple, 1);
-                PatchMain.Log(title + "Try/" + text, 1);
+                PatchMain.Log(title + "ArgCheck/" + text, 1);
                 BottleIngredient bi = CreateBI(t);
-                if (!bi.IsValid() || !CheckRegulation(bi, c, acttype)) 
+                //bool isBIValid = CheckBI(bi);
+                if (bi == null)
                 {
+                    Log(title + "BI is null", 1);
                     return false;
                 }
+                else { Log(title + "CreateBI->Success/" + GetStr(bi)); }
+                /*
+                if (!bi.IsValid())
+                {
+                    Log(title + "BI is Invalid", 1);
+                    return false;
+                }
+                else { Log(title + "CreateBI Success/" + GetStr(bi)); }*/
+                if (!CheckRegulation(bi, c, acttype))
+                {
+                    Log(title + "Regulation Failure", 1);
+                    return false;
+                }
+                else { Log(title + "Regulation Checked"); }
                 if (broken) //破損処理
                 {
                     bool tryBrake = bi.TryBrake();
                     text += "/tB:" + GetStr(tryBrake);
                 }
-                Thing result = DoRecycle(bi, c, acttype);
+                Thing result = DoRecycle(bi, c, acttype, p);
                 text = "";
                 
                 if (result != null)
@@ -251,99 +301,12 @@ namespace s649PBR
                 }
             }
             
-            public static BottleIngredient CreateBI(Thing t) 
-            {
-                if (t == null) { return null; }
-                var bi = new BottleIngredient(t);
-                if (bi.IsValid()) { return bi; } else { return null; }
-            }
-            public static Thing ThingGenFromBI(BottleIngredient bi) 
-            {
-                if (!bi.IsEnableRecycle()) { return null; }
-                Thing result = ThingGen.Create(bi.GetID()).SetNum(bi.num);
-                return result;
-            }
-            /*
-            private static Thing DoRecycleBottle(Thing t, Chara c, int acttype, bool broken = false, Point p = null)
-            {
-                //
-                // Thing t に使われるBottleIngをidで返す->リサイクル実行:成否をThingで返す
-                //
-                string title = "[PBR:DRB]";
-                string text = "";
-                //text += "Thing:" + t.NameSimple;
-                //text += "/C:" + c.NameSimple;
-                //text += "/Act:" + GetStr(acttype);
-                //text += "/Br:" + GetStr(broken);
-                //text += "/P:" + GetStr(p);
-                //Log(title + text, 1);
-               
-
-                Thing result = null;
-                BottleIngredient bi = new BottleIngredient(t);
-                text += "BI:" + GetStr(bi.idIngredient) + ":"+ bi.id + "(" + bi.orgThing.id + ")";
-                //bool regulation = CheckRegulation(bi.isJunk, c, acttype);
-                //text += "/reg:" + GetStr(regulation);
-                bool tryBrake = false;
-                bool tryConsume = false;
-                bool bIER1, bIER2;
-
-                //bool isEnableRecycle = bi.IsEnableRecycle();
-                //int bottleIng = ReturnID(t);
-                bIER1 = bi.IsEnableRecycle();
-                text += "/IER1:" + GetStr(bIER1);
-                if (regulation && bIER1)
-                {
-                    if (broken) //破損処理
-                    {
-                        tryBrake = bi.TryBrake();
-                        text += "/tB:" + GetStr(tryBrake);
-                    }
-                    if (acttype == ActType.Use)
-                    { //薬の消費処理
-                        tryConsume = bi.TryConsume();
-                        text += "/tC:" + GetStr(tryConsume);
-                    }
-                    bIER2 = bi.IsEnableRecycle();
-                    text += "/IER2:" + GetStr(bIER2);
-                    if (bIER2)//再チェック
-                    {
-                        string GetID() = bi.id;
-                        if (bi.isBroken || bi.isConsumed) { GetID() = bi.GetChangedID(); }
-                        text += "/rsID:" + GetID();
-                        result = ThingGen.Create(GetID());
-                        text += "/rs:" + result.NameSimple;
-                        if (p == null)
-                        {
-                            if (c.IsPC) 
-                            {
-                                text += "/p:-/isPC:T";
-                                c.Pick(result);
-                            } else 
-                            {
-                                text += "/p:-/isPC:F";
-                                EClass._zone.AddCard(result, c.pos);
-                            }
-                            PatchMain.Log(title + "Create:" + text);
-                        }
-                        else
-                        {
-                            text += "/p:" + p.ToString();
-                            EClass._zone.AddCard(result, p);
-                            PatchMain.Log(title + "CreateTo:" + text);
-                        }
-                        return result;
-                    }
-                    PatchMain.Log(title + "NotCreated:" + text);
-                    return null;
-                }
-                PatchMain.Log(title + "NotCreated:" + text);
-                return null;
-            }
-            */
+            
+            
             public static bool TryUse(Trait trait, Chara c) 
             {
                 string title = "[PBR-Main:TUse]";
+                Log(title + "Start", 1);
                 if (trait == null) { Log(title + "*Error* NoTrait"); return false; }
                 if (c == null) { Log(title + "*Error* NoChara"); return false; }
                 if (Cf_Allow_Use)
@@ -385,6 +348,7 @@ namespace s649PBR
                 string title = "[PBR-Main:TThrown]";
                 if (trait == null) { Log(title + "*Error* NoTrait"); return false; }
                 if (c_thrower == null) { Log(title + "*Error* NoChara"); return false; }
+                if (point == null) { Log(title + "*Error* NoPoint"); return false; }
                 if (Cf_Allow_Throw)
                 {
                     bool isDrink = trait is TraitDrink;
@@ -472,27 +436,31 @@ namespace s649PBR
             }
             public static string GetStr(int arg)
             {
-                return arg.ToString();
+                return (arg != 0) ? arg.ToString() : "0";
+            }
+            public static string GetStr(string s) 
+            {
+                return s;
             }
             public static string GetStr(Point arg)
             {
-                if (arg == null) { return ""; }
-                return arg.ToString();
+                return (arg != null) ? arg.ToString() : "-";
+            }
+            public static string GetStr(Trait arg)
+            {
+                return (arg != null) ? arg.ToString() : "-";
             }
             public static string GetStr(Card arg)
             {
-                if (arg == null) { return ""; }
-                return arg.NameSimple;
+                return (arg != null) ? arg.NameSimple : "-";
             }
-            public static string GetStr(ActType at)
+            public static string GetStr(ActType arg)
             {
-                if (at == null) { return ""; }
-                return at.ToString();
+                return (arg != null) ? arg.ToString() : "-";
             }
-            public static string GetStr(BottleIngredient bi)
+            public static string GetStr(BottleIngredient arg)
             {
-                if (bi == null) { return ""; }
-                return bi.ToString();
+                return (arg != null) ? arg.ToString() : "-";
             }
 
             //list関連-----------------------------------------------------------------------------------------------------
@@ -694,6 +662,85 @@ if(PatchMain.configDebugLogging)
 
 //////trash box//////////////////////////////////////////////////////////////////////////////////////////////////
 ///
+
+/*
+            private static Thing DoRecycleBottle(Thing t, Chara c, int acttype, bool broken = false, Point p = null)
+            {
+                //
+                // Thing t に使われるBottleIngをidで返す->リサイクル実行:成否をThingで返す
+                //
+                string title = "[PBR:DRB]";
+                string text = "";
+                //text += "Thing:" + t.NameSimple;
+                //text += "/C:" + c.NameSimple;
+                //text += "/Act:" + GetStr(acttype);
+                //text += "/Br:" + GetStr(broken);
+                //text += "/P:" + GetStr(p);
+                //Log(title + text, 1);
+               
+
+                Thing result = null;
+                BottleIngredient bi = new BottleIngredient(t);
+                text += "BI:" + GetStr(bi.idIngredient) + ":"+ bi.id + "(" + bi.orgThing.id + ")";
+                //bool regulation = CheckRegulation(bi.isJunk, c, acttype);
+                //text += "/reg:" + GetStr(regulation);
+                bool tryBrake = false;
+                bool tryConsume = false;
+                bool bIER1, bIER2;
+
+                //bool isEnableRecycle = bi.IsEnableRecycle();
+                //int bottleIng = ReturnID(t);
+                bIER1 = bi.IsEnableRecycle();
+                text += "/IER1:" + GetStr(bIER1);
+                if (regulation && bIER1)
+                {
+                    if (broken) //破損処理
+                    {
+                        tryBrake = bi.TryBrake();
+                        text += "/tB:" + GetStr(tryBrake);
+                    }
+                    if (acttype == ActType.Use)
+                    { //薬の消費処理
+                        tryConsume = bi.TryConsume();
+                        text += "/tC:" + GetStr(tryConsume);
+                    }
+                    bIER2 = bi.IsEnableRecycle();
+                    text += "/IER2:" + GetStr(bIER2);
+                    if (bIER2)//再チェック
+                    {
+                        string GetID() = bi.id;
+                        if (bi.isBroken || bi.isConsumed) { GetID() = bi.GetChangedID(); }
+                        text += "/rsID:" + GetID();
+                        result = ThingGen.Create(GetID());
+                        text += "/rs:" + result.NameSimple;
+                        if (p == null)
+                        {
+                            if (c.IsPC) 
+                            {
+                                text += "/p:-/isPC:T";
+                                c.Pick(result);
+                            } else 
+                            {
+                                text += "/p:-/isPC:F";
+                                EClass._zone.AddCard(result, c.pos);
+                            }
+                            PatchMain.Log(title + "Create:" + text);
+                        }
+                        else
+                        {
+                            text += "/p:" + p.ToString();
+                            EClass._zone.AddCard(result, p);
+                            PatchMain.Log(title + "CreateTo:" + text);
+                        }
+                        return result;
+                    }
+                    PatchMain.Log(title + "NotCreated:" + text);
+                    return null;
+                }
+                PatchMain.Log(title + "NotCreated:" + text);
+                return null;
+            }
+            */
 //if (!IsEnableRecycle(bottleIng, c, acttype)) { return false; }
 //int oNum = t.Num;
 //int prodN = ReturnID(t);
