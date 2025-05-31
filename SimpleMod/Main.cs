@@ -185,8 +185,8 @@ namespace s649PBR
                 text += "/C:" + GetStr(c);
                 text += "/P:" + GetStr(p);
                 
-                //text += "/rsID:" + resultID;
-                Thing result = ThingGen.Create(bi.resultID).SetNum(bi.num);
+                //text += "/rsID:" + GetID();
+                Thing result = ThingGen.Create(bi.GetID()).SetNum(bi.num);
                 text += "/rs:" + result.NameSimple;
                 if (p == null)
                 {
@@ -260,7 +260,7 @@ namespace s649PBR
             public static Thing ThingGenFromBI(BottleIngredient bi) 
             {
                 if (!bi.IsEnableRecycle()) { return null; }
-                Thing result = ThingGen.Create(bi.resultID).SetNum(bi.num);
+                Thing result = ThingGen.Create(bi.GetID()).SetNum(bi.num);
                 return result;
             }
             /*
@@ -308,10 +308,10 @@ namespace s649PBR
                     text += "/IER2:" + GetStr(bIER2);
                     if (bIER2)//再チェック
                     {
-                        string resultID = bi.id;
-                        if (bi.isBroken || bi.isConsumed) { resultID = bi.GetChangedID(); }
-                        text += "/rsID:" + resultID;
-                        result = ThingGen.Create(resultID);
+                        string GetID() = bi.id;
+                        if (bi.isBroken || bi.isConsumed) { GetID() = bi.GetChangedID(); }
+                        text += "/rsID:" + GetID();
+                        result = ThingGen.Create(GetID());
                         text += "/rs:" + result.NameSimple;
                         if (p == null)
                         {
@@ -492,7 +492,7 @@ namespace s649PBR
             public static string GetStr(BottleIngredient bi)
             {
                 if (bi == null) { return ""; }
-                return bi.id + "(" + bi.resultID + ")";
+                return bi.ToString();
             }
 
             //list関連-----------------------------------------------------------------------------------------------------
@@ -506,8 +506,8 @@ namespace s649PBR
 /*
 //関連するレシピリスト・
 除外リスト
-    初級錬金道具（レジンしか使ってないことになってしまうため）
-    渇きの壺(中に使われているのかもしれない)
+    初級錬金道具:tool_alchemy（レジンしか使ってないことになってしまうため）
+    //////渇きの壺(中に使われているのかもしれない)
 
 完成品にBIがあるもの
 ・初級錬金道具のレシピ全般
@@ -697,7 +697,7 @@ if(PatchMain.configDebugLogging)
 //if (!IsEnableRecycle(bottleIng, c, acttype)) { return false; }
 //int oNum = t.Num;
 //int prodN = ReturnID(t);
-//string resultid = bi.id;
+//string GetID() = bi.id;
 //Thing prodT = null;
 //string prod = "";
 /*
@@ -708,32 +708,32 @@ if (broken) //破損処理
     switch (bi.idIngredient)
     {
         case BottleIngredient.Bottle_Empty:
-            resultid = "glass";
+            GetID() = "glass";
             break;
         case BottleIngredient.Bucket_Empty:
-            //resultid = "bucket_empty";
+            //GetID() = "bucket_empty";
             break;
         case BottleIngredient.None://nothing
             break;
         case BottleIngredient.Junk_Bottles:
-            resultid = "fragment";//bottle
+            GetID() = "fragment";//bottle
             break;
         case BottleIngredient.Junk_Can:
-            //resultid = GetRandomJunkCan();//can
+            //GetID() = GetRandomJunkCan();//can
             break;
         case BottleIngredient.Can:
-            //resultid = "";//can not junk
+            //GetID() = "";//can not junk
             break;
         case BottleIngredient.Drug:
-            resultid = "";
-            //resultid = "";//(!broken) ? "231" : "";//drug bin
+            GetID() = "";
+            //GetID() = "";//(!broken) ? "231" : "";//drug bin
             break;
         case BottleIngredient.Junk_Glass:
-            resultid = "glass";
-            //resultid = "";//(!broken) ? "231" : "";//drug bin
+            GetID() = "glass";
+            //GetID() = "";//(!broken) ? "231" : "";//drug bin
             break;
         default:
-            //resultid = "";
+            //GetID() = "";
             break;
     }
 
@@ -821,7 +821,7 @@ internal static void ExeRecycle(List<RecycleThing> rlist, Chara c)
                 if (!IsEnableRecycle(bottleIng, c, acttype)) { return false; }
                 //int oNum = t.Num;
                 //int prodN = ReturnID(t);
-                string resultid = GetStringID(bottleIng);
+                string GetID() = GetStringID(bottleIng);
                 //Thing prodT = null;
                 //string prod = "";
                 if (broken) //破損処理
@@ -829,32 +829,32 @@ internal static void ExeRecycle(List<RecycleThing> rlist, Chara c)
                     switch (bottleIng)
                     {
                         case BottleIngredient.Bottle_Empty:
-                            resultid = "glass";
+                            GetID() = "glass";
                             break;
                         case BottleIngredient.Bucket_Empty:
-                            //resultid = "bucket_empty";
+                            //GetID() = "bucket_empty";
                             break;
                         case BottleIngredient.None://nothing
                             break;
                         case BottleIngredient.Junk_Bottles:
-                            resultid = "fragment";//bottle
+                            GetID() = "fragment";//bottle
                             break;
                         case BottleIngredient.Junk_Can:
-                            //resultid = GetRandomJunkCan();//can
+                            //GetID() = GetRandomJunkCan();//can
                             break;
                         case BottleIngredient.Can:
-                            //resultid = "";//can not junk
+                            //GetID() = "";//can not junk
                             break;
                         case BottleIngredient.Drug:
-                            resultid = "";
-                            //resultid = "";//(!broken) ? "231" : "";//drug bin
+                            GetID() = "";
+                            //GetID() = "";//(!broken) ? "231" : "";//drug bin
                             break;
                         case BottleIngredient.Junk_Glass:
-                            resultid = "glass";
-                            //resultid = "";//(!broken) ? "231" : "";//drug bin
+                            GetID() = "glass";
+                            //GetID() = "";//(!broken) ? "231" : "";//drug bin
                             break;
                         default:
-                            //resultid = "";
+                            //GetID() = "";
                             break;
                     }
                 }
@@ -862,9 +862,9 @@ internal static void ExeRecycle(List<RecycleThing> rlist, Chara c)
 
                 //if(prod == ""|| prod == "qqq"){return null;} else {return ThingGen.Create(prod);} 
                 //Thing result;
-                if (resultid != "")
+                if (GetID() != "")
                 {
-                    result = ThingGen.Create(resultid);
+                    result = ThingGen.Create(GetID());
                     if (p == null)
                     {
                         if (c.IsPC) { c.Pick(result); } else { EClass._zone.AddCard(result, c.pos); }

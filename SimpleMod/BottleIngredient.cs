@@ -69,6 +69,9 @@ namespace s649PBR
             public const int None = 0;
             public const int Bottle_Empty = 1;
             public const int Bucket_Empty = 2;
+            public const int Milk = 3;
+            public const int Milk_Can = 4;
+            public const int Snow = 5;
             public const int Junk_Bottles = -1;
             public const int Junk_Can = -2;
             public const int Can = -3;
@@ -78,19 +81,20 @@ namespace s649PBR
             public const int Junk_Cup = -7;
             public const int Other = -999;
 
-            public string id { get; private set; }
-            public string resultID { get; private set; }
-            //public string orgID { get; private set; }
+            private string id { get; set; }
+            private string resultID { get; set; }
+            private string orgID { get; set; }
             // Change the `idIngredient` property to include a private setter to allow assignment within the class.
             public int idIngredient { get; private set; }
-            public string orgCategory { get; private set; }
-            public string orgUnit { get; private set; }
-            public Thing orgThing;
+            private string orgCategory { get; set; }
+            private string orgUnit { get; set; }
+            public Thing orgThing { get; private set; }
             public int num;
             public bool isBroken;//壊れた？
             public bool isConsumed;//消費された？
-            public bool isProhibition;//還元禁止・ing用
-            //public bool ConsumeIng;//還元禁止・result用
+            public bool isProhibition;//還元禁止・ing用※未実装
+            public bool isInstalled;//還元禁止・result用
+            //public bool ConsumeIng;//
 
             public bool isJunk { get; private set; }
 
@@ -102,39 +106,34 @@ namespace s649PBR
                 //orgThing = thing;
                 //orgID = thing.id;
                 //orgTrait = thing.trait;
+                //init
                 orgCategory = thing.sourceCard.category;
                 orgUnit = thing.source.unit;
                 orgThing = thing;
+                orgID = thing.id;
                 isBroken = false;
                 isConsumed = false;
-                
-                int intID = GetIDIngredient(thing);
-                idIngredient = intID;
-                id = GetStringID(intID);
+                isInstalled = false;
+                isProhibition = false;
+                idIngredient = 0;
+                id = "";
+                num = 1;
+
+                //set
+                SetIDIngredient(thing);
+                //idIngredient = intID;
+                SetStringID();
                 resultID = id;
-                isJunk = (intID < 0) ? true : false;
-                num = n1;
-                isProhibition = IsProhibition();
+                isJunk = (idIngredient < 0) ? true : false;
+                SetProhibition();
+                num *= n1;
                 //isJunk = false;
             }
-            /*
-            public BottleIngredient(string argID, string argCategory, string argUnit, int n1 = 1)
+           
+            private void SetProhibition() 
             {
-                //orgThing = thing;
-                orgID = argID;
-                //orgTrait = thing.trait;
-                orgCategory = argCategory;
-                orgUnit = argUnit;
-                int intID = GetIDIngredient(argID);
-                idIngredient = intID;
-                id = GetStringID(intID);
-                isJunk = (intID < 0) ? true : false;
-                num = n1;
-                //isJunk = false;
-            }*/
-            private bool IsProhibition() 
-            {
-                return false;
+                if (idIngredient == BottleIngredient.Snow) { isProhibition = true; }
+                //return false;
                 /*
                 var trait = orgThing.trait;
                 if (trait is TraitAlchemyBench || trait is TraitToolWaterPot)
@@ -143,60 +142,72 @@ namespace s649PBR
                 }
                 else*/
             }
-            private int GetIDIngredient(Thing t)
+            private void SetIDIngredient(Thing t)
             {
-                if (t == null) { return 0; }
+                //idIngredientをsetしつつ結果をリターン
+                if (t == null) { return; }
                 //Trait trait = t.trait;
                 //string category = t.sourceCard.category;
                 //string unit = t.source.unit;
-                return GetIDIngredient(t.id, t.trait);
+                SetIDIngredient(t.id, t.trait);
             }
 
-            private int GetIDIngredient(string tid, Trait trait = null)
+            private void SetIDIngredient(string tid, Trait trait = null)
             {
+                int result;
                 string category = orgCategory;
                 string unit = orgUnit;
                 //string category = orgThing.sourceCard.category;
                 //string unit = orgThing.source.unit;
-                if (tid == "") { return 0; }
+                if (tid == "") { return; }
 
                 if (trait != null)
                 {   //trait持ち
-                    if (trait is TraitSnow) { return BottleIngredient.None; }
-                    if (trait is TraitDye) { return BottleIngredient.Bottle_Empty; }
-                    if (trait is TraitPotion || trait is TraitPotionRandom || trait is TraitPotionEmpty)
+                    if (trait is TraitSnow) { result = BottleIngredient.Snow; }
+                    else if (trait is TraitDye) { result = BottleIngredient.Bottle_Empty; }
+                    else if (trait is TraitPotion || trait is TraitPotionRandom || trait is TraitPotionEmpty)
                     {
-                        if (category == "drug") { return BottleIngredient.Drug; } 
-                        else { return BottleIngredient.Bottle_Empty; }
-                        //return 1;
+                        if (category == "drug") { result = BottleIngredient.Drug; }
+                        else { result = BottleIngredient.Bottle_Empty; }
+                        //result = 1;
                     }
-                    if (trait is TraitPerfume) { return BottleIngredient.Junk_Bottles; }
-                    if (trait is TraitDrinkMilk || trait is TraitDrinkMilkMother)
+                    else if (trait is TraitPerfume) { result = BottleIngredient.Junk_Bottles; }
+                    else if (trait is TraitDrinkMilk || trait is TraitDrinkMilkMother)
                     {
-                        if (unit == "cup") { return BottleIngredient.Junk_Bottles; }//kofi:718 etc
-                        if (unit == "bowl") { return BottleIngredient.Junk_Bowl; }//coconut j:789 etc
-                        return BottleIngredient.None;
+                        if (unit == "cup") { result = BottleIngredient.Junk_Bottles; }//kofi:718 etc
+                        else if (unit == "bowl") { result = BottleIngredient.Junk_Bowl; }//coconut j:789 etc
+                        result = BottleIngredient.Milk;
                     }
-                    if (trait is TraitDrink)
+                    else if (trait is TraitDrink)
                     {
                         if (category == "booze")
                         {
-                            if (unit == "jug") { return BottleIngredient.Junk_Glass; }//ビア:58
-                            if (unit == "glass") { return BottleIngredient.Junk_Glass; }//ワイン:732 etc
-                            return BottleIngredient.Junk_Bottles;
+                            if (unit == "jug") { result = BottleIngredient.Junk_Glass; }//ビア:58
+                            else if (unit == "glass") { result = BottleIngredient.Junk_Glass; }//ワイン:732 etc
+                            result = BottleIngredient.Junk_Bottles;
                         }
                         else if (category == "_drink")
                         {
-                            if (unit == "bucket") { return BottleIngredient.Bucket_Empty; }
-                            if (unit == "pot") { return BottleIngredient.Bottle_Empty; }
-                            if (unit == "bottle") { return BottleIngredient.Junk_Bottles; }
-                            if (unit == "jar") { return BottleIngredient.Junk_Bottles; }//ビン:59
-                            if (unit == "cup") { return BottleIngredient.Junk_Cup; }//お茶:503
-                            if (unit == "can") { return BottleIngredient.Junk_Can; }//缶ジュース:504,505
+                            if (unit == "bucket") { result = BottleIngredient.Bucket_Empty; }
+                            else if (unit == "pot") { result = BottleIngredient.Bottle_Empty; }
+                            else if (unit == "bottle") { result = BottleIngredient.Junk_Bottles; }
+                            else if (unit == "jar") { result = BottleIngredient.Junk_Bottles; }//ビン:59
+                            else if (unit == "cup") { result = BottleIngredient.Junk_Cup; }//お茶:503
+                            else if (unit == "can") { result = BottleIngredient.Junk_Can; }//缶ジュース:504,505
                         }
                         //else if (category == "milk") { }
                     }
-                    return BottleIngredient.None;
+                    else if (tid == "toolAlchemy") 
+                    {
+                        result = Bottle_Empty;
+                        isInstalled = true;
+                        num = 4;
+                    }
+
+
+                    result = BottleIngredient.None;
+                    idIngredient = result;
+                    return;
                 }
                 else //ThingがCreateされておらず、idから呼び出す時に使う。ThingVには使えない？Foodは対応する
                 {   //traitナシ・TraitFactoryから呼び出すときのみ・ThingやFoodなど
@@ -217,7 +228,7 @@ namespace s649PBR
                         default:
                             return BottleIngredient.None;
                     }*/
-                    return 0;
+                    return;
                 }
             }
             //private static bool IsJunk
@@ -225,11 +236,11 @@ namespace s649PBR
             //    return idIngredient < 0;
             //}
             
-            private string GetStringID(int bi)
+            private void SetStringID()
             {
                 string resultid = "";
 
-                switch (bi)
+                switch (idIngredient)
                 {
                     case BottleIngredient.Bottle_Empty:
                         resultid = "potion_empty";
@@ -264,16 +275,16 @@ namespace s649PBR
                         resultid = "";
                         break;
                 }
-                return resultid;
+                resultID =  resultid;
             }
-            public string GetChangedID() 
+            public string GetID() 
             {
-                return resultID;
+                if (IsChanged()) { return resultID; } else { return id; }
             }
-            //public bool IsEnableRecycle()
-            //{
-            //    return IsValid();
-            //}
+            private bool IsChanged() 
+            {
+                return isConsumed || isBroken;
+            }
             public bool TryBrake() 
             {
                 if (!IsValid()) { return false; }
@@ -285,6 +296,11 @@ namespace s649PBR
                         return true;
                     case BottleIngredient.Bucket_Empty:
                         break;
+                    case BottleIngredient.Snow:
+                        isBroken = true;
+                        isConsumed = true;
+                        resultID = "";
+                        return true;
                     case BottleIngredient.None:
                         break;
                     case BottleIngredient.Junk_Bottles:
@@ -324,11 +340,11 @@ namespace s649PBR
                 //bool b1 = IsValid();
                 //bool b2 = num >= 1;
                 //PatchMain.Log(title + GetStr(b1) + "/" + GetStr(b2), 2);
-                return IsValid() && num >= 1;
+                return IsValid() && !isInstalled && !isConsumed && !isProhibition;
             }
             public bool IsValid() 
             {
-                return (id != "" && idIngredient != 0) ? true : false;
+                return (id != "" && idIngredient != 0 && num >= 1) ? true : false;
             }
             public bool IsEqualID(BottleIngredient bi)
             {
@@ -361,6 +377,14 @@ namespace s649PBR
                     //if (this.num <= 0) { isValid = false; }
                 }
             }
+            public override string ToString()
+            {
+                string text = id;
+                if (IsChanged()) { text += ":" + resultID; }
+                text += "(" + orgID + ")";
+                if (num > 1) { text += "." + num.ToString(); }
+                return text;
+            }
             //private static List<string> JunkBottleList = new List<string> { "726", "727", "728" };
             //private static List<string> JunkCanList = new List<string> { "236", "529", "1170" };
             public string GetRandomJunkBottle()
@@ -377,7 +401,33 @@ namespace s649PBR
             }
             
         }//class:BottleIngredient
-        /*
+        
+    }//<<end namespaceSub
+}//>end namespaceMain
+
+
+
+//trash/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+/*
+           public BottleIngredient(string argID, string argCategory, string argUnit, int n1 = 1)
+           {
+               //orgThing = thing;
+               orgID = argID;
+               //orgTrait = thing.trait;
+               orgCategory = argCategory;
+               orgUnit = argUnit;
+               int intID = SetIDIngredient(argID);
+               idIngredient = intID;
+               id = SetStringID(intID);
+               isJunk = (intID < 0) ? true : false;
+               num = n1;
+               //isJunk = false;
+           }*/
+/*
         public class RecycleThing
         {
             private static readonly string title = "[RQ]";
@@ -533,17 +583,6 @@ namespace s649PBR
                 PatchMain.Log("[PBR:RQ]RecycleQueue:Cleared", 1);
             }
         }*/
-    }//<<end namespaceSub
-}//>end namespaceMain
-
-
-
-
-
-
-
-
-
 /*
             private static bool GetRegulation(Chara c, int at)
             {

@@ -11,6 +11,7 @@ using UnityEngine;
 using static Recipe;
 using Debug = UnityEngine.Debug;
 using s649PBR.BIClass;
+using static s649PBR.Main.PatchMain;
 
 namespace s649PBR
 {//>begin NamespaceMain
@@ -26,24 +27,16 @@ namespace s649PBR
             static Thing lastMixedThing;
             static int lastCraftCount;
             static int recycleSet;
-            //static bool isProhibition;
-            //static bool ConsumeIng;
 
-            //static List<RecycleThing> processRecycleList;
-            private static bool ConsumeIng(Thing t) 
-            {
-                if (t.id == "tool_alchemy" || t.id == "waterPot") { return true; } else { return false; }
-            }
-            private static bool ExeRecycle(bool consumeIng)
+            private static bool ExeRecycle()
             {
                 string text = "[recycle]";
                 bool b = false;
                 foreach (BottleIngredient bi in recycleQueues)
                 {
-
-                    if (bi.IsEnableRecycle() && !consumeIng) 
+                    if (bi.IsEnableRecycle()) 
                     {
-                        Thing t = ThingGen.Create(bi.id).SetNum(bi.num);
+                        Thing t = ThingGen.Create(bi.GetID()).SetNum(bi.num);
                         EClass._zone.AddCard(t, EClass.pc.pos);
                         text += "N:" + t.NameSimple + "/n:" + t.Num.ToString();
                         b = true;
@@ -58,7 +51,7 @@ namespace s649PBR
                 if (!bi.IsEnableRecycle()) { return false; }
                 foreach (BottleIngredient bottleIngredient in recycleQueues) 
                 {
-                    if (bottleIngredient.IsEqualID(bi)) 
+                    if (bottleIngredient.IsEqualID(bi) && bi.IsEnableRecycle()) 
                     {
                         bottleIngredient.AddNum(bi);
                         return true;
@@ -72,7 +65,7 @@ namespace s649PBR
                 if (!bi.IsEnableRecycle() || !bi.isProhibition) { return false; }
                 foreach (BottleIngredient bottleIngredient in recycleQueues)
                 {
-                    if (bottleIngredient.IsEqualID(bi))
+                    if (bottleIngredient.IsEqualID(bi) && bi.IsEnableRecycle())
                     {
                         bottleIngredient.Decrease(bi);
                         return true;
@@ -83,12 +76,12 @@ namespace s649PBR
             private static void SetMultiNum(int argNum)
             {
                 if (recycleQueues.Count <= 0) { return; }
-                foreach (BottleIngredient bottleIngredient in recycleQueues)
+                foreach (BottleIngredient bi in recycleQueues)
                 {
-                    bottleIngredient.SetMultiNum(argNum);
+                    bi.SetMultiNum(argNum);
                 }
             }
-            private static string GetStr(List<BottleIngredient> biList) 
+            private static string GetStrings(List<BottleIngredient> biList) 
             {
                 string text = "";
                 if (biList.Count > 0)
@@ -97,7 +90,7 @@ namespace s649PBR
                     {
                         if (bi.IsEnableRecycle())
                         {
-                            text += bi.id + "." + bi.num.ToString() + "/";
+                            text += bi.ToString() + "/";
                         }
                     }
                 }
@@ -129,17 +122,7 @@ namespace s649PBR
                     List<Ingredient> ingredients = (recipe != null) ? recipe.ingredients : null;
                     //checkRecipesource
                     if (recipe != null && ingredients != null)
-                    {   //craftしたThingをうまくFook出来なかったのでrecipeからBIを生成
-                        //RecipeCardからfook出来た
-                        /*
-                        var id = recipe.id;
-                        if (!EClass.sources.things.map.ContainsKey(id)) { PatchMain.Log(title + "*error* idが無いよ"); return; }
-                        var category = EClass.sources.things.map[id].category;
-                        var unit = EClass.sources.things.map[id].unit;
-                        var traits = EClass.sources.things.map[id].trait;
-                        int num = __instance.num;//製作回数
-                        var resultBI = new BottleIngredient(id, category, unit, traits, num);
-                        */
+                    {   
 
                         string text = "";
                         text += "recipe:" + recipe.GetName();
@@ -156,7 +139,7 @@ namespace s649PBR
 
                             if (bi.IsEnableRecycle())
                             {
-                                text += ing.id + "." + ing.req + ":bi-" + bi.id; ;
+                                text += "bi:" + GetStr(bi) ;
                                 AddBIToQueues(bi);
                             }
                             text += "/";
@@ -167,19 +150,8 @@ namespace s649PBR
                         //text += "/rBI:" + resultBI.ToString();
                         PatchMain.Log(title + text, 1);
 
-                        string recycleString = "queue:" + GetStr(recycleQueues);
-                        /*
-                        if (recycleQueues.Count > 0)
-                        {
-                            foreach (BottleIngredient bi in recycleQueues)
-                            {
-                                if(bi.IsEnableRecycle())
-                                {
-                                    recycleString += bi.id + "." + bi.num.ToString() + "/";
-                                }
-                            }
-                        }
-                        else { recycleString += "-"; }*/
+                        string recycleString = "queue:" + GetStrings(recycleQueues);
+                        
                         PatchMain.Log(title + recycleString, 1);
 
                         //queueに追加する
@@ -243,7 +215,7 @@ namespace s649PBR
                         if (thing == null) { break; }
 
                         var bi = new BottleIngredient(thing);
-                        PatchMain.Log(title + "BIcheck:" + thing.NameSimple + "/bi:" + bi.id, 1);
+                        PatchMain.Log(title + "BIcheck:" + thing.NameSimple + "/bi:" + bi.ToString(), 1);
                         //text += "[" + thing.NameSimple + ":" + bi + ":" + thing.Num + "]";
                         if (bi.IsEnableRecycle())
                         {
@@ -252,10 +224,10 @@ namespace s649PBR
                             bool b = AddBIToQueues(bi);
                             if (b) 
                             {
-                                PatchMain.Log(title + "processRLSet:Success/" + GetStr(recycleQueues), 1);
+                                PatchMain.Log(title + "processRLSet:Success/" + GetStrings(recycleQueues), 1);
                             } else 
                             {
-                                PatchMain.Log(title + "processRLSet:Failed....../" + GetStr(recycleQueues), 1);
+                                PatchMain.Log(title + "processRLSet:Failed....../" + GetStrings(recycleQueues), 1);
                             }
                             
                         }
@@ -263,14 +235,6 @@ namespace s649PBR
                         //PatchMain.Log(text, 1);
                     }
                     recycleSet++;
-                    
-
-                    //string resultBI = PatchMain.GetStringID(__result);
-                    //productにbottleingが含まれている場合はリターンを減産する
-                    //PatchMain.RemoveFromList(recycleList, new RecycleThing(resultBI), __result.Num);
-                    //recycleQueue = new RecycleQueue(recycleList);
-                    //PatchMain.Log(title + "QueueSet:" + recycleQueue.ToString(), 1);
-                    //PatchMain.ExeRecycle(recycleList, EClass.pc);
                 }
                 else { PatchMain.Log(title + "SetSkipped", 2); }
                 return true;
@@ -297,31 +261,7 @@ namespace s649PBR
 
                 if (recycleSet == PhaseRecycle.IngSet)
                 {
-                    //string text = "ings:";
-                    //string resultBI = "";
-                    //var recycleList = new List<RecycleThing>();
-
-                    //List<Thing> ings = ai.ings;
-                    /*
-                    if (ings == null || ings.Count <= 0)
-                    {
-                        PatchMain.Log(title + "NoIngs");
-                        return;
-                    }
-                    foreach (Thing thing in ings)
-                    {
-                        if (thing == null) { break; }
-                        string bi = PatchMain.GetStringID(thing);
-                        text += "[" + thing.NameSimple + ":" + bi.ToString() + ":" + thing.Num + "]";
-                        if (bi != "")
-                        {
-                            //result = DoRecycleBottle(t, ai.owner, ActType.Craft);
-                            PatchMain.AddThingToList(recycleList, new(bi, thing.Num));
-                        }
-                    }
-                    */
-                    //recycleSet = true;
-                    //PatchMain.Log(text, 1);
+                    
                     if (recycleQueues.Count > 0)
                     {
                         //string resultBI = PatchMain.GetStringID(__result);
@@ -334,21 +274,15 @@ namespace s649PBR
                             bool b = RemoveBIFromQueues(bi);
                             if (b)
                             {
-                                PatchMain.Log(title + "Remove:Success" + GetStr(recycleQueues), 1);
+                                PatchMain.Log(title + "Remove:Success" + GetStrings(recycleQueues), 1);
                             }
-                            else { PatchMain.Log(title + "Remove:Fail" + GetStr(recycleQueues), 1); }
+                            else { PatchMain.Log(title + "Remove:Fail" + GetStrings(recycleQueues), 1); }
                         }
                         else
-                        { PatchMain.Log(title + "Result:NoBI" + GetStr(recycleQueues), 1); }
+                        { PatchMain.Log(title + "Result:NoBI" + GetStrings(recycleQueues), 1); }
 
-                        //if (PatchMain.IsValid(recycleQueues))
-                        //{
-                        //    recycleQueues = new RecycleQueue(recycleQueues);
-                        //    PatchMain.Log(title + "QueueSet:" + recycleQueues.ToString(), 1);
-                        //}
-                        //else { PatchMain.Log(title + "QueueSet:Fail", 1); }
                     }
-                    else { PatchMain.Log(title + "NoRecycleQueue" + GetStr(recycleQueues), 1); }
+                    else { PatchMain.Log(title + "NoRecycleQueue" + GetStrings(recycleQueues), 1); }
                     
                     recycleSet++;
                     //PatchMain.ExeRecycle(recycleList, EClass.pc);
@@ -381,8 +315,8 @@ namespace s649PBR
                             RemoveBIFromQueues(bi);
                         } else { PatchMain.Log(title + "Result:NoBI"); }
                         SetMultiNum(__instance.num);//回数分倍化
-                        bool consumed = ConsumeIng(lastMixedThing);
-                        ExeRecycle(consumed);
+                        //bool consumed = ConsumeIng(lastMixedThing);
+                        ExeRecycle();
                         //recycleQueue.ExeRecycle();
                         //recycleQueue.RemoveAll();
                         PatchMain.Log(title + "RecycleDone!", 1);
@@ -396,9 +330,9 @@ namespace s649PBR
                     {
                         PatchMain.Log(title + "lastCraftCount:" + lastCraftCount.ToString());
                         SetMultiNum(lastCraftCount);
-                        PatchMain.Log(title + "RQ:" + GetStr(recycleQueues));
-                        bool consumed = ConsumeIng(lastMixedThing);
-                        ExeRecycle(consumed);
+                        PatchMain.Log(title + "RQ:" + GetStrings(recycleQueues));
+                        //bool consumed = ConsumeIng(lastMixedThing);
+                        ExeRecycle();
                         //recycleQueue.RemoveAll();
                         PatchMain.Log(title + "RecycleDone!", 1);
                     }
@@ -408,13 +342,6 @@ namespace s649PBR
                 //Chara owner = __instance.owner;
                 //PatchMain.Log("[PBR:craft]chara:" + owner.NameSimple, 1);
             }
-
-            
-
-
-
-
-            
         }//<<<end class:PatchExe
 
         public class PhaseRecycle
@@ -438,6 +365,50 @@ namespace s649PBR
 ////////////////////////////////////////////////
 */
 
+
+/*
+                        if (recycleQueues.Count > 0)
+                        {
+                            foreach (BottleIngredient bi in recycleQueues)
+                            {
+                                if(bi.IsEnableRecycle())
+                                {
+                                    recycleString += bi.id + "." + bi.num.ToString() + "/";
+                                }
+                            }
+                        }
+                        else { recycleString += "-"; }*/
+//string resultBI = PatchMain.GetStringID(__result);
+//productにbottleingが含まれている場合はリターンを減産する
+//PatchMain.RemoveFromList(recycleList, new RecycleThing(resultBI), __result.Num);
+//recycleQueue = new RecycleQueue(recycleList);
+//PatchMain.Log(title + "QueueSet:" + recycleQueue.ToString(), 1);
+//PatchMain.ExeRecycle(recycleList, EClass.pc);
+//static bool isProhibition;
+//static bool ConsumeIng;
+
+//static List<RecycleThing> processRecycleList;
+//private static bool ConsumeIng(Thing t) 
+//{
+//    if (t.id == "tool_alchemy" || t.id == "waterPot") { return true; } else { return false; }
+//}
+//craftしたThingをうまくFook出来なかったのでrecipeからBIを生成
+//RecipeCardからfook出来た
+/*
+var id = recipe.id;
+if (!EClass.sources.things.map.ContainsKey(id)) { PatchMain.Log(title + "*error* idが無いよ"); return; }
+var category = EClass.sources.things.map[id].category;
+var unit = EClass.sources.things.map[id].unit;
+var traits = EClass.sources.things.map[id].trait;
+int num = __instance.num;//製作回数
+var resultBI = new BottleIngredient(id, category, unit, traits, num);
+*/
+//if (PatchMain.IsValid(recycleQueues))
+//{
+//    recycleQueues = new RecycleQueue(recycleQueues);
+//    PatchMain.Log(title + "QueueSet:" + recycleQueues.ToString(), 1);
+//}
+//else { PatchMain.Log(title + "QueueSet:Fail", 1); }
 /*
                     if(resNum > 0)
                         {
@@ -712,3 +683,29 @@ if (Func_Craft_Allowed)
 //        PatchMain.AddThingToList(recycleList, new(bi, thing.Num));
 //    }
 //}
+
+//string text = "ings:";
+//string resultBI = "";
+//var recycleList = new List<RecycleThing>();
+
+//List<Thing> ings = ai.ings;
+/*
+if (ings == null || ings.Count <= 0)
+{
+    PatchMain.Log(title + "NoIngs");
+    return;
+}
+foreach (Thing thing in ings)
+{
+    if (thing == null) { break; }
+    string bi = PatchMain.GetStringID(thing);
+    text += "[" + thing.NameSimple + ":" + bi.ToString() + ":" + thing.Num + "]";
+    if (bi != "")
+    {
+        //result = DoRecycleBottle(t, ai.owner, ActType.Craft);
+        PatchMain.AddThingToList(recycleList, new(bi, thing.Num));
+    }
+}
+*/
+//recycleSet = true;
+//PatchMain.Log(text, 1);
