@@ -30,6 +30,10 @@ namespace s649PBR
             {
                 id = arg;
             }
+            public bool IsForAll()
+            {
+                return !(id >= 1 && id <= 3);
+            }
             //public bool IsValid() 
             //{
             //    if (id > 0 && id <= 4)
@@ -79,7 +83,7 @@ namespace s649PBR
             public const int Junk_Bowl = -6;
             public const int Junk_Cup = -7;
             public const int Other = -999;
-
+            //BIdata
             private int idIngredient { get; set; }//¯•Êq
             private string id { get; set; }//ƒGƒŠƒ““àID
             private string resultID { get; set; }//”j‘¹Œã‚ÌID
@@ -89,7 +93,7 @@ namespace s649PBR
             public bool isConsumed;//Á”ï‚³‚ê‚½H
             public bool isProhibition;//ŠÒŒ³‹Ö~Eing—p¦–¢À‘•
             public bool isInstalled;//ŠÒŒ³‹Ö~Eresult—p
-
+            //ThingSource
             private Thing _Thing { get; set; }
             private string _ThingID { get; set; }
             private Trait _Trait { get; set; }
