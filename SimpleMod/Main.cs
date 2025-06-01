@@ -85,10 +85,10 @@ namespace s649PBR
             }//<<<<end method:Start
             //------------------------------------------------------------------
             //OnDrinkの前に投げられたかどうか用-DoRecycle後にfalseする必要
-            public static bool IsThrown = false;
-            public static Chara lastThrower;
-            public static BottleIngredient lastCreatedBI;
-            public static Thing lastThrownThing;
+            //public static bool IsThrown = false;
+            //public static Chara lastThrower;
+            //public static BottleIngredient lastCreatedBI;
+            //public static Thing lastThrownThing;
 
             //internal method-------------------------------------------------------------------------------------------------
             internal static void Log(string text, int lv = 0)
@@ -147,6 +147,7 @@ namespace s649PBR
             {
                 if (!bi.IsEnableRecycle()) { return null; }
                 Thing result = ThingGen.Create(bi.GetID()).SetNum(bi.num);
+                result.ChangeMaterial(bi.idMaterial);
                 return result;
             }
             private static bool CheckBI(BottleIngredient bi) 
@@ -200,6 +201,52 @@ namespace s649PBR
                 //return false;
             }
             //recycle--------------------------------------------------------
+            internal static bool DoRecycle(BottleIngredient bi, Chara c, Point p = null) 
+            {
+                string title = "[PBR:Main:DR]";
+                if (bi == null || !bi.IsEnableRecycle()) { Log(title + "NoBI or CannotRecycle"); return false; }
+                if (c == null) { Log(title + "*Error* NoChara"); return false; }
+                //if (acttype == null) { Log(title + "*Error* ActType is Invalid"); return null; }
+
+                string text = "";
+                text += "BI:" + GetStr(bi);
+                text += "/C:" + c.NameSimple;
+                text += "/P:" + GetStr(p);
+                PatchMain.Log(title + "ArgCheck/" + text, 2);
+
+                // text = GetStr(acttype);
+                //text += "/bi:" + GetStr(bi);
+                //text += "/C:" + GetStr(c);
+                //text += "/P:" + GetStr(p);
+
+                //text += "/rsID:" + GetID();
+                if (!bi.IsEnableRecycle()) { Log(title + "CannotRecycle"); return false; }
+
+                Thing result = ThingGen.Create(bi.GetID()).SetNum(bi.num);
+                text = "rs:" + GetStr(result);
+                if (p == null)
+                {
+                    if (c.IsPC)
+                    {
+                        text += "/isPC:T";
+                        c.Pick(result);
+                    }
+                    else
+                    {
+                        text += "/isPC:F";
+                        EClass._zone.AddCard(result, c.pos);
+                    }
+                    PatchMain.Log(title + "Create:" + text);
+                }
+                else
+                {
+                    text += "/p:" + p.ToString();
+                    EClass._zone.AddCard(result, p);
+                    PatchMain.Log(title + "CreateTo:" + text);
+                }
+                return true;
+            }
+            
             internal static Thing DoRecycle(BottleIngredient bi, Chara c, ActType acttype, Point p = null) 
             {
                 string title = "[PBR:Main:DR]";
@@ -243,6 +290,41 @@ namespace s649PBR
                 }
                 return result;
             }
+
+            internal static BottleIngredient TryCreateBI(Thing t, Chara c, ActType acttype) 
+            {
+                //bool isSuccess = false;
+                string title = "[PBR:Main:TrRe]";
+                Log(title + "Start", 1);
+                //argcheck
+                if (t == null) { Log(title + "*Error* NoThing"); return null; }
+                if (c == null) { Log(title + "*Error* NoChara"); return null; }
+                if (acttype == null) { Log(title + "*Error* ActType is Not Valid"); return null; }
+
+                string text = GetStr(acttype) + "->";
+                text += "T:" + t.NameSimple + "/";
+                text += "C:" + c.NameSimple + "/";
+                //text += "/Br:" + GetStr(broken);
+                //text += "P:" + GetStr(p);
+                //Thing usedT = trait.owner.Thing;
+                //Log(title + "Thing->" + t.NameSimple + " :by " + c.NameSimple, 1);
+                PatchMain.Log(title + "ArgCheck/" + text, 1);
+                BottleIngredient bi = CreateBI(t);
+                if (bi == null)
+                {
+                    Log(title + "BI is null", 1);
+                    return null;
+                }
+                else { Log(title + "CreateBI->Success/" + GetStr(bi)); }
+                if (!CheckRegulation(bi, c, acttype))
+                {
+                    Log(title + "Regulation Failure", 1);
+                    return null;
+                }
+                else { Log(title + "Regulation Checked"); }
+                return bi;
+            }
+
             internal static bool TryRecycle(Thing t, Chara c, ActType acttype, Point p = null, bool broken = false)
             {
                 string title = "[PBR:Main:TrRe]";
@@ -300,8 +382,6 @@ namespace s649PBR
                     return false;
                 }
             }
-            
-            
             
             public static bool TryUse(Trait trait, Chara c) 
             {
@@ -380,10 +460,10 @@ namespace s649PBR
                 }
                 else
                 { Log(title + "Throw:NotAllowed", 1); }
-                IsThrown = false;
-                lastThrower = null;
-                lastCreatedBI = null;
-                lastThrownThing = null;
+                //IsThrown = false;
+                //lastThrower = null;
+                //lastCreatedBI = null;
+                //lastThrownThing = null;
                 if (isSuccess) { return true; } else { return false; }
                     
             }
@@ -428,8 +508,7 @@ namespace s649PBR
                 { Log(title + "Throw:NotAllowed", 1); }
                 if (isSuccess) { return true; } else { return false; }
             }
-            //local----------------------------------------------------------------------------------------------------------------------------------------
-            //public static PlayerType playerType;//コンフィグのプレイヤー識別用
+            //文字列出力：GetStr----------------------------------------------------------------------------------------------------------------------------------------
             private static string ToTF(bool b) { return (b) ? "T" : "F"; }
             public static string GetStr(bool b) {
                 return ToTF(b);
@@ -463,9 +542,7 @@ namespace s649PBR
                 return (arg != null) ? arg.ToString() : "-";
             }
 
-            //list関連-----------------------------------------------------------------------------------------------------
-
-
+            
         }//<<<end class:Main
         
         

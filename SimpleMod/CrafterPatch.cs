@@ -17,9 +17,8 @@ namespace s649PBR
 {//>begin NamespaceMain
     namespace CrafterPatchMain
     {//>>begin NamespaceSub
-        
 
-    [HarmonyPatch]
+        [HarmonyPatch]
         internal class PatchExe
         {//>>>begin class:PatchExe
             static string title = "[PBR:Craft]";
@@ -97,6 +96,7 @@ namespace s649PBR
                 else { text += "-"; }
                 return text;
             }
+
             [HarmonyPostfix]
             [HarmonyPatch(typeof(AI_UseCrafter), "OnStart")]
             private static void AI_UseCrafterOnStartPostPatch(AI_UseCrafter __instance)
@@ -165,12 +165,12 @@ namespace s649PBR
                     
 
                 }
-                else //notFactory
-                {
+                //else //notFactory
+                //{
                     
                     //PatchMain.Log(title + "processor:" + lastCraftCount.ToString(), 1);
                     //PatchMain.Log(title + "recycleList:" + GetStr(recycleList), 1);
-                }
+                //}
             }
             
             [HarmonyPostfix]

@@ -4,7 +4,6 @@ using HarmonyLib;
 using s649PBR.Main;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -81,20 +80,22 @@ namespace s649PBR
             public const int Junk_Cup = -7;
             public const int Other = -999;
 
-            private string id { get; set; }
-            private string resultID { get; set; }
-            private string _ThingID { get; set; }
-            // Change the `idIngredient` property to include a private setter to allow assignment within the class.
-            public int idIngredient { get; private set; }
-            private string _ThingCategory { get; set; }
-            private string _ThingUnit { get; set; }
-            private Thing _Thing { get; set; }
-            private Trait _Trait { get; set; }
+            private int idIngredient { get; set; }//識別子
+            private string id { get; set; }//エリン内ID
+            private string resultID { get; set; }//破損後のID
+            public int idMaterial { get; private set; }//材質ID
             public int num { get; private set; }
             public bool isBroken;//壊れた？
             public bool isConsumed;//消費された？
             public bool isProhibition;//還元禁止・ing用※未実装
             public bool isInstalled;//還元禁止・result用
+
+            private Thing _Thing { get; set; }
+            private string _ThingID { get; set; }
+            private Trait _Trait { get; set; }
+            private string _ThingCategory { get; set; }
+            private string _ThingUnit { get; set; }
+            private int _ThingIDMaterial { get; set; }
             //public bool ConsumeIng;//
 
             public bool isJunk { get; private set; }
@@ -113,6 +114,7 @@ namespace s649PBR
                 _ThingID = thing.id;
                 _ThingCategory = (thing.sourceCard != null)? thing.sourceCard.category : "";
                 _ThingUnit = (thing.source != null) ? thing.source.unit : "";
+                _ThingIDMaterial = thing.idMaterial;
                 
                 isBroken = false;
                 isConsumed = false;
@@ -121,12 +123,14 @@ namespace s649PBR
                 idIngredient = 0;
                 id = "";
                 resultID = "";
+                idMaterial = 0;
                 num = 1;
 
                 //set
-                SetIDIngredient(thing);
+                SetIDIngredient();
                 //idIngredient = intID;
                 SetStringID();
+                SetMaterial();
                 //resultID = id;
                 isJunk = (idIngredient < 0) ? true : false;
                 SetProhibition();
@@ -146,8 +150,9 @@ namespace s649PBR
                 }
                 else*/
             }
-            private void SetIDIngredient(Thing t)
+            private void SetIDIngredient()
             {
+                Thing t = _Thing;
                 string title = "[PBR-BI:SIDI]";
                 
                 //idIngredientをsetしつつ結果をリターン
@@ -389,6 +394,50 @@ namespace s649PBR
                 id =  resultid;
                 resultID = resultid;
             }
+            private void SetMaterial()
+            {
+                switch (idIngredient)
+                {
+                    case BottleIngredient.Bottle_Empty:
+                        //resultid = "potion_empty";
+                        idMaterial = _ThingIDMaterial;
+                        break;
+                    case BottleIngredient.Bucket_Empty:
+                        idMaterial = _ThingIDMaterial;
+                        //resultid = "bucket_empty";
+                        break;
+                    case BottleIngredient.None://nothing
+                        break;
+                    case BottleIngredient.Junk_Bottles:
+                        //resultid = GetRandomJunkBottle();//bottle
+                        idMaterial = _ThingIDMaterial;
+                        break;
+                    case BottleIngredient.Junk_Can:
+                        //resultid = GetRandomJunkCan();//can
+                        idMaterial = _ThingIDMaterial;
+                        break;
+                    case BottleIngredient.Can:
+                        //resultid = "";//can not junk
+                        break;
+                    case BottleIngredient.Drug:
+                        //resultid = "";//(!broken) ? "231" : "";//drug bin
+                        break;
+                    case BottleIngredient.Junk_Glass:
+                        //resultid = GetRandomJunkBottle();//(!broken) ? "231" : "";//drug bin
+                        break;
+                    case BottleIngredient.Junk_Bowl:
+                        //resultid = "176";//(!broken) ? "231" : "";
+                        idMaterial = _ThingIDMaterial;
+                        break;
+                    case BottleIngredient.Junk_Cup:
+                        //resultid = "202";//(!broken) ? "231" : "";
+                        idMaterial = _ThingIDMaterial;
+                        break;
+                    default:
+                        //resultid = "";
+                        break;
+                }
+            }
             public string GetID() 
             {
                 if (IsChanged()) { return resultID; } else { return id; }
@@ -502,7 +551,8 @@ namespace s649PBR
                 string text = "";
                 text += "IDI:" + GetStr(idIngredient);
                 text += "/id:" + GetStr(id);
-                text += "/num:" + GetStr(num) + ":";
+                text += "/idM:" + GetStr(idMaterial);
+                text += "/num:" + GetStr(num);
                 text += "/Flag:" + GetStr(isBroken);
                 text += ":" + GetStr(isConsumed);
                 text += ":" + GetStr(isInstalled);
@@ -512,6 +562,7 @@ namespace s649PBR
                 text += ":" + GetStr(_Trait);
                 text += ":" + _ThingCategory;
                 text += ":" + _ThingUnit;
+                text += ":" + GetStr(_ThingIDMaterial);
                 return text;
             }
             //private static List<string> JunkBottleList = new List<string> { "726", "727", "728" };

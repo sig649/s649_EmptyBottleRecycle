@@ -20,19 +20,58 @@ namespace s649PBR
         [HarmonyPatch]
         internal class PatchExe
         {//>>>begin class:PatchExe
+
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(ActThrow), "Throw", new Type[] { typeof(Card), typeof(Point), typeof(Card), typeof(Thing), typeof(ThrowMethod) })]
+            private static bool ThrowPrePatch(ActThrow __instance, Card c, Point p, Card target, Thing t, ThrowMethod method, ref BottleIngredient __state)
+            {//begin method
+                string title = "[PBR:AT.T;Pre]";
+                if (Cf_Allow_Throw)
+                {
+                    BottleIngredient bi;
+                    if (c == null) { Log(title + "*Error* NoCard"); return true; }
+                    Chara c_thrower = c.Chara;
+                    //Thing t = __instance
+                    bi = TryCreateBI(t, c_thrower, new ActType(ActType.Throw));
+
+                    //IsThrown = true;
+                    //lastThrower = c.Chara;
+                    //lastThrownThing = t;
+                    //lastCreatedBI = CreateBI(t);
+                    __state = bi;
+                    Log(title + "PreFinish", 2);
+                } 
+                return true;
+                
+            }//end method
+
             [HarmonyPostfix]
             [HarmonyPatch(typeof(ActThrow), "Throw", new Type[] { typeof(Card), typeof(Point), typeof(Card), typeof(Thing), typeof(ThrowMethod) })]
-            private static void ThrowPostPatch(ActThrow __instance, Card c, Point p, Card target, Thing t, ThrowMethod method)
-            {//begin method:TraitDrinkPatch
-                string title = "[PBR:AT.T]IsThrownSet";
-                IsThrown = true;
-                lastThrower = c.Chara;
-                lastThrownThing = t;
-                //lastCreatedBI = CreateBI(t);
+            private static void ThrowPostPatch(ActThrow __instance, Card c, Point p, Card target, Thing t, ThrowMethod method, BottleIngredient __state)
+            {//begin method
+                string title = "[PBR:AT.T:Post]";
+                if (Cf_Allow_Throw)
+                {
+                    string text = "";
+                    if (c == null) { Log(title + "*Error* NoCard"); return; }
+                    Chara c_thrower = c.Chara;
+                    BottleIngredient bi = __state;
+                    if (bi == null) { Log(title + "NoBI", 1); return; }
+                    bool tryBrake = bi.TryBrake();
+                    text += "/tB:" + GetStr(tryBrake) + "/";
+                    bool result = DoRecycle(bi, c_thrower, p);
+                    text += result ? "Done!" : "Not Done";
+                    //IsThrown = true;
+                    //lastThrower = c.Chara;
+                    //lastThrownThing = t;
+                    //lastCreatedBI = CreateBI(t);
 
-                PatchMain.Log(title + "Done", 2);
-            }//<<<<end method:TraitDrinkPatch
+                    PatchMain.Log(title + text, 2);
+                } else { Log(title + "'Throw' not Allowed", 3); }
+            }//end method
+        
         }//<<<end class:PatchExe
+
     }//<<end namespaceSub
 }//<end namespaceMain
 
