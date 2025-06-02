@@ -80,7 +80,7 @@ namespace s649PBR
             private void Start()
             {//>>>>begin method:Start
                 LoadConfig();
-                var harmony = new Harmony("PatchMain");
+                //var harmony = new Harmony("PatchMain");
                 new Harmony("PatchMain").PatchAll();
             }//<<<<end method:Start
             //------------------------------------------------------------------
