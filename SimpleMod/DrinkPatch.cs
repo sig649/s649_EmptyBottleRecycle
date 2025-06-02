@@ -20,7 +20,7 @@ namespace s649PBR
         {//>>>begin class:PatchExe
             [HarmonyPrefix]
             [HarmonyPatch(typeof(Chara), "Drink")]
-            private static bool TraitDrinkPrePatch(Chara __instance, Card t, ref BottleIngredient __state) 
+            private static bool CharaDrinkPrePatch(Chara __instance, Card t, ref BottleIngredient __state) 
             {
                 string title = "[PBR:T.D/Pre]";
                 if (Cf_Allow_Use)
@@ -41,17 +41,17 @@ namespace s649PBR
             }
 
             [HarmonyPostfix]
-            [HarmonyPatch(typeof(Trait), "Drink")]
-            private static void TraitDrinkPostPatch(TraitDrink __instance, Card t, BottleIngredient __state)
+            [HarmonyPatch(typeof(Chara), "Drink")]
+            private static void CharaDrinkPostPatch(Chara __instance, Card t, BottleIngredient __state)
             {
                 string title = "[PBR:T.D/Post]";
                 if (Cf_Allow_Use)
                 {
                     string text = "";
                     //if (t == null) { Log(title + "*Error* NoCard"); return; }
-                    if (__instance.owner == null) { Log(title + "*Error* NoOwner"); return; }
+                    if (t == null) { Log(title + "*Error* NoCard"); return; }
                     //if (t.isThing == false) { Log(title + "*Error* t is not Thing"); return; }
-                    Chara c_drinker = __instance.owner.Chara;
+                    Chara c_drinker = __instance;//.owner.Chara;//t.Chara;
                     //Thing thing = t.Thing;
                     BottleIngredient bi = __state;
                     if (bi == null) { Log(title + "NoBI", 1); return; }
