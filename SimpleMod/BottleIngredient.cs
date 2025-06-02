@@ -157,9 +157,9 @@ namespace s649PBR
             }
             private void SetIDIngredient()
             {
-                Thing t = _Thing;
                 string title = "[PBR-BI:SIDI]";
-                
+                Log(title + "Start", 3);
+                Thing t = _Thing;
                 //idIngredientÇsetÇµÇ¬Ç¬åãâ ÇÉäÉ^Å[Éì
                 if (t == null) { Log(title + "*Error* NoThing", 2); return; }
                 //Trait trait = t.trait;
@@ -191,11 +191,13 @@ namespace s649PBR
                                         result = BottleIngredient.Bottle_Empty;
                                         break;
                                     case TraitPotion:
-                                        result = BottleIngredient.Bottle_Empty;
+                                        if (category == "drug") 
+                                        { result = BottleIngredient.Drug; } 
+                                        else { result = BottleIngredient.Bottle_Empty; }
                                         break;
-                                    case TraitDrug:
-                                        result = BottleIngredient.Drug;
-                                        break;
+                                    //case TraitDrug:
+                                    //    result = BottleIngredient.Drug;
+                                    //    break;
                                     case TraitDrinkMilk:
                                         //if (trait is TraitDrinkMilkMother) { }
                                         switch (unit) 

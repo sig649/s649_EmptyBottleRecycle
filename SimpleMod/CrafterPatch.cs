@@ -34,6 +34,7 @@ namespace s649PBR
                 foreach (BottleIngredient bi in recycleQueues)
                 {
                     string title = "[PBR:ER]";
+                    Log(title + "Start", 3);
                     if (bi.IsEnableRecycle()) 
                     {
                         //Thing t = ThingGen.Create(bi.GetID()).SetNum(bi.num);

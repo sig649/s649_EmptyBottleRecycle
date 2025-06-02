@@ -22,9 +22,10 @@ namespace s649PBR
             [HarmonyPatch(typeof(Chara), "Drink")]
             private static bool CharaDrinkPrePatch(Chara __instance, Card t, ref BottleIngredient __state) 
             {
-                string title = "[PBR:T.D/Pre]";
+                string title = "[PBR:C.D/Pre]";
                 if (Cf_Allow_Use)
                 {
+                    Log(title + "Start", 3);
                     BottleIngredient bi;
                     Chara c_drinker = __instance;//.owner.Chara;//t.Chara;
                     if (t == null) { Log(title + "*Error* NoCard"); return true; }
@@ -44,9 +45,10 @@ namespace s649PBR
             [HarmonyPatch(typeof(Chara), "Drink")]
             private static void CharaDrinkPostPatch(Chara __instance, Card t, BottleIngredient __state)
             {
-                string title = "[PBR:T.D/Post]";
+                string title = "[PBR:C.D/Post]";
                 if (Cf_Allow_Use)
                 {
+                    Log(title + "Start", 3);
                     string text = "";
                     //if (t == null) { Log(title + "*Error* NoCard"); return; }
                     if (t == null) { Log(title + "*Error* NoCard"); return; }
