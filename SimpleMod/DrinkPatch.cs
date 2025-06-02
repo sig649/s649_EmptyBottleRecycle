@@ -19,17 +19,18 @@ namespace s649PBR
         internal class PatchExe
         {//>>>begin class:PatchExe
             [HarmonyPrefix]
-            [HarmonyPatch(typeof(Trait), "Drink")]
-            private static bool TraitDrinkPrePatch(TraitDrink __instance, Card t, ref BottleIngredient __state) 
+            [HarmonyPatch(typeof(Chara), "Drink")]
+            private static bool TraitDrinkPrePatch(Chara __instance, Card t, ref BottleIngredient __state) 
             {
                 string title = "[PBR:T.D/Pre]";
                 if (Cf_Allow_Use)
                 {
                     BottleIngredient bi;
+                    Chara c_drinker = __instance;//.owner.Chara;//t.Chara;
                     if (t == null) { Log(title + "*Error* NoCard"); return true; }
-                    if (__instance.owner == null) { Log(title + "*Error* NoOwner"); return true; }
-                    if (t.isThing == false) { Log(title + "*Error* t is not Thing"); return true; }
-                    Chara c_drinker = __instance.owner.Chara;//t.Chara;
+                    //if (__instance.owner == null) { Log(title + "*Error* NoOwner"); return true; }
+                    //if (t.isThing == false) { Log(title + "*Error* t is not Thing"); return true; }
+                    
                     Thing thing = t.Thing;
                     //Thing t = __instance
                     bi = TryCreateBI(thing, c_drinker, new ActType(ActType.Use));

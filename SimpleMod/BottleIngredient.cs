@@ -140,6 +140,7 @@ namespace s649PBR
                 SetProhibition();
                 num *= n1;
                 //isJunk = false;
+                Log("[PBR:BI]Generate->" + GetDetail(), 3);
             }
            
             private void SetProhibition() 
@@ -513,25 +514,29 @@ namespace s649PBR
             }
             public bool IsEqualID(BottleIngredient bi)
             {
+                if (bi == null) { return false; }
                 if (!bi.IsValid()) { return false; }
                 return this.IsValid() && IsEqualID(bi.idIngredient);
             }
             public bool IsEqualID(int biID)
             {
-                return (biID == this.idIngredient) ? true : false;
+                return (biID == this.idIngredient);
             }
             public void AddNum(BottleIngredient bi)
             {
+                if (bi == null) { return; }
                 if (!bi.IsValid()) { return; }
                 AddNum(bi.num);
                 //this.num += t.num; 
             }
             private void AddNum(int n1)
             {
+                if (!IsValid()) { return; }
                 this.num += n1;
             }
             public void SetMultiNum(int n1)
             {
+                if (!IsValid()) { return; }
                 this.num *= n1;
             }
             public void Decrease(BottleIngredient bi)

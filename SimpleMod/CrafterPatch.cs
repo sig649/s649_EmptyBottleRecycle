@@ -33,10 +33,14 @@ namespace s649PBR
                 bool b = false;
                 foreach (BottleIngredient bi in recycleQueues)
                 {
+                    string title = "[PBR:ER]";
                     if (bi.IsEnableRecycle()) 
                     {
-                        Thing t = ThingGen.Create(bi.GetID()).SetNum(bi.num);
-                        EClass._zone.AddCard(t, EClass.pc.pos);
+                        //Thing t = ThingGen.Create(bi.GetID()).SetNum(bi.num);
+                        Thing t = ThingGenFromBI(bi);
+                        if (t != null) { EClass._zone.AddCard(t, EClass.pc.pos); } 
+                        else { Log(title + "Thing has not Created",1); }
+                            
                         text += "N:" + t.NameSimple + "/n:" + t.Num.ToString();
                         b = true;
                     }
@@ -44,29 +48,29 @@ namespace s649PBR
                 PatchMain.Log(text, 1);
                 return b;
             }
-            private static bool AddBIToQueues(BottleIngredient bi) 
+            private static bool AddBIToQueues(BottleIngredient argBI) 
             {
                 //if (biList.Count == 0) { biList.Add(bottleIngredient); return; }
-                if (!bi.IsEnableRecycle()) { return false; }
+                if (!argBI.IsEnableRecycle()) { return false; }
                 foreach (BottleIngredient bottleIngredient in recycleQueues) 
                 {
-                    if (bottleIngredient.IsEqualID(bi) && bi.IsEnableRecycle()) 
+                    if (bottleIngredient.IsEqualID(argBI) && bottleIngredient.IsEnableRecycle()) 
                     {
-                        bottleIngredient.AddNum(bi);
+                        bottleIngredient.AddNum(argBI);
                         return true;
                     }
                 }
-                recycleQueues.Add(bi);
+                recycleQueues.Add(argBI);
                 return true;
             }
-            private static bool RemoveBIFromQueues(BottleIngredient bi) 
+            private static bool RemoveBIFromQueues(BottleIngredient argBI) 
             {
-                if (!bi.IsEnableRecycle() || !bi.isProhibition) { return false; }
+                if (!argBI.IsEnableRecycle()) { return false; }
                 foreach (BottleIngredient bottleIngredient in recycleQueues)
                 {
-                    if (bottleIngredient.IsEqualID(bi) && bi.IsEnableRecycle())
+                    if (bottleIngredient.IsEqualID(argBI) && bottleIngredient.IsEnableRecycle())
                     {
-                        bottleIngredient.Decrease(bi);
+                        bottleIngredient.Decrease(argBI);
                         return true;
                     }
                 }
@@ -307,7 +311,7 @@ namespace s649PBR
                     recycleSet++;
                     //PatchMain.ExeRecycle(recycleList, EClass.pc);
                 }
-                else { PatchMain.Log(title + "Skipped:", 2); }
+                else { PatchMain.Log(title + "RemoveSkipped:", 2); }
                 lastCraftCount++;
                 PatchMain.Log(title + "Count:" + lastCraftCount.ToString(), 2);
 
@@ -334,7 +338,9 @@ namespace s649PBR
                         {
                             //recycleQueue.RemoveBIFromQueues(new (PatchMain.GetStringID(lastMixedThing), lastMixedThing.trait.CraftNum));
                             RemoveBIFromQueues(bi);
-                        } else { PatchMain.Log(title + "Result:NoBI"); }
+                        } else { PatchMain.Log(title + "Result:NoBI", 1); }
+                        
+                        //出力
                         SetMultiNum(__instance.num);//回数分倍化
                         PatchMain.Log(title + "RQ:" + GetStringsList(recycleQueues));
                         ExeRecycle();

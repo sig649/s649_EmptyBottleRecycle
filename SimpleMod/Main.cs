@@ -93,136 +93,153 @@ namespace s649PBR
             //internal method-------------------------------------------------------------------------------------------------
             internal static void Log(string text, int lv = 0)
             {
+                //Log.Levels
+                //--- -1:None
+                //---- 0:Error
+                //---- 1:Info
+                //---- 2:Deep
+                //---- 3:All
                 if (Cf_LogLevel >= lv)
                 {
                     Debug.Log(text);
                 }
             }
-            private static int ReturnWCC(int acttype) 
-            {
-                switch(acttype)
-                {
-                    case ActType.None:
-                        return 0;
-                    case ActType.Use:
-                        return CE_WhichCharaCreatesWhenUse.Value;
-                    case ActType.Blend:
-                        return CE_WhichCharaCreatesWhenBlend.Value;
-                    case ActType.Throw:
-                        return CE_WhichCharaCreatesWhenThrow.Value;
-                    case ActType.Craft:
-                        return 999;
-                    default:
-                        return 999;
-                }
-            }
-            private static int TypeCharaPlaying(Card c)
-            {
-                if (c == null) { return 0; }
-                if (c.IsPC)
-                {
-                    return 1;
-                }
-                else if (!c.IsPC && c.IsPCParty)
-                {
-                    return 2;
-                }
-                else
-                {
-                    return 3;
-                }
-            }
+            
 
             //bi-------------------------------------------------------------------------
-            internal static BottleIngredient CreateBI(Thing t, int num  = 1)
+            private static BottleIngredient CreateBI(Thing t, int num  = 1)
             {
                 string title = "[PBR-Main:CreateBI]";
-                Log(title + "Start");
+                //Log(title + "Start");
                 if (t == null) { Log(title + "*Error* NoThing"); return null; }
-                var bi = new BottleIngredient(t, num);
-                if (bi != null) { CheckBI(bi); }
-                if (bi.IsValid()) { return bi; } else { return null; }
+                BottleIngredient bi = new BottleIngredient(t, num);
+                if (bi == null) { Log(title + "NoBI", 1); return null; }
+                var isValid = CheckBI(bi);
+                if (isValid) 
+                { Log(title + "ValidBI:" + GetStr(bi), 1); } 
+                else { Log(title + "InvalidBI:" + GetStr(bi), 1); }
+                return bi;
             }
             internal static Thing ThingGenFromBI(BottleIngredient bi)
             {
                 string title = "[PBR:Main:TGFBI]";
-                if (!bi.IsEnableRecycle()) { Log(title + "Cannot Recycle");  return null; }
+                if (!bi.IsEnableRecycle()) { Log(title + "Cannot Recycle", 1);  return null; }
                 Thing result = ThingGen.Create(bi.GetID()).SetNum(bi.num);
+                if (result == null) 
+                { Log(title + "*Error* ThingGen NotCreated:" + GetStr(result), 1); return null; }
                 result.ChangeMaterial(bi.idMaterial);
+                Log(title + "Success:" + GetStr(result) + "/Mat:" + result.idMaterial, 1);
                 return result;
             }
             private static bool CheckBI(BottleIngredient bi) 
             {
                 string title = "[PBR:Main:CheckBI]";
-                if (bi == null) { Log(title + "bi is null"); return false; }
+                if (bi == null) { Log(title + "*Error* bi is null"); return false; }
                 Log(title + "Detail->" + bi.GetDetail(), 2);
-                return bi.IsValid();
+                bool result = bi.IsValid();
+                Log(title + "R:" + result, 3);
+                return result;
             }
             //regulation-------------------------------------------------------
+            private static int ReturnWCC(int acttype)
+            {
+                string title = "[PBR-Main:RWCC]";
+                int result;
+                switch (acttype)
+                {
+                    case ActType.None:
+                        result = 0;
+                        break;
+                    case ActType.Use:
+                        result = CE_WhichCharaCreatesWhenUse.Value;
+                        break;
+                    case ActType.Blend:
+                        result = CE_WhichCharaCreatesWhenBlend.Value;
+                        break;
+                    case ActType.Throw:
+                        result = CE_WhichCharaCreatesWhenThrow.Value;
+                        break;
+                    case ActType.Craft:
+                        result = 999;
+                        break;
+                    default:
+                        result = 999;
+                        break;
+                }
+                Log(title + "R:" + result, 3); return result;
+            }
+            private static int TypeCharaPlaying(Card c)
+            {
+                string title = "[PBR-Main:RWCC]";
+                int result;
+                if (c == null) { Log(title + "*Error* c is null", 0); return 0; }
+                if (c.IsPC)
+                {
+                    result = 1;
+                    //return 1;
+                }
+                else if (!c.IsPC && c.IsPCParty)
+                {
+                    result = 2;
+                    //return 2;
+                }
+                else
+                {
+                    result = 3;
+                    //return 3;
+                }
+                Log(title + "R:" + result, 3);
+                return result;
+            }
             private static bool GetCharaRegulation(Chara c, int acttype) 
             {
                 string title = "[PBR:Main:GCR]";
                 if (c == null) { Log(title + "*Error* NoChara"); return false; }
                 int tcp = TypeCharaPlaying(c);
-                return tcp <= ReturnWCC(acttype);
+                bool result = tcp <= ReturnWCC(acttype);
+                Log(title + "R:" + result, 3);
+                return result;
             }
             private static bool GetCharaJunkRegulation(Chara c)
             {
                 string title = "[PBR:Main:GCJR]";
                 if (c == null) { Log(title + "*Error* NoChara"); return false; }
                 int tcp = TypeCharaPlaying(c);
-                return tcp <= CE_WhichCharaCreatesJunkBottles.Value;
+                bool result = tcp <= CE_WhichCharaCreatesJunkBottles.Value;
+                Log(title + "R:" + result, 3);
+                return result;
             }
 
-            private static bool CheckRegulation(BottleIngredient bi, Chara c, ActType acttype) 
+            internal static bool CheckRegulation(BottleIngredient bi, Chara c, ActType acttype) 
             {
                 //string title = "[PBR:Main:CheckR]";
+                //仲介
                 return CheckReg(bi.isJunk, c, acttype);
 
             }
             private static bool CheckReg(bool isJunk, Chara c, ActType acttype) 
             {
-                //string text = "[BI:IERB]bi:" + this.orgid + "/C:" + c.NameSimple + "/at:" + acttype.ToString();
-                // Log("[IERB]bi:" + bottleIng.ToString() + "/" + c.NameSimple + "/" + acttype.ToString());
-                //regulateを参照して実行できるかどうかを返す
-                //bool isJunk = (bottleIng < 0) ? true : false;
-                //bool isJunk = this.IsJunk;
                 string title = "[PBR:Main:CheckR]";
+                if (c == null) { Log(title + "*Error* NoChara"); return false; }
+                if (acttype == null) { Log(title + "*Error* NoActType"); return false; }
                 bool isForAll = acttype.IsForAll();
                 bool regJunk = !isJunk || GetCharaJunkRegulation(c);
                 bool regChara = GetCharaRegulation(c, acttype.id);
-                //bool result;
-                if (c == null) { Log(title + "*Error* NoChara"); return false; }
-                return isForAll ? (regChara && regJunk) : regJunk;
-                //return regJunk || !regChara;
-                //if (isForAll)
-                //{
-                //    return true;
-                //} else { return regChara && regJunk; }
-                //int wcc = PatchMain.ReturnWCC(acttype);
-
-                //if (isForAll) { regJunk = Cf_Reg_JunkBottle; } else { regJunk = Cf_Reg_JunkBottle && GetCharaJunkRegulation(c); }
-                //bool regChara = TypeCharaPlaying(c) <= wcc;
-                   
-                
-                //result = regChara && isJunk ? regJunk : true;
-                //bool result = (bottleIng != 0) ? GetRegulation(c, acttype, isJunk) : false;
-                //text += "/iJ:" + ToTF(isJunk) + "/rs:" + ToTF(result);
-                //Log(text , 1);
-                //return result;
-                //return false;
+                bool result = isForAll ? (regChara && regJunk) : regJunk;
+                Log(title + "R:" + result, 3);
+                return result;
             }
             //recycle--------------------------------------------------------
             internal static bool DoRecycle(BottleIngredient bi, Chara c, Point p = null) 
             {
                 string title = "[PBR:Main:DR]";
-                if (bi == null) { Log(title + "NoBI", 2); return false; }
+                if (bi == null) { Log(title + "*Error* NoBI"); return false; }
                 if (c == null) { Log(title + "*Error* NoChara"); return false; }
                 //if (acttype == null) { Log(title + "*Error* ActType is Invalid"); return null; }
 
                 string text = "";
                 text += "BI:" + GetStr(bi);
-                text += "/C:" + c.NameSimple;
+                text += "/C:" + GetStr(c);//c.NameSimple;
                 text += "/P:" + GetStr(p);
                 PatchMain.Log(title + "ArgCheck/" + text, 2);
 
@@ -235,7 +252,7 @@ namespace s649PBR
                 
 
                 Thing result = ThingGenFromBI(bi);//= ThingGen.Create(bi.GetID()).SetNum(bi.num);
-
+                if (result == null) { Log(title + "NoResult", 1); return false; }
                 text = "rs:" + GetStr(result);
                 if (p == null)
                 {
@@ -249,13 +266,13 @@ namespace s649PBR
                         text += "/isPC:F";
                         EClass._zone.AddCard(result, c.pos);
                     }
-                    PatchMain.Log(title + "Create:" + text);
+                    PatchMain.Log(title + "Create:" + text, 1);
                 }
                 else
                 {
                     text += "/p:" + p.ToString();
                     EClass._zone.AddCard(result, p);
-                    PatchMain.Log(title + "CreateTo:" + text);
+                    PatchMain.Log(title + "CreateTo:" + text, 1);
                 }
                 return true;
             }
@@ -327,19 +344,18 @@ namespace s649PBR
                 //Log(title + "Thing->" + t.NameSimple + " :by " + c.NameSimple, 1);
                 PatchMain.Log(title + "ArgCheck/" + text, 1);
                 BottleIngredient bi = CreateBI(t, num);
-                bool b = CheckBI(bi);
-                if (!b)
+                //bool b = CheckBI(bi);
+                if (bi != null)
                 {
-                    Log(title + "BI is null", 1);
-                    return null;
+                    Log(title + "CreateBI->Success/" + GetStr(bi));
                 }
-                else { Log(title + "CreateBI->Success/" + GetStr(bi)); }
-                if (!CheckRegulation(bi, c, acttype))
+                else {  Log(title + "BI is null", 1); return null;
+                }
+                if (CheckRegulation(bi, c, acttype))
                 {
-                    Log(title + "Regulation Failure", 1);
-                    return null;
+                    Log(title + "Regulation Checked");
                 }
-                else { Log(title + "Regulation Checked"); }
+                else { Log(title + "Regulation Failure", 1); return null; }
                 return bi;
             }
             /*
@@ -1593,3 +1609,27 @@ private static bool IsEnableRecycle(int bottleIng, Chara c, int acttype)
 //public static bool Cf_Reg_CJB_PC => Cf_Reg_JunkBottle && PlayerType.ContainPC(CE_WhichCharaCreatesJunkBottles.Value);
 // public static bool Cf_Reg_CJB_NPC => Cf_Reg_JunkBottle && PlayerType.ContainNPC(CE_WhichCharaCreatesJunkBottles.Value);
 
+
+//return regJunk || !regChara;
+//if (isForAll)
+//{
+//    return true;
+//} else { return regChara && regJunk; }
+//int wcc = PatchMain.ReturnWCC(acttype);
+
+//if (isForAll) { regJunk = Cf_Reg_JunkBottle; } else { regJunk = Cf_Reg_JunkBottle && GetCharaJunkRegulation(c); }
+//bool regChara = TypeCharaPlaying(c) <= wcc;
+
+
+//result = regChara && isJunk ? regJunk : true;
+//bool result = (bottleIng != 0) ? GetRegulation(c, acttype, isJunk) : false;
+//text += "/iJ:" + ToTF(isJunk) + "/rs:" + ToTF(result);
+//Log(text , 1);
+//return result;
+//return false;
+
+//string text = "[BI:IERB]bi:" + this.orgid + "/C:" + c.NameSimple + "/at:" + acttype.ToString();
+// Log("[IERB]bi:" + bottleIng.ToString() + "/" + c.NameSimple + "/" + acttype.ToString());
+//regulateを参照して実行できるかどうかを返す
+//bool isJunk = (bottleIng < 0) ? true : false;
+//bool isJunk = this.IsJunk;
