@@ -16,7 +16,14 @@ namespace s649PBR
     namespace BIClass
     {//>>begin namespaceSub
         //--nakami----------------------
-        
+        public class LogTier
+        {
+            public const int Error = 0;
+            public const int Info = 1;
+            public const int Deep = 2;
+            public const int Other = 3;
+            public const int All = 4;
+        }
         public class ActType
         {//class:ActType
             //public int value;
@@ -140,7 +147,7 @@ namespace s649PBR
                 SetProhibition();
                 num *= n1;
                 //isJunk = false;
-                Log("[PBR:BI]Generate->" + GetDetail(), 3);
+                Log("[PBR:BI]Generate->" + GetDetail(), 2);
             }
            
             private void SetProhibition() 

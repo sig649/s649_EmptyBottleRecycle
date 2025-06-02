@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using s649PBR.Main;
 using s649PBR.BIClass;
 using static s649PBR.Main.PatchMain;
+using BepInEx.Logging;
 
 namespace s649PBR
 {//>begin namespaceMain
@@ -22,22 +23,20 @@ namespace s649PBR
             [HarmonyPatch(typeof(Chara), "Drink")]
             private static bool CharaDrinkPrePatch(Chara __instance, Card t, ref BottleIngredient __state) 
             {
-                string title = "[PBR:C.D/Pre]";
+                LogStack("[C.D/Pre]");//string title = "[PBR:C.D/Pre]";
                 if (Cf_Allow_Use)
                 {
-                    Log(title + "Start", 3);
+                    Log("Start", LogTier.Other);
                     BottleIngredient bi;
-                    Chara c_drinker = __instance;//.owner.Chara;//t.Chara;
-                    if (t == null) { Log(title + "*Error* NoCard"); return true; }
-                    //if (__instance.owner == null) { Log(title + "*Error* NoOwner"); return true; }
-                    //if (t.isThing == false) { Log(title + "*Error* t is not Thing"); return true; }
-                    
+                    Chara c_drinker = __instance;
+                    if (t == null) { LogError("NoCard"); goto MethodEnd; }
                     Thing thing = t.Thing;
-                    //Thing t = __instance
                     bi = TryCreateBI(thing, c_drinker, new ActType(ActType.Use));
                     __state = bi;
-                    Log(title + "PreFinish", 2);
+                    Log("PreFinish", LogTier.Other);
                 }
+            MethodEnd:
+                LogStackDump();
                 return true;
             }
 
@@ -45,32 +44,48 @@ namespace s649PBR
             [HarmonyPatch(typeof(Chara), "Drink")]
             private static void CharaDrinkPostPatch(Chara __instance, Card t, BottleIngredient __state)
             {
-                string title = "[PBR:C.D/Post]";
+                LogStack("[C.D/Pre]");//string title = "[PBR:C.D/Post]";
                 if (Cf_Allow_Use)
                 {
-                    Log(title + "Start", 3);
+                    Log("Start", LogTier.Other);
                     string text = "";
-                    //if (t == null) { Log(title + "*Error* NoCard"); return; }
-                    if (t == null) { Log(title + "*Error* NoCard"); return; }
-                    //if (t.isThing == false) { Log(title + "*Error* t is not Thing"); return; }
-                    Chara c_drinker = __instance;//.owner.Chara;//t.Chara;
-                    //Thing thing = t.Thing;
+                    if (t == null) { LogError("NoCard"); goto MethodEnd; }
+                    Chara c_drinker = __instance;
                     BottleIngredient bi = __state;
-                    if (bi == null) { Log(title + "NoBI", 1); return; }
-                    //bool tryBrake = bi.TryBrake();
-                    //text += "/tB:" + GetStr(tryBrake) + "/";
+                    if (bi == null) { Log("NoBI", LogTier.Info); goto MethodEnd; }
                     bool result = DoRecycle(bi, c_drinker);
                     text += result ? "Done!" : "Not Done";
-                    //IsThrown = true;
-                    //lastThrower = c.Chara;
-                    //lastThrownThing = t;
-                    //lastCreatedBI = CreateBI(t);
 
-                    PatchMain.Log(title + text, 2);
+                    PatchMain.Log(text, LogTier.Info);
                 }
-                else { Log(title + "'Use' not Allowed", 3); }
+                else { Log("'Use' not Allowed", LogTier.Other); }
+            MethodEnd:
+                LogStackDump();
             }
-            /*
+            
+            
+
+            
+        }//<<<end class:PatchExe
+    }//<<end namespaceSub
+}//<end namespaceMain
+
+
+//trash
+
+//.owner.Chara;//t.Chara;
+//if (t.isThing == false) { Log(title + "*Error* t is not Thing"); return; }
+//if (t == null) { Log(title + "*Error* NoCard"); return; }
+//.owner.Chara;//t.Chara;
+//Thing thing = t.Thing;
+//bool tryBrake = bi.TryBrake();
+//text += "/tB:" + GetStr(tryBrake) + "/";
+//IsThrown = true;
+//lastThrower = c.Chara;
+//lastThrownThing = t;
+//lastCreatedBI = CreateBI(t);
+//Thing t = __instance
+/*
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDrink), "OnDrink")]
             private static void TraitDrinkPostPatch(TraitDrink __instance, Chara c)
@@ -101,9 +116,7 @@ namespace s649PBR
                 //return true;
             }//<<<<end method:TraitDrinkPatch
             */
-            
-
-            /*
+/*
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDrink), "OnThrowGround")]
             private static void OnThrowGroundPostPatch(TraitDrink __instance, Chara c, Point p)
@@ -134,12 +147,8 @@ namespace s649PBR
                 { Log(title + "NotDone", 2); }
             }//<<<<end method:TraitDrinkPatch
             */
-        }//<<<end class:PatchExe
-    }//<<end namespaceSub
-}//<end namespaceMain
-
-
-//trash
+//if (__instance.owner == null) { Log(title + "*Error* NoOwner"); return true; }
+//if (t.isThing == false) { Log(title + "*Error* t is not Thing"); return true; }
 
 /*
                     
