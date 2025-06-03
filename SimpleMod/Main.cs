@@ -94,7 +94,7 @@ namespace s649PBR
             //public static Thing lastThrownThing;
 
             //internal method-------------------------------------------------------------------------------------------------
-            internal static void Log(string text, int lv = 0)
+            internal static void Log(string text, int lv = 1)
             {
                 //Log.Levels
                 //--- -1:None...出力しない。コメント的な意味合い
@@ -148,6 +148,10 @@ namespace s649PBR
             public static void LogError(string argText) 
             {
                 Log(argText, 0);
+            }
+            public static void ClearLogStack() 
+            {   //初期化。preで呼び出しておくと安全
+                stackLog = new List<string> { };
             }
             
             //bi-------------------------------------------------------------------------

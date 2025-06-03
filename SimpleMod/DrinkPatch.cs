@@ -22,6 +22,7 @@ namespace s649PBR
             private static BottleIngredient stateBottleIng;
             private static void CharaDrinkPatchPreExe(Chara chara, Card card) 
             {
+                
                 LogStack("[C.D/Pre]");
                 CharaDrinkPPre(chara, card);
                 LogStackDump();
@@ -60,6 +61,7 @@ namespace s649PBR
             [HarmonyPatch(typeof(Chara), "Drink")]
             private static bool CharaDrinkPrePatch(Chara __instance, Card t) 
             {
+                ClearLogStack();
                 stateBottleIng = null;
                 if (Cf_Allow_Use) { CharaDrinkPatchPreExe(__instance, t); }
                     
