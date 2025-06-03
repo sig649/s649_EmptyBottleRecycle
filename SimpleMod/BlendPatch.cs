@@ -18,12 +18,17 @@ namespace s649PBR
         [HarmonyPatch]
         internal class PatchExe
         {
+            /*
+             * Fook出来てない挙動
+             * 染料を持ってオブジェクトなどに使った時
+             * 
+             */
             static string title;// = "[PBR:IOBOP]";
             static string p_phase;
             [HarmonyPrefix]
             [HarmonyPatch(typeof(InvOwnerBlend), "_OnProcess")]
             private static bool IOBOnProcessPrePatch(InvOwnerBlend __instance, Thing t, ref BottleIngredient __state)
-            {
+            {   //fookinfo:インベントリのアイテムを混ぜた時全般？//well/dye/poison
                 /*
                 if (Cf_Allow_Blend)
                 {
@@ -81,35 +86,35 @@ namespace s649PBR
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDye), "OnBlend")]
             private static void TraitDyeBug_OnBlendFookCheck(Thing t, Chara c)
-            {
+            {   //アイテムに混ぜた時
                 title = "TraitDye.OnBlend";
                 Log(title + "/FookCheck");
             }
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitWell), "OnBlend")]
             private static void TraitDye_OnBlendFookCheck(Thing t, Chara c)
-            {
+            {   //FookCheck:井戸に対して混ぜた時
                 title = "Traitwell.OnBlend";
                 Log(title + "/FookCheck");
             }
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDrink), "OnBlend")]
             private static void TraitDrink_OnBlendFookCheck(Thing t, Chara c)
-            {
+            {   
                 title = "TraitDrink.OnBlend";
                 Log(title + "/FookCheck");
             }
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDrink), "BlendLove")]
             private static void TraitD_BlendLoveFookCheck(Chara c, Thing t, bool dream = false)
-            {
+            {   //lolvepotion
                 title = "TraitDrink.BlendLove";
                 Log(title + "/FookCheck");
             }
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDrink), "BlendPoison")]
             private static void TraitD_BlendPoisonFookCheck(Chara c, Thing t)
-            {
+            {   //poison
                 title = "TraitDrink.BlendPoison";
                 Log(title + "/FookCheck");
             }

@@ -169,7 +169,7 @@ namespace s649PBR
                 Thing t = _Thing;
                 //idIngredient‚ğset‚µ‚Â‚ÂŒ‹‰Ê‚ğƒŠƒ^[ƒ“
                 if (t == null) { LogError(title + "NoThing"); return; }
-                Log("Start", LogTier.Other);
+                Log(title + "Start", LogTier.Other);
                 //Trait trait = t.trait;
                 //string category = t.sourceCard.category;
                 //string unit = t.source.unit;

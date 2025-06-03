@@ -24,7 +24,7 @@ namespace s649PBR
             private static Thing used_t;
             //private static Point throwed_p;
             private static bool isCheckSuccess;
-            private static readonly string header = "[PBR/D]";
+            private static readonly string header = "[Dr]";
 
             /*
             private static void CharaDrinkPatchPreExe(Chara chara, Card card) 
@@ -121,7 +121,7 @@ namespace s649PBR
                     bool result = DoRecycle(stateBottleIng, c_drinker);
                     text += result ? "Done!" : "Not Done";
 
-                    PatchMain.Log(text, LogTier.Info);
+                    PatchMain.Log(text, LogTier.Other);
                 }
                 else { Log("'Use' not Allowed", LogTier.Other); }
                 

@@ -48,6 +48,7 @@ namespace s649PBR
             private static ConfigEntry<int> CE_LogLevel;//デバッグ用のログの出力LV　-1:出力しない 0~:第二引数に応じて出力
             public static int Cf_LogLevel => CE_LogLevel.Value;
             private static readonly string modtitle = "[PBR]";
+            private static readonly string modNS = "Ma";
             private static List<string> stackLog  = new List<string>{};
             //private static string stackLogLast = "";
 
@@ -160,17 +161,17 @@ namespace s649PBR
             private static BottleIngredient CreateBI(Thing argThing, int argNum  = 1)
             {
                 BottleIngredient resultBI = null;
-                LogStack("[Main:CreateBI]"); //string title = "[PBR-Main:CreateBI]"; 
+                LogStack("[" + modNS + "/CreateBI]"); //string title = "[PBR-Main:CreateBI]"; 
                 if (argThing == null) { LogError("NoThing"); goto MethodEnd; }
-                Log("ArgCheckedd", LogTier.Other);
+                Log("ArgChecked", LogTier.Deep);
 
                 resultBI = new BottleIngredient(argThing, argNum);
                 //if (resultBI != null) { Log("Create=>" + resultBI.GetDetail(), LogTier.Deep); }
                 if (resultBI == null) { Log("NoBI", LogTier.Deep); goto MethodEnd; }
                 var isValid = CheckBI(resultBI);
                 if (isValid) 
-                { Log("ValidBI:" + GetStr(resultBI), LogTier.Info); } 
-                else { Log("InvalidBI:" + GetStr(resultBI), LogTier.Info); }
+                { Log("ValidBI:" + GetStr(resultBI), LogTier.Deep); } 
+                else { Log("InvalidBI:" + GetStr(resultBI), LogTier.Deep); }
 
             MethodEnd:
                 LogStackDump();
@@ -179,16 +180,16 @@ namespace s649PBR
             internal static Thing ThingGenFromBI(BottleIngredient bi)
             {
                 Thing resultThing = null;
-                LogStack("[Main:TGBI]"); //string title = "[PBR:Main:TGFBI]";
+                LogStack("[" + modNS + "/TGBI]"); //string title = "[PBR:Main:TGFBI]";
                 if (bi == null) { LogError("No BI"); goto MethodEnd; }
-                Log("ArgChecked", LogTier.Other);
+                Log("ArgChecked", LogTier.Deep);
 
                 if (!bi.IsEnableRecycle()) { LogError("BI must be EnableRecycle"); goto MethodEnd; }
                 resultThing = ThingGen.Create(bi.GetID()).SetNum(bi.num);
                 if (resultThing == null) 
                 { Log("ThingGen has NotCreated:" + GetStr(resultThing), LogTier.Deep); goto MethodEnd; }
                 resultThing.ChangeMaterial(bi.idMaterial);
-                Log("Success:" + GetStr(resultThing) + "/Mat:" + resultThing.idMaterial, LogTier.Info);
+                Log("Success:" + GetStr(resultThing) + "/Mat:" + resultThing.idMaterial, LogTier.Deep);
             MethodEnd:
                 LogStackDump();
                 return resultThing;
@@ -196,9 +197,9 @@ namespace s649PBR
             private static bool CheckBI(BottleIngredient bi) 
             {
                 bool result = false;
-                LogStack("[Main:CheckBI]"); //string title = "[PBR:Main:CheckBI]";
+                LogStack("[" + modNS + "/CheckBI]"); //string title = "[PBR:" + modNS + "CheckBI]";
                 if (bi == null) { LogError("bi is null"); goto MethodEnd; }
-                Log("ArgChecked", LogTier.Other);
+                Log("ArgChecked", LogTier.Deep);
                 //Log(title + "Detail->" + bi.GetDetail(), 2);
                 result = bi.IsValid();
                 Log("R:" + bi.GetDetail(), LogTier.Deep);
@@ -209,7 +210,7 @@ namespace s649PBR
             //regulation-------------------------------------------------------
             private static int ReturnWCC(int acttype)
             {
-                //LogStack("[Main:RWCC]");
+                //LogStack("[" + modNS + "RWCC]");
                 string title = "[RWCC]";
                 Log(title + "Start", LogTier.All);
                 int result;
@@ -240,7 +241,7 @@ namespace s649PBR
             private static int TypeCharaPlaying(Card c)
             {
                 int result = 0;
-                //LogStack("[Main:TCP]"); //string title = "[PBR-Main:RWCC]";
+                //LogStack("[" + modNS + "TCP]"); //string title = "[PBR-" + modNS + "RWCC]";
                 string title = "[TCP]";
                 if (c == null) { LogError(title + "c is null"); goto MethodEnd; }
                 Log(title + "ArgChecked", LogTier.Other);
@@ -302,7 +303,7 @@ namespace s649PBR
                 //string title = "[PBR:Main:CheckR]";
                 //仲介
                 bool resultBool;
-                LogStack("[Main:CheckR]");
+                LogStack("[" + modNS + "/CheckR]");
                 resultBool = CheckReg(bi.isJunk, c, acttype);
                 LogStackDump();
                 return resultBool;
@@ -333,7 +334,7 @@ namespace s649PBR
             internal static bool DoRecycle(BottleIngredient bi, Chara c, Point p = null)
             {
                 bool resultBool;
-                LogStack("[Main:DoR]");
+                LogStack("[" + modNS + "/DoR]");
                 resultBool = DoRecc(bi, c, p);
                 LogStackDump();
                 return resultBool;
@@ -341,7 +342,7 @@ namespace s649PBR
             private static bool DoRecc(BottleIngredient bi, Chara c, Point p = null) 
             {
                 bool resultBool = false;
-                 //string title = "[PBR:Main:DR]";
+                 //string title = "[PBR:" + modNS + "DR]";
                 //Log( + "Start", 3);
                 if (bi == null) { Log("NoBI"); goto MethodEnd; }
                 if (c == null) { Log("NoChara"); goto MethodEnd; }
@@ -363,21 +364,21 @@ namespace s649PBR
 
                 Thing createBI = ThingGenFromBI(bi);//= ThingGen.Create(bi.GetID()).SetNum(bi.num);
                 if (createBI == null) { Log("NoResult", LogTier.Deep); goto MethodEnd; }
-                text = "rs:" + GetStr(createBI);
+                text = "" + GetStr(createBI);
                 if (p == null)
                 {
                     if (c.IsPC)
                     {
-                        text += "/isPC:T";
+                        text += "/toPC";
                         c.Pick(createBI);
                     }
                     else
                     {
-                        text += "/isPC:F";
+                        text += "/to:" + GetStr(c);
                         EClass._zone.AddCard(createBI, c.pos);
                     }
                     
-                    PatchMain.Log("Create:" + text, LogTier.Info);
+                    PatchMain.Log("Recycled:" + text, LogTier.Info);
                     resultBool = true;
                 }
                 else
@@ -385,7 +386,7 @@ namespace s649PBR
                     text += "/p:" + p.ToString();
                     EClass._zone.AddCard(createBI, p);
                     resultBool = true;
-                    PatchMain.Log("CreateTo:" + text, LogTier.Info);
+                    PatchMain.Log("RecycledTo:" + text, LogTier.Info);
                 }
             MethodEnd:
                 
@@ -440,7 +441,7 @@ namespace s649PBR
             internal static BottleIngredient TryCreateBottleIng(ActType acttype, Thing thing, Chara chara = null, int num = 1)
             {
                 BottleIngredient result;
-                LogStack("[Main/TCBI]");
+                LogStack("[" + modNS + "/TCBI]");
                 if (chara == null) { chara = EClass.pc; }//cがnullの時はPCが行ったとみなす
                 result =  TryCBI(thing, chara, acttype, num);
                 LogStackDump();
@@ -465,7 +466,7 @@ namespace s649PBR
                 //bool b = CheckBI(bi);
                 if (returnBI != null)
                 {
-                    Log("CreateBI->Success/" + GetStr(returnBI), LogTier.Info);
+                    Log("CreateBI->Success/" + GetStr(returnBI), LogTier.Deep);
                 }
                 else {  Log("BI is null", LogTier.Deep); goto MethodEnd;
                 }
