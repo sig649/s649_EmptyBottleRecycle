@@ -19,10 +19,51 @@ namespace s649PBR
         [HarmonyPatch]
         internal class PatchExe
         {//>>>begin class:PatchExe
+            private static BottleIngredient stateBottleIng;
+            private static void CharaDrinkPatchPreExe(Chara chara, Card card) 
+            {
+                LogStack("[C.D/Pre]");
+                CharaDrinkPPre(chara, card);
+                LogStackDump();
+            }
+            private static void CharaDrinkPatchPostExe(Chara chara, Card card)
+            {
+                LogStack("[C.D/Post]");
+                CharaDrinkPPost(chara, card);
+                LogStackDump();
+            }
+            private static void CharaDrinkPPre(Chara chara, Card card)
+            {
+                Log("Start", LogTier.Other);
+                //BottleIngredient bi;
+                Chara c_drinker = chara;
+                if (card == null) { LogError("NoCard"); return; }
+                Thing thing = card.Thing;
+                stateBottleIng = TryCreateBottleIng(new ActType(ActType.Use), thing, c_drinker);
+                //return = bi;
+                Log("PreFinish", LogTier.Other);
+            }
+            private static void CharaDrinkPPost(Chara chara, Card card) 
+            {
+                Log("Start", LogTier.Other);
+                string text = "";
+                if (card == null) { LogError("NoCard"); return; }
+                Chara c_drinker = chara;
+                BottleIngredient bi = stateBottleIng;
+                if (bi == null) { Log("NoBI", LogTier.Info); return; }
+                bool result = DoRecycle(bi, c_drinker);
+                text += result ? "Done!" : "Not Done";
+
+                PatchMain.Log(text, LogTier.Info);
+            }
             [HarmonyPrefix]
             [HarmonyPatch(typeof(Chara), "Drink")]
-            private static bool CharaDrinkPrePatch(Chara __instance, Card t, ref BottleIngredient __state) 
+            private static bool CharaDrinkPrePatch(Chara __instance, Card t) 
             {
+                stateBottleIng = null;
+                if (Cf_Allow_Use) { CharaDrinkPatchPreExe(__instance, t); }
+                    
+                /*
                 LogStack("[C.D/Pre]");//string title = "[PBR:C.D/Pre]";
                 if (Cf_Allow_Use)
                 {
@@ -37,13 +78,18 @@ namespace s649PBR
                 }
             MethodEnd:
                 LogStackDump();
+                */
                 return true;
+                
             }
 
             [HarmonyPostfix]
             [HarmonyPatch(typeof(Chara), "Drink")]
-            private static void CharaDrinkPostPatch(Chara __instance, Card t, BottleIngredient __state)
+            private static void CharaDrinkPostPatch(Chara __instance, Card t)
             {
+                if (Cf_Allow_Use) { CharaDrinkPatchPostExe(__instance, t); }
+                else { Log("'Use' not Allowed", LogTier.Other); }
+                /*
                 LogStack("[C.D/Pre]");//string title = "[PBR:C.D/Post]";
                 if (Cf_Allow_Use)
                 {
@@ -61,6 +107,7 @@ namespace s649PBR
                 else { Log("'Use' not Allowed", LogTier.Other); }
             MethodEnd:
                 LogStackDump();
+                */
             }
             
             

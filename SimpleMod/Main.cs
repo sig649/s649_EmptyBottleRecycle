@@ -19,7 +19,7 @@ namespace s649PBR
         [BepInPlugin("s649_PotionBottleRecycle", "s649 Potion Bottle Recycle", "0.2.0.0")]
         public class PatchMain : BaseUnityPlugin
         {//>>>begin class:PatchExe
-            
+
             //////-----Config Entry---------------------------------------------------------------------------------- 
 
             //CE 00 general
@@ -43,13 +43,13 @@ namespace s649PBR
             private static ConfigEntry<int> CE_WhichCharaCreatesJunkBottles;//CreateJunkBottlesをどのキャラに適応させるか
 
             public static bool Cf_Reg_JunkBottle => CE_AllowCreatesJunkBottles.Value;
-            
+
             //CE debug
             private static ConfigEntry<int> CE_LogLevel;//デバッグ用のログの出力LV　-1:出力しない 0~:第二引数に応じて出力
             public static int Cf_LogLevel => CE_LogLevel.Value;
             private static readonly string modtitle = "[PBR]";
-            private static string stackLog = "";
-            private static string stackLogLast = "";
+            private static List<string> stackLog  = new List<string>{};
+            //private static string stackLogLast = "";
 
             //loading------------------------------------------------------------------------------------------------------------------------------------------------------------
             internal void LoadConfig()
@@ -102,41 +102,47 @@ namespace s649PBR
                 //---- 1:Info...通常の出力
                 //---- 2:Deep...引数などの付随情報を出力
                 //---- 3:General...メソッドの呼び出しや終了などの簡易情報※デバッグ用。ログ過多必死
-                string logtext = "";
+                string logHeader = "";
                 switch (lv) 
                 {
                     case < 0:
                         return;
                     case 0:
-                        logtext = "[Error]";
+                        logHeader = "[Error]";
                         break;
                     case 1:
-                        logtext = "[Info ]";
+                        logHeader = "[Info ]";
                         break;
                     case 2:
-                        logtext = "[Deep ]";
+                        logHeader = "[Deep ]";
                         break;
                     case 3:
-                        logtext = "[Other]";
+                        logHeader = "[Other]";
                         break;
                     default:
-                        logtext = "[ALL  ]";
+                        logHeader = "[ALL  ]";
                         break;
                         
                 }
                 if (Cf_LogLevel >= lv)
                 {
-                    Debug.Log(modtitle + logtext + stackLog + text);
+                    Debug.Log(modtitle + logHeader + string.Join("", stackLog) + text);
                 }
             }
             internal static void LogStack(string argString) 
             {
-                stackLogLast = stackLog;
-                stackLog += argString;
+                //メソッドの先頭で呼び出し、ログ用のヘッダーを追加する
+                //メソッドの終点でLogStackDumpを呼び出す必要がある
+                //末端のメソッドなら呼び出す必要はない
+                //中継メソッドで呼び出すようにすれば楽かも
+                //stackLogLast = stackLog;
+                //stackLog += argString;
+                stackLog.Add(argString);
             }
             internal static void LogStackDump()
             {
-                stackLog = stackLogLast;
+                if (stackLog.Count > 1) { stackLog.RemoveAt(stackLog.Count - 1); }
+                //stackLog = stackLogLast;
                 //stackLog += argString;
             }
             public static void LogError(string argText) 
@@ -150,9 +156,10 @@ namespace s649PBR
                 BottleIngredient resultBI = null;
                 LogStack("[Main:CreateBI]"); //string title = "[PBR-Main:CreateBI]"; 
                 if (argThing == null) { LogError("NoThing"); goto MethodEnd; }
-                Log("Start", LogTier.Other);
+                Log("ArgCheckedd", LogTier.Other);
 
                 resultBI = new BottleIngredient(argThing, argNum);
+                //if (resultBI != null) { Log("Create=>" + resultBI.GetDetail(), LogTier.Deep); }
                 if (resultBI == null) { Log("NoBI", LogTier.Deep); goto MethodEnd; }
                 var isValid = CheckBI(resultBI);
                 if (isValid) 
@@ -168,7 +175,7 @@ namespace s649PBR
                 Thing resultThing = null;
                 LogStack("[Main:TGBI]"); //string title = "[PBR:Main:TGFBI]";
                 if (bi == null) { LogError("No BI"); goto MethodEnd; }
-                Log("Start", LogTier.Other);
+                Log("ArgChecked", LogTier.Other);
 
                 if (!bi.IsEnableRecycle()) { LogError("BI must be EnableRecycle"); goto MethodEnd; }
                 resultThing = ThingGen.Create(bi.GetID()).SetNum(bi.num);
@@ -185,10 +192,10 @@ namespace s649PBR
                 bool result = false;
                 LogStack("[Main:CheckBI]"); //string title = "[PBR:Main:CheckBI]";
                 if (bi == null) { LogError("bi is null"); goto MethodEnd; }
-                Log("Start", LogTier.Other);
+                Log("ArgChecked", LogTier.Other);
                 //Log(title + "Detail->" + bi.GetDetail(), 2);
                 result = bi.IsValid();
-                Log("R:" + result, LogTier.Other);
+                Log("R:" + bi.GetDetail(), LogTier.Deep);
             MethodEnd:
                 LogStackDump();
                 return result;
@@ -196,8 +203,9 @@ namespace s649PBR
             //regulation-------------------------------------------------------
             private static int ReturnWCC(int acttype)
             {
-                LogStack("[Main:RWCC]"); //string title = "[PBR-Main:RWCC]";
-                Log("Start", LogTier.Other);
+                //LogStack("[Main:RWCC]");
+                string title = "[RWCC]";
+                Log(title + "Start", LogTier.All);
                 int result;
                 switch (acttype)
                 {
@@ -220,16 +228,16 @@ namespace s649PBR
                         result = 999;
                         break;
                 }
-                Log("R:" + result, LogTier.Other); 
+                Log(title + "R:" + result, LogTier.Other); 
                 return result;
             }
             private static int TypeCharaPlaying(Card c)
             {
                 int result = 0;
-                LogStack("[Main:TCP]"); //string title = "[PBR-Main:RWCC]";
-                
-                if (c == null) { LogError("c is null"); goto MethodEnd; }
-                Log("Start", LogTier.Other);
+                //LogStack("[Main:TCP]"); //string title = "[PBR-Main:RWCC]";
+                string title = "[TCP]";
+                if (c == null) { LogError(title + "c is null"); goto MethodEnd; }
+                Log(title + "ArgChecked", LogTier.Other);
                 if (c.IsPC)
                 {
                     result = 1;
@@ -245,38 +253,41 @@ namespace s649PBR
                     result = 3;
                     //return 3;
                 }
-                Log("R:" + result, LogTier.Other);
+                Log("R:" + result, LogTier.All);
 
             MethodEnd:
-                LogStackDump();
+                //LogStackDump();
                 return result;
             }
-            private static bool GetCharaRegulation(int tcp, int acttype) 
+            private static bool GetCharaRegulation(int tcp, int wcc) 
             {
                 bool result = false;
-                LogStack("[Main:GCR]");
-                //string title = "[PBR:Main:GCR]";
-                Log("Start", LogTier.Other);
+                //LogStack("[Main:GCR]");
+                string title = "[GCR]";
+                //Log(title + "Start", LogTier.Other);
 
                 //if (c == null) { Log(title + "*Error* NoChara"); return false; }
                 //int tcp = TypeCharaPlaying(c);
-                result = tcp <= ReturnWCC(acttype);
-                Log("R:" + result, LogTier.Other);
+                result = tcp <= wcc;
+                Log(title + "R:" + result, LogTier.All);
 
-                LogStackDump();
+                //LogStackDump();
                 return result;
             }
-            private static bool GetCharaJunkRegulation(int tcp)
+            private static bool GetCharaJunkRegulation(int tcp, int wccj)
             {
-                LogStack("[Main:GCJR]");
-                //string title = "[PBR:Main:GCJR]";
-                Log("Start", LogTier.Other);
+                bool result = false;
+                //LogStack("[Main:GCJR]");
+                string title = "[GCJR]";
+                //Log(title + "Start", LogTier.Other);
                 //if (c == null) { Log(title + "*Error* NoChara"); return false; }
                 //int tcp = TypeCharaPlaying(c);
-                bool result = tcp <= CE_WhichCharaCreatesJunkBottles.Value;
-                Log("R:" + result, 3);
+                //bool result = tcp <= CE_WhichCharaCreatesJunkBottles.Value;
+                //Log(title + "R:" + result, 3);
 
-                LogStackDump();
+                // LogStackDump();
+                result = tcp <= wccj;
+                Log(title + "R:" + result, LogTier.All);
                 return result;
             }
 
@@ -284,34 +295,47 @@ namespace s649PBR
             {
                 //string title = "[PBR:Main:CheckR]";
                 //仲介
-                return CheckReg(bi.isJunk, c, acttype);
-
+                bool resultBool;
+                LogStack("[Main:CheckR]");
+                resultBool = CheckReg(bi.isJunk, c, acttype);
+                LogStackDump();
+                return resultBool;
             }
             private static bool CheckReg(bool isJunk, Chara argChara, ActType argActtype) 
             {
                 bool resultBool = false;
-                LogStack("[Main:CheckR]"); //string title = "[PBR:Main:CheckR]";
+                 //string title = "[PBR:Main:CheckR]";
                 
                 if (argChara == null) { LogError("NoChara"); goto MethodEnd; }
                 int tcp = TypeCharaPlaying(argChara);
                 if (argActtype == null) { LogError("NoActType"); goto MethodEnd; }
-                Log("Start", LogTier.Other);
+                Log("ArgChecked", LogTier.Other);
 
                 bool isForAll = argActtype.IsForAll();
-                bool regChara = GetCharaRegulation(tcp, argActtype.id);
-                bool regJunk = !isJunk || GetCharaJunkRegulation(tcp);
+                int wcc = ReturnWCC(argActtype.id);
+                int wccj = CE_WhichCharaCreatesJunkBottles.Value;
+                bool regChara = GetCharaRegulation(tcp, wcc);
+                bool regJunk = !isJunk || GetCharaJunkRegulation(tcp, wccj);
                 
                 resultBool = isForAll ? (regChara && regJunk) : regJunk;
                 Log("R:" + resultBool, LogTier.Other);
             MethodEnd:
-                LogStackDump();
+                //LogStackDump();
                 return resultBool;
             }
             //recycle--------------------------------------------------------
-            internal static bool DoRecycle(BottleIngredient bi, Chara c, Point p = null) 
+            internal static bool DoRecycle(BottleIngredient bi, Chara c, Point p = null)
+            {
+                bool resultBool;
+                LogStack("[Main:DoR]");
+                resultBool = DoRecc(bi, c, p);
+                LogStackDump();
+                return resultBool;
+            }
+            private static bool DoRecc(BottleIngredient bi, Chara c, Point p = null) 
             {
                 bool resultBool = false;
-                LogStack("[Main:DoR]"); //string title = "[PBR:Main:DR]";
+                 //string title = "[PBR:Main:DR]";
                 //Log( + "Start", 3);
                 if (bi == null) { Log("NoBI"); goto MethodEnd; }
                 if (c == null) { Log("NoChara"); goto MethodEnd; }
@@ -321,7 +345,7 @@ namespace s649PBR
                 text += "BI:" + GetStr(bi);
                 text += "/C:" + GetStr(c);//c.NameSimple;
                 text += "/P:" + GetStr(p);
-                Log("Start:ArgCheck/" + text, LogTier.Deep);
+                Log("ArgDeepCheck/" + text, LogTier.Deep);
 
                 // text = GetStr(acttype);
                 //text += "/bi:" + GetStr(bi);
@@ -358,7 +382,7 @@ namespace s649PBR
                     PatchMain.Log("CreateTo:" + text, LogTier.Info);
                 }
             MethodEnd:
-                LogStackDump();
+                
                 return resultBool;
             }
             /*
@@ -406,14 +430,20 @@ namespace s649PBR
                 return result;
             }
             */
-            internal static BottleIngredient TryCreateBI(Thing t, ActType acttype, int num = 1)
+            //TryCreateBIs--------------------------------------------------------------------------------
+            internal static BottleIngredient TryCreateBottleIng(ActType acttype, Thing thing, Chara chara = null, int num = 1)
             {
-                return TryCreateBI(t, EClass.pc, acttype, num);
+                BottleIngredient result;
+                LogStack("[Main/TCBI]");
+                if (chara == null) { chara = EClass.pc; }
+                result =  TryCBI(thing, chara, acttype, num);
+                LogStackDump();
+                return result;
             }
-            internal static BottleIngredient TryCreateBI(Thing argThing, Chara argChara, ActType argActtype, int argNum = 1) 
+            private static BottleIngredient TryCBI(Thing argThing, Chara argChara, ActType argActtype, int argNum = 1) 
             {
                 BottleIngredient returnBI = null;
-                LogStack("[Main/TCBI]"); //string title = "[PBR:Main:TCBI]";
+                 //string title = "[PBR:Main:TCBI]";
                 //Log("Start", 1);
                 //argcheck
                 if (argThing == null) { LogError("NoThing"); goto MethodEnd; }
@@ -423,7 +453,7 @@ namespace s649PBR
                 string text = GetStr(argActtype) + "->";
                 text += "T:" + argThing.NameSimple + "/";
                 text += "C:" + argChara.NameSimple + "/";
-                PatchMain.Log("Start:ArgCheck/" + text, LogTier.Deep);
+                Log("ArgDeepCheck/" + text, LogTier.Deep);
 
                 returnBI = CreateBI(argThing, argNum);
                 //bool b = CheckBI(bi);
@@ -439,7 +469,7 @@ namespace s649PBR
                 }
                 else { Log("Regulation Failure", LogTier.Deep); goto MethodEnd; }
             MethodEnd:
-                LogStackDump();
+            //    LogStackDump();
                 return returnBI;
             }
             /*

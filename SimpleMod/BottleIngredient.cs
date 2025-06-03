@@ -147,7 +147,7 @@ namespace s649PBR
                 SetProhibition();
                 num *= n1;
                 //isJunk = false;
-                Log("[PBR:BI]Generate->" + GetDetail(), 2);
+                //Log("[BI]Generate->" + GetDetail(), LogTier.Deep);
             }
            
             private void SetProhibition() 
@@ -164,11 +164,12 @@ namespace s649PBR
             }
             private void SetIDIngredient()
             {
-                string title = "[PBR-BI:SIDI]";
-                Log(title + "Start", 3);
+                string title = "[BI:SIDI]";
+                
                 Thing t = _Thing;
                 //idIngredientをsetしつつ結果をリターン
-                if (t == null) { Log(title + "*Error* NoThing", 2); return; }
+                if (t == null) { LogError(title + "NoThing"); return; }
+                Log("Start", LogTier.Other);
                 //Trait trait = t.trait;
                 //string category = t.sourceCard.category;
                 //string unit = t.source.unit;
@@ -179,7 +180,7 @@ namespace s649PBR
                 string tid = _ThingID;
                 //string category = orgThing.sourceCard.category;
                 //string unit = orgThing.source.unit;
-                if (tid == "") { Log(title + "*Error* NoThingID", 2); return; }
+                if (tid == "") { LogError(title + "NoThingID"); return; }
 
                 if (trait != null)
                 {
@@ -327,10 +328,10 @@ namespace s649PBR
                     result = BottleIngredient.None;
                     */
                     idIngredient = result;
-                    Log(title + "IDing => " + GetStr(result), 2);
+                    Log(title + "IDing => " + GetStr(result), LogTier.Deep);
                     return;
                 }
-                { Log(title + "*Error* NoTrait", 2); return; }
+                { LogError(title + "NoTrait"); return; }
                 /*
                 else //ThingがCreateされておらず、idから呼び出す時に使う。ThingVには使えない？Foodは対応する
                 {   //traitナシ・TraitFactoryから呼び出すときのみ・ThingやFoodなど
