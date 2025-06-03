@@ -151,7 +151,7 @@ namespace s649PBR
                 Log(argText, 0);
             }
             public static void ClearLogStack() 
-            {   //初期化。HarmonyPatchのpreかpostもしくはメソッドの頭で必ず呼び出す。
+            {   //初期化。HarmonyPatchのpreかpostで、メソッドの頭で必ず呼び出す。
                 //preとpostで重複呼び出しはしない事。
                 stackLog = new List<string> { };
             }

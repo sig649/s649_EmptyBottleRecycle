@@ -30,7 +30,7 @@ namespace s649PBR
             //lastProcess---------------------------------------------------------------------------
             private static bool ExeRecycle()
             {
-                string title = "[PBR:ExeR]";
+                string title = "[ExeR]";
                 LogStack(title);
                 Log("Start", 3);
                 string text = "[recycle]";
@@ -213,7 +213,7 @@ namespace s649PBR
             */
 
 
-            //Harmon Patches ---------------------------------------------------------------------------
+            //Harmony Patches ---------------------------------------------------------------------------
             [HarmonyPostfix]
             [HarmonyPatch(typeof(AI_UseCrafter), "OnStart")]
             private static void AI_UseCrafterOnStartPostPatch(AI_UseCrafter __instance)
@@ -285,7 +285,7 @@ namespace s649PBR
                     lastMixedThing = __result;
                 }
             }
-
+            //traitcrafter------------------------------------------------------------
             [HarmonyPrefix]
             [HarmonyPatch(typeof(TraitCrafter), "Craft")]
             private static bool TraitCrafterCraftPrePatch(TraitCrafter __instance, AI_UseCrafter ai)
@@ -358,7 +358,7 @@ namespace s649PBR
                 //PatchMain.Log(title + "Count:" + lastCraftCount.ToString(), 2);
                 //LogStackDump();
             }//<<<<end method:PostPatch
-
+            //OnEnd---------------------------------------------------------------------
             [HarmonyPostfix]
             [HarmonyPatch(typeof(AI_UseCrafter), "OnEnd")]
             private static void AI_UseCrafterOnEndPostPatch(AI_UseCrafter __instance)

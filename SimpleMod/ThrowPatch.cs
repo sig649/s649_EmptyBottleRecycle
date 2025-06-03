@@ -25,7 +25,8 @@ namespace s649PBR
             private static Thing throwed_t;
             private static Point throwed_p;
             private static bool isCheckSuccess;
-            private static readonly string header = "AT.T";
+            private static readonly string header = "[PBR/Th]";
+            /*
             private static void ThrowPatchPreExe(ActThrow actThrow, Thing thing, Point point)
             {
                 LogStack("[" + header+ "/Pre]");
@@ -36,6 +37,8 @@ namespace s649PBR
                 ThrowPPre(actThrow, thing, point);
                 LogStackDump();
             }
+            */
+            /*
             private static void ThrowPatchPostExe()
             {
                 if (!isCheckSuccess) { Log("post phase is skipped for check failure", LogTier.Other); return; }
@@ -77,31 +80,44 @@ namespace s649PBR
 
                 PatchMain.Log(text, LogTier.Info);
             }
+            */
+            //static Chara c_thrower;
+            //harmonyPatch----------------------------------------------------------------------
             [HarmonyPrefix]
             [HarmonyPatch(typeof(ActThrow), "Throw", new Type[] { typeof(Card), typeof(Point), typeof(Card), typeof(Thing), typeof(ThrowMethod) })]
             private static bool ThrowPrePatch(ActThrow __instance, Card c, Point p, Card target, Thing t, ThrowMethod method)
             {//begin method
                 stateBottleIng = null;
-                if (Cf_Allow_Throw) { ThrowPatchPreExe(__instance, t, p); }
-
-                /*
-                string title = "[PBR:AT.T;Pre]";
-                if (Cf_Allow_Throw)
-                {
-                    BottleIngredient bi;
-                    if (c == null) { Log(title + "*Error* NoCard"); return true; }
-                    Chara c_thrower = c.Chara;
-                    //Thing t = __instance
-                    bi = TryCreateBI(t, c_thrower, new ActType(ActType.Throw));
-
-                    //IsThrown = true;
-                    //lastThrower = c.Chara;
-                    //lastThrownThing = t;
-                    //lastCreatedBI = CreateBI(t);
-                    __state = bi;
-                    Log(title + "PreFinish", 2);
-                } 
-                */
+                c_thrower = null;
+                throwed_t = null;
+                throwed_p = null;
+                isCheckSuccess = false;
+                ClearLogStack();
+                LogStack(header);
+                string title = "[AT.T/Pre]";
+                LogStack(title);
+                if (Cf_Allow_Throw) 
+                { //ThrowPatchPreExe(__instance, t, p);
+                    
+                    
+                    
+                    c_thrower = __instance.owner.Chara;
+                    throwed_t = t;
+                    throwed_p = p;
+                    if (__instance.owner == null) { LogError("NoOwner"); goto MethodEnd; }
+                    if (c_thrower == null) { LogError("NoThrower"); goto MethodEnd; }
+                    if (throwed_t == null) { LogError("NoThing"); goto MethodEnd; }
+                    if (throwed_p == null) { LogError("NoPoint"); goto MethodEnd; }
+                    Log("ArgChecked", LogTier.Other);
+                    //Thing thing = card.Thing;
+                    stateBottleIng = TryCreateBottleIng(new ActType(ActType.Throw), throwed_t, c_thrower);
+                    if (stateBottleIng == null) { Log("NoBI", LogTier.Deep); goto MethodEnd; }
+                    isCheckSuccess = true;
+                    //return = bi;
+                    Log("PreSuccess", LogTier.Deep);
+                }
+            MethodEnd:
+                LogStackDump();
                 return true;
                 
             }//end method
@@ -110,9 +126,39 @@ namespace s649PBR
             [HarmonyPatch(typeof(ActThrow), "Throw", new Type[] { typeof(Card), typeof(Point), typeof(Card), typeof(Thing), typeof(ThrowMethod) })]
             private static void ThrowPostPatch(ActThrow __instance, Card c, Point p, Card target, Thing t, ThrowMethod method, BottleIngredient __state)
             {//begin method
-                if (Cf_Allow_Throw) { ThrowPatchPostExe(); }
+                string title = "[AT.T/Post]";
+                LogStack(title);
+                if (Cf_Allow_Throw)
+                { //ThrowPatchPostExe();
+                    if (!isCheckSuccess) { Log("post phase is skipped for check failure", LogTier.Deep); return; }
+                    
+                    //ThrowPPost();
+                    Log("Start", LogTier.Other);
+                    string text = "";
+                    bool tryBrake = stateBottleIng.TryBrake();
+                    text += "/tB:" + GetStr(tryBrake) + "/";
+
+                    bool result = DoRecycle(stateBottleIng, c_thrower, throwed_p);
+                    text += result ? "Done!" : "Not Done";
+
+                    if (result) { Log(text); } else { Log(text, LogTier.Deep); }
+
+                }
                 else { Log("'Throw' not Allowed", LogTier.Other); }
-                /*
+                LogStackDump();
+            }//end method
+        
+        }//<<<end class:PatchExe
+
+    }//<<end namespaceSub
+}//<end namespaceMain
+
+
+
+//if (thing == null) { LogError("NoCard"); return; }
+//Chara c_drinker = chara;
+//BottleIngredient bi = stateBottleIng;
+/*
                 string title = "[PBR:AT.T:Post]";
                 if (Cf_Allow_Throw)
                 {
@@ -133,13 +179,24 @@ namespace s649PBR
                     PatchMain.Log(title + text, 2);
                 } else { Log(title + "'Throw' not Allowed", 3); }
                 */
-            }//end method
-        
-        }//<<<end class:PatchExe
+/*
+                string title = "[PBR:AT.T;Pre]";
+                if (Cf_Allow_Throw)
+                {
+                    BottleIngredient bi;
+                    if (c == null) { Log(title + "*Error* NoCard"); return true; }
+                    Chara c_thrower = c.Chara;
+                    //Thing t = __instance
+                    bi = TryCreateBI(t, c_thrower, new ActType(ActType.Throw));
 
-    }//<<end namespaceSub
-}//<end namespaceMain
-
+                    //IsThrown = true;
+                    //lastThrower = c.Chara;
+                    //lastThrownThing = t;
+                    //lastCreatedBI = CreateBI(t);
+                    __state = bi;
+                    Log(title + "PreFinish", 2);
+                } 
+                */
 //Thing usedT = t;
 //Chara usedC = c.Chara;
 //bool result = PatchMain.TryRecycle(usedT, usedC, ActType.Throw, true, p);
