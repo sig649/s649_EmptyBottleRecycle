@@ -133,8 +133,9 @@ namespace s649PBR
             {
                 //メソッドの先頭で呼び出し、ログ用のヘッダーを追加する
                 //メソッドの終点でLogStackDumpを呼び出す必要がある
+                //※混乱を招くため処理の途中に追加してはいけない
                 //末端のメソッドなら呼び出す必要はない
-                //中継メソッドで呼び出すようにすれば楽かも
+                //ログ処理だけして中身は別メソッド処理に任せるやり方も後の混乱を呼ぶのでだめ。中継メソッドはできるだけ簡素に
                 //stackLogLast = stackLog;
                 //stackLog += argString;
                 stackLog.Add(argString);
@@ -150,7 +151,8 @@ namespace s649PBR
                 Log(argText, 0);
             }
             public static void ClearLogStack() 
-            {   //初期化。preで呼び出しておくと安全
+            {   //初期化。HarmonyPatchのpreかpostもしくはメソッドの頭で必ず呼び出す。
+                //preとpostで重複呼び出しはしない事。
                 stackLog = new List<string> { };
             }
             
@@ -439,7 +441,7 @@ namespace s649PBR
             {
                 BottleIngredient result;
                 LogStack("[Main/TCBI]");
-                if (chara == null) { chara = EClass.pc; }
+                if (chara == null) { chara = EClass.pc; }//cがnullの時はPCが行ったとみなす
                 result =  TryCBI(thing, chara, acttype, num);
                 LogStackDump();
                 return result;

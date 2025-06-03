@@ -30,12 +30,13 @@ namespace s649PBR
             //lastProcess---------------------------------------------------------------------------
             private static bool ExeRecycle()
             {
+                string title = "[PBR:ExeR]";
+                LogStack(title);
+                Log("Start", 3);
                 string text = "[recycle]";
                 bool b = false;
                 foreach (BottleIngredient bi in recycleQueues)
                 {
-                    string title = "[PBR:ER]";
-                    Log(title + "Start", 3);
                     if (bi.IsEnableRecycle()) 
                     {
                         //Thing t = ThingGen.Create(bi.GetID()).SetNum(bi.num);
@@ -48,6 +49,7 @@ namespace s649PBR
                     }
                 }
                 PatchMain.Log(text, 1);
+                LogStackDump();
                 return b;
             }
 
@@ -105,7 +107,7 @@ namespace s649PBR
                     //if (thing == null) { break; }
 
                     //var bi = new BottleIngredient(thing);
-                    var bi = TryCreateBI(thing, new ActType(ActType.Craft), thing.Num);
+                    var bi = TryCreateBottleIng(new ActType(ActType.Craft), thing,  null, thing.Num);
                     //PatchMain.Log(title + "BIcheck:" + thing.NameSimple + "/bi:" + bi.ToString(), 1);
                     //text += "[" + thing.NameSimple + ":" + bi + ":" + thing.Num + "]";
                     if (bi.IsValid())
@@ -123,6 +125,7 @@ namespace s649PBR
                 PatchMain.Log(title + text, 1);
                 return isSuccess;
             }
+            /*
             private static bool TSBITQFI(List<Ingredient> ings)
             {   //TrySetBIToQueuesFromIngsの中身
                 //string title = "[PBR:Craft/TSBITQFI]";//stack済み
@@ -143,49 +146,71 @@ namespace s649PBR
                 }
                 PatchMain.Log(text, LogTier.Deep);
                 text = "queue:" + GetStringsList(recycleQueues);
-                PatchMain.Log(text, 2);
+                PatchMain.Log(text, LogTier.Deep);
             MethodEnd:
                 return isSuccess;
-            }
+            }*/
             private static bool TrySetBIToQueuesFromIngs(List<Ingredient> ings)
             {   //argがIngredient listの場合
                 string title = "TSBITQFI";
                 LogStack("[" + title + "]");
-                var b = TSBITQFI(ings);
-                string text = b ? "Done!" : "Not Done";
-                Log(text, LogTier.Other);
-                LogStackDump();
-                return b;
-            }
-            private static void TrySetFromFactory(AI_UseCrafter ai_usecrafter) 
-            {
-                //string title = "[TSFF]";
-                //LogStack(title);//追加済
-                
-                
+                bool isSuccess = false;
 
-                if (isFactory)//加工機械による作業ではない
+               // var b = TSBITQFI(ings);
+                string text = "ingre:";
+                //bool isSuccess = false;
+                if (ings == null || ings.Count <= 0) { LogError("NoList"); goto MethodEnd; }
+                foreach (Ingredient ing in ings)
                 {
-                    //PatchMain.Log("[PBR:craft]Crafter is TraitFactory", 1);
-                    Recipe recipe = ai_usecrafter.recipe;
-                    if (recipe == null) { LogError("NoRecipe"); return; }
-                    string text = "recipe:" + recipe.GetName();
-                    Log(text, LogTier.Deep);
-                    List<Ingredient> ingredients = recipe.ingredients;
-                    //checkRecipesource
-                    bool b;
-                    if (ingredients != null)
+                    //var bi = new BottleIngredient(ing.thing, ing.req);
+                    BottleIngredient bi = TryCreateBottleIng(new ActType(ActType.Craft), ing.thing, null, ing.req);
+                    if (bi.IsValid())
                     {
-                        b = TrySetBIToQueuesFromIngs(ingredients);
+                        text += "bi:" + GetStr(bi);
+                        isSuccess = AddBIToQueues(bi);
+                        //isSuccess = true;
                     }
-                    else { LogError("NoIngredients"); return; }
-                    text = b ? "Done!" : "Not Done";
-                    Log(text, LogTier.Other);
+                    text += "/";
                 }
-                //MethodEnd:
-                //return;
-                //LogStackDump();
+                PatchMain.Log(text, LogTier.Deep);
+                text = "queue:" + GetStringsList(recycleQueues);
+                PatchMain.Log(text, LogTier.Deep);
+           
+                //return isSuccess;
+                text = isSuccess ? "Done!" : "Not Done";
+                Log(text, LogTier.Other);
+            MethodEnd:
+                LogStackDump();
+                return isSuccess;
             }
+            /*
+            private static bool TrySetFromFactory(AI_UseCrafter ai_usecrafter) 
+            {
+                string title = "[TSFF]";
+                LogStack(title);//追加済
+                //PatchMain.Log("[PBR:craft]Crafter is TraitFactory", 1);
+                bool isSuccess = false;
+                Recipe recipe = ai_usecrafter.recipe;
+                if (recipe == null) { LogError("NoRecipe"); goto MethodEnd ; }
+                string text = "recipe:" + recipe.GetName();
+                Log(text, LogTier.Deep);
+                List<Ingredient> ingredients = recipe.ingredients;
+                //checkRecipesource
+                //bool b;
+                if (ingredients != null)
+                {
+                    isSuccess = TrySetBIToQueuesFromIngs(ingredients);
+                }
+                else { LogError("NoIngredients"); goto MethodEnd; }
+                text = isSuccess ? "Done!" : "Not Done";
+                Log(text, LogTier.Other);
+
+                MethodEnd:
+                LogStackDump();
+                return isSuccess;
+               
+            }
+            */
 
 
             //Harmon Patches ---------------------------------------------------------------------------
@@ -197,30 +222,56 @@ namespace s649PBR
                 //共通初期化...のはず
                 string title = "[AIUC.OS]";
                 ClearLogStack();
-                LogStack(header);
-                LogStack(title);
+                LogStack(header + title);
+                //LogStack(title);
                 recycleQueues = new List<BottleIngredient>();
                 lastMixedThing = null;
                 lastCraftCount = 0;
                 recycleSet = 0;
-
+                Log("StateInit", LogTier.Deep);
+                bool isSuccess = false;
                 TraitCrafter trait = __instance.crafter;
-                if (trait == null) { LogError("NoTrait"); return; }
+                if (trait == null) { LogError("NoTrait"); goto MethodEnd; }
                 bool isFactory = trait is TraitFactory;
                 Log("ArgChexk/iF:" + GetStr(isFactory) + "/t:" + GetStr(trait), LogTier.Deep);
+                string text = "";
                 if (isFactory) 
                 {
-                    title = "[TSFF]";
-                    LogStack(title);
-                    var b = TrySetFromFactory(__instance);
-                    text = b ? "Done!" : "Not Done";
-                    Log(text, LogTier.Other);
-                    LogStackDump()
-                } 
-                    //isProhibition = false;
-                    //processRecycleList = null;
-                    ;
-                LogStackDump();
+                    //title = "[TSFF]";
+                    //LogStack(title);
+                    //string title = "[TSFF]";
+                    //LogStack(title);//追加済
+                                    //PatchMain.Log("[PBR:craft]Crafter is TraitFactory", 1);
+                    
+                    Recipe recipe = __instance.recipe;
+                    if (recipe == null) { LogError("NoRecipe"); goto MethodEnd; }
+                    text = "recipe:" + recipe.GetName();
+                    Log(text, LogTier.Deep);
+                    List<Ingredient> ingredients = recipe.ingredients;
+                    //checkRecipesource
+                    //bool b;
+                    if (ingredients != null)
+                    {
+                        isSuccess = TrySetBIToQueuesFromIngs(ingredients);
+                    }
+                    else { LogError("NoIngredients"); goto MethodEnd; }
+                    text = isSuccess ? "Done!" : "Not Done";
+                    Log("TrySet->" + text, LogTier.Deep);
+
+                
+                    //LogStackDump();
+                    //return isSuccess;
+
+                    //LogStackDump();
+                }
+            MethodEnd:
+                text = "End";
+                Log(text, LogTier.Other);
+                //isProhibition = false;
+                //processRecycleList = null;
+
+                //LogStackDump();
+                //ClearLogStack();
             }
             
             [HarmonyPostfix]
@@ -242,7 +293,11 @@ namespace s649PBR
                 if (!PatchMain.Cf_Allow_Craft) { return true; }
 
                 //加工機械のクラフトからIngを得る
-                title = "[PBR:Craft/TC.C/Pre]";
+                string title = "[TC.C/Pre]";
+                ClearLogStack();
+                LogStack(header);
+                LogStack(title);
+                //title = "[PBR:Craft/TC.C/Pre]";
                 
                 if (recycleSet == PhaseRecycle.None)
                 {
@@ -259,6 +314,8 @@ namespace s649PBR
                     recycleSet++;
                 }
                 else { PatchMain.Log(title + "SetSkipped", 2); }
+            //MethodEnd:
+                LogStackDump();
                 return true;
             }
 
@@ -266,55 +323,53 @@ namespace s649PBR
             [HarmonyPatch(typeof(TraitCrafter), "Craft")]
             private static void TraitCrafterCraftPostPatch(TraitCrafter __instance, AI_UseCrafter ai, Thing __result)
             {//>>>>begin method:PostPatch
-                title = "[PBR:TC.C:Post]";
                 if (!PatchMain.Cf_Allow_Craft) { return; }
-                //PatchMain.Log("[PBR:craft]Fook:TraitCrafter/Craft");
-                if (__result == null) {PatchMain.Log(title + "NoResult"); return; }
-                if (ai == null){PatchMain.Log(title + "NoAI"); return;}
-                //PatchMain.Log("[PBR:craft]Fook:TraitCrafter/Craft", 1);
-
-                if (recycleSet == PhaseRecycle.IngSet)
+                
+                if (recycleSet == PhaseRecycle.IngSet && recycleQueues.Count > 0)
                 {
-                    
-                    if (recycleQueues.Count > 0)
-                    {
-                        //string resultBI = PatchMain.GetStringID(__result);
-                        lastMixedThing = __result;
-                        //var bi = new BottleIngredient(__result, __result.trait.CraftNum);
-                        var bi = TryCreateBI(__result, new ActType(ActType.Craft), __result.trait.CraftNum);
-                        //PatchMain.Log(title + "BIcheck:" + __result.NameSimple + "/bi:" + bi.ToString(), 1);
-                        //productにbottleingが含まれている場合はリターンを減産する
-                        if (bi.IsValid())
-                        {
-                            bool b = RemoveBIFromQueues(bi);
-                            if (b)
-                            {
-                                PatchMain.Log(title + "Remove:Success" + GetStringsList(recycleQueues), 1);
-                            }
-                            else { PatchMain.Log(title + "Remove:Fail" + GetStringsList(recycleQueues), 1); }
-                        }
-                        else
-                        { PatchMain.Log(title + "Result:NoBI or Invalid" + GetStringsList(recycleQueues), 1); }
+                    string title = "[TC.C:Post]";
+                    LogStack(title);
 
+                    if (__result == null) { LogError("NoResult"); return; }
+                    if (ai == null) { LogError("NoAI"); return; }
+                    Log("ArgChecked", LogTier.Deep);
+                    lastMixedThing = __result;
+                    var bi = TryCreateBottleIng(new ActType(ActType.Craft), __result, null, __result.trait.CraftNum);
+                    //PatchMain.Log(title + "BIcheck:" + __result.NameSimple + "/bi:" + bi.ToString(), 1);
+                    //productにbottleingが含まれている場合はリターンを減産する
+                    if (bi.IsValid())
+                    {
+                        bool b = RemoveBIFromQueues(bi);
+                        if (b)
+                        {
+                            PatchMain.Log("Remove:Success" + GetStringsList(recycleQueues), LogTier.Deep);
+                        }
+                        else { PatchMain.Log("Remove:Fail" + GetStringsList(recycleQueues), LogTier.Deep); }
                     }
-                    else { PatchMain.Log(title + "NoRecycleQueue" + GetStringsList(recycleQueues), 1); }
-                    
+                    else
+                    { PatchMain.Log("Result:NoBI or Invalid" + GetStringsList(recycleQueues), LogTier.Deep); }
+
                     recycleSet++;
                     //PatchMain.ExeRecycle(recycleList, EClass.pc);
                 }
-                else { PatchMain.Log(title + "RemoveSkipped:", 2); }
+                else { PatchMain.Log("RemoveSkipped:", LogTier.Other); }
+            //MethodEnd:
                 lastCraftCount++;
-                PatchMain.Log(title + "Count:" + lastCraftCount.ToString(), 2);
-
+                //PatchMain.Log(title + "Count:" + lastCraftCount.ToString(), 2);
+                //LogStackDump();
             }//<<<<end method:PostPatch
 
             [HarmonyPostfix]
             [HarmonyPatch(typeof(AI_UseCrafter), "OnEnd")]
             private static void AI_UseCrafterOnEndPostPatch(AI_UseCrafter __instance)
             {
-                title = "[PBR:Craft/AIUC.OE:Post]";
+                //title = "[PBR:Craft/AIUC.OE:Post]";
+                string title = "[AIUC.OE:Post]";
+                ClearLogStack();
+                LogStack(header + title);
                 if (!PatchMain.Cf_Allow_Craft) { return; }
-                PatchMain.Log(title + "AI_UseCrafter/OnEnd", 1);
+
+                //PatchMain.Log(title + "AI_UseCrafter/OnEnd", 1);
                 TraitCrafter trait = __instance.crafter;
                 
                 if (trait is TraitFactory)
@@ -322,34 +377,34 @@ namespace s649PBR
                     if (lastMixedThing != null && recycleQueues != null && recycleQueues.Count > 0)
                     {
                         //craftしたThingからBIを作成しつつRemove
-                        PatchMain.Log(title + "lastMixed:" + lastMixedThing.NameSimple + "/num:" + lastMixedThing.Num);
+                        Log("lastMixed:" + lastMixedThing.NameSimple + "/num:" + lastMixedThing.Num);
                        // var bi = new BottleIngredient(lastMixedThing, lastMixedThing.trait.CraftNum);
-                        var bi = TryCreateBI(lastMixedThing, new ActType(ActType.Craft), lastMixedThing.trait.CraftNum);
+                        var bi = TryCreateBottleIng(new ActType(ActType.Craft), lastMixedThing, null, lastMixedThing.trait.CraftNum);
                         if (bi.IsEnableRecycle()) //還元除外用
                         {
                             //recycleQueue.RemoveBIFromQueues(new (PatchMain.GetStringID(lastMixedThing), lastMixedThing.trait.CraftNum));
                             RemoveBIFromQueues(bi);
-                        } else { PatchMain.Log(title + "Result:NoBI", 1); }
+                        } else { Log("Result:NoBI", LogTier.Deep); }
                         
                         //出力
                         SetMultiNum(__instance.num);//回数分倍化
-                        PatchMain.Log(title + "RQ:" + GetStringsList(recycleQueues));
+                        Log("RQ:" + GetStringsList(recycleQueues));
                         ExeRecycle();
-                        PatchMain.Log(title + "RecycleDone!", 1);
-                    } else { PatchMain.Log(title + "Canceled:RemoveFromResult", 1); }
+                        Log("RecycleDone!", LogTier.Deep);
+                    } else { Log("Canceled:RemoveFromResult", LogTier.Deep); }
                 }
                 else 
                 {   //加工機械
                     //PatchMain.Log("[PBR:craft]Crafter is not TraitFactory", 1);
                     if (lastCraftCount != 0 && recycleQueues != null && recycleSet == PhaseRecycle.Done) 
                     {
-                        PatchMain.Log(title + "lastCraftCount:" + lastCraftCount.ToString());
+                        Log("lastCraftCount:" + lastCraftCount.ToString(), LogTier.Deep);
                         SetMultiNum(lastCraftCount);
-                        PatchMain.Log(title + "RQ:" + GetStringsList(recycleQueues));
+                        Log("RQ:" + GetStringsList(recycleQueues), LogTier.Deep);
                         ExeRecycle();
-                        PatchMain.Log(title + "RecycleDone!", 1);
+                        Log("RecycleDone!", LogTier.Deep);
                     }
-                    else { PatchMain.Log(title + "RecycleNotExecuted", 1); }
+                    else { Log("RecycleNotExecuted", LogTier.Deep); }
                 }
                 
                 //Chara owner = __instance.owner;
