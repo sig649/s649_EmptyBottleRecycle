@@ -331,6 +331,7 @@ namespace s649PBR
                     Log(title + "IDing => " + GetStr(result), LogTier.Deep);
                     return;
                 }
+                else
                 { LogError(title + "NoTrait"); return; }
                 /*
                 else //ThingがCreateされておらず、idから呼び出す時に使う。ThingVには使えない？Foodは対応する

@@ -10,12 +10,18 @@ using System.Collections.Generic;
 using s649PBR.Main;
 using s649PBR.BIClass;
 using static s649PBR.Main.PatchMain;
+using System;
 //using BepInEx.Logging;
 
 namespace s649PBR
 {//>begin namespaceMain
     namespace DrinkPatch
     {//>>begin namespaceSub
+        /*
+             * Fook出来てない挙動
+             * 染料を持ってオブジェクトなどに使った時
+             * 
+             */
         [HarmonyPatch]
         internal class PatchExe
         {//>>>begin class:PatchExe
@@ -24,78 +30,49 @@ namespace s649PBR
             private static Thing used_t;
             //private static Point throwed_p;
             private static bool isCheckSuccess;
-            private static readonly string header = "[Dr]";
-
-            /*
-            private static void CharaDrinkPatchPreExe(Chara chara, Card card) 
-            {
-                
-                LogStack("[C.D/Pre]");
-                CharaDrinkPPre(chara, card);
-                LogStackDump();
-            }
-            private static void CharaDrinkPatchPostExe(Chara chara, Card card)
-            {
-                LogStack("[C.D/Post]");
-                CharaDrinkPPost(chara, card);
-                LogStackDump();
-            }
-            private static void CharaDrinkPPre(Chara chara, Card card)
-            {
-                Log("Start", LogTier.Other);
-                //BottleIngredient bi;
-                Chara c_drinker = chara;
-                if (card == null) { LogError("NoCard"); return; }
-                Thing thing = card.Thing;
-                stateBottleIng = TryCreateBottleIng(new ActType(ActType.Use), thing, c_drinker);
-                //return = bi;
-                Log("PreFinish", LogTier.Other);
-            }
-            private static void CharaDrinkPPost(Chara chara, Card card) 
-            {
-                Log("Start", LogTier.Other);
-                string text = "";
-                if (card == null) { LogError("NoCard"); return; }
-                Chara c_drinker = chara;
-                BottleIngredient bi = stateBottleIng;
-                if (bi == null) { Log("NoBI", LogTier.Info); return; }
-                bool result = DoRecycle(bi, c_drinker);
-                text += result ? "Done!" : "Not Done";
-
-                PatchMain.Log(text, LogTier.Info);
-            }
-            */
+            private static readonly string modNS = "DP";
+            //private static readonly string header = "Dr";
 
             [HarmonyPrefix]
             [HarmonyPatch(typeof(Chara), "Drink")]
             private static bool CharaDrinkPrePatch(Chara __instance, Card t) 
             {
+                //stat init
                 stateBottleIng = null;
                 c_drinker = null;
                 used_t = null;
                 //throwed_p = null;
                 isCheckSuccess = false;
+                //log init
                 ClearLogStack();
-                LogStack(header);
-                string title = "[C.D/Pre]";
-                LogStack(title);
+                string title = "C.D";
+                LogStack("[" + modNS + "/" + title + "]");
 
                 if (Cf_Allow_Use)
                 { //CharaDrinkPatchPreExe(__instance, t); }
-                    
-                    //BottleIngredient bi;
-                    c_drinker = __instance;
-                    if (!t.isThing) { LogError("t is not thing"); goto MethodEnd; }
-                    used_t = t.Thing;
-                    Log("ArgChecked", LogTier.Deep);
-                    //Thing thing = card.Thing;
-                    stateBottleIng = TryCreateBottleIng(new ActType(ActType.Use), used_t, c_drinker);
-                    //return = bi;
+                    try
+                    {
+                        //BottleIngredient bi;
+                        c_drinker = __instance;
+                        if (!t.isThing) { LogError("*Warn* t is not thing"); goto MethodEnd; }
+                        used_t = t.Thing;
+                        Log("ArgChecked", LogTier.Deep);
+                        //Thing thing = card.Thing;
+                        stateBottleIng = TryCreateBottleIng(new ActType(ActType.Use), used_t, c_drinker);
+                        //return = bi;
+                        
+                    }
+                    catch (NullReferenceException ex)
+                    {
+                        Debug.Log(ex.Message);
+                        Debug.Log(ex.StackTrace);
+                        goto MethodEnd;
+                    }
                     if (stateBottleIng == null) { Log("NoBI", LogTier.Deep); goto MethodEnd; }
                     isCheckSuccess = true;
                     Log("PreFinish", LogTier.Other);
 
-                    
+
                 }
             MethodEnd:
                 LogStackDump();
@@ -126,6 +103,36 @@ namespace s649PBR
                 else { Log("'Use' not Allowed", LogTier.Other); }
                 
             }
+            /*
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(HotItemAct), "TrySetAct")]
+            internal static void HotItemAct_TrySetAct_PostPatch()
+            {
+                string title = "[PBR:FookCheck]";
+                Log(title + "HotItemAct" + "/" + "TrySetAct");
+            }
+            */
+            
+            /*
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(TraitDye), "OnBlend")]
+            internal static void TraitDye_OnBlend_PostPatch()
+            {
+                string title = "[PBR:FookCheck]";
+                Log(title + "TraitDye" + "/" + "OnBlend");
+            }
+            */
+            
+            /*
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(TraitDrink), "OnBlend")]
+            internal static void TraitDrink_OnBlend_PostPatch()
+            {
+                string title = "[PBR:FookCheck]";
+                Log(title + "TraitDrink" + "/" + "OnBlend");
+            }
+            */
+        
         }//<<<end class:PatchExe
     }//<<end namespaceSub
 }//<end namespaceMain
@@ -133,6 +140,46 @@ namespace s649PBR
 
 //trash
 
+
+/*
+private static void CharaDrinkPatchPreExe(Chara chara, Card card) 
+{
+
+    LogStack("[C.D/Pre]");
+    CharaDrinkPPre(chara, card);
+    LogStackDump();
+}
+private static void CharaDrinkPatchPostExe(Chara chara, Card card)
+{
+    LogStack("[C.D/Post]");
+    CharaDrinkPPost(chara, card);
+    LogStackDump();
+}
+private static void CharaDrinkPPre(Chara chara, Card card)
+{
+    Log("Start", LogTier.Other);
+    //BottleIngredient bi;
+    Chara c_drinker = chara;
+    if (card == null) { LogError("NoCard"); return; }
+    Thing thing = card.Thing;
+    stateBottleIng = TryCreateBottleIng(new ActType(ActType.Use), thing, c_drinker);
+    //return = bi;
+    Log("PreFinish", LogTier.Other);
+}
+private static void CharaDrinkPPost(Chara chara, Card card) 
+{
+    Log("Start", LogTier.Other);
+    string text = "";
+    if (card == null) { LogError("NoCard"); return; }
+    Chara c_drinker = chara;
+    BottleIngredient bi = stateBottleIng;
+    if (bi == null) { Log("NoBI", LogTier.Info); return; }
+    bool result = DoRecycle(bi, c_drinker);
+    text += result ? "Done!" : "Not Done";
+
+    PatchMain.Log(text, LogTier.Info);
+}
+*/
 
 /*
                 LogStack("[C.D/Pre]");//string title = "[PBR:C.D/Post]";

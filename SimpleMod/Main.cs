@@ -160,8 +160,11 @@ namespace s649PBR
             //bi-------------------------------------------------------------------------
             private static BottleIngredient CreateBI(Thing argThing, int argNum  = 1)
             {
+                string title = "CreBI";
+                LogStack("[" + modNS + "/" + title + "]");
+
                 BottleIngredient resultBI = null;
-                LogStack("[" + modNS + "/CreateBI]"); //string title = "[PBR-Main:CreateBI]"; 
+                //LogStack("[" + modNS + "/CreBI]"); //string title = "[PBR-Main:CreateBI]"; 
                 if (argThing == null) { LogError("NoThing"); goto MethodEnd; }
                 Log("ArgChecked", LogTier.Deep);
 
@@ -179,8 +182,11 @@ namespace s649PBR
             }
             internal static Thing ThingGenFromBI(BottleIngredient bi)
             {
+                
+                string title = "TGFBI";
+                LogStack("[" + modNS + "/" + title + "]"); //string title = "[PBR:Main:TGFBI]";
+
                 Thing resultThing = null;
-                LogStack("[" + modNS + "/TGBI]"); //string title = "[PBR:Main:TGFBI]";
                 if (bi == null) { LogError("No BI"); goto MethodEnd; }
                 Log("ArgChecked", LogTier.Deep);
 
@@ -190,19 +196,23 @@ namespace s649PBR
                 { Log("ThingGen has NotCreated:" + GetStr(resultThing), LogTier.Deep); goto MethodEnd; }
                 resultThing.ChangeMaterial(bi.idMaterial);
                 Log("Success:" + GetStr(resultThing) + "/Mat:" + resultThing.idMaterial, LogTier.Deep);
+
             MethodEnd:
                 LogStackDump();
                 return resultThing;
             }
             private static bool CheckBI(BottleIngredient bi) 
             {
+                string title = "ChBI";
+                LogStack("[" + modNS + "/" + title + "]"); //string title = "[PBR:" + modNS + "CheckBI]";
+
                 bool result = false;
-                LogStack("[" + modNS + "/CheckBI]"); //string title = "[PBR:" + modNS + "CheckBI]";
                 if (bi == null) { LogError("bi is null"); goto MethodEnd; }
                 Log("ArgChecked", LogTier.Deep);
                 //Log(title + "Detail->" + bi.GetDetail(), 2);
                 result = bi.IsValid();
                 Log("R:" + bi.GetDetail(), LogTier.Deep);
+
             MethodEnd:
                 LogStackDump();
                 return result;
@@ -211,8 +221,9 @@ namespace s649PBR
             private static int ReturnWCC(int acttype)
             {
                 //LogStack("[" + modNS + "RWCC]");
-                string title = "[RWCC]";
-                Log(title + "Start", LogTier.All);
+                string title = "[ReWCC]";
+                LogStack("[" + modNS + "/" + title + "]");
+                Log("Start", LogTier.All);
                 int result;
                 switch (acttype)
                 {
@@ -235,110 +246,161 @@ namespace s649PBR
                         result = 999;
                         break;
                 }
-                Log(title + "R:" + result, LogTier.Other); 
+                Log("R:" + result, LogTier.Other);
+                LogStackDump();
                 return result;
             }
             private static int TypeCharaPlaying(Card c)
             {
-                int result = 0;
-                //LogStack("[" + modNS + "TCP]"); //string title = "[PBR-" + modNS + "RWCC]";
                 string title = "[TCP]";
-                if (c == null) { LogError(title + "c is null"); goto MethodEnd; }
-                Log(title + "ArgChecked", LogTier.Other);
-                if (c.IsPC)
+                LogStack("[" + modNS + "/" + title + "]");
+                int result = 0;
+                try
                 {
-                    result = 1;
-                    //return 1;
+                    
+                    //LogStack("[" + modNS + "TCP]"); //string title = "[PBR-" + modNS + "RWCC]";
+                    //string title = "[TCP]";
+                    //if (c == null) { LogError(title + "c is null"); goto MethodEnd; }
+                    Log("ArgChecked:" + GetStr(c), LogTier.Other);
+                    if (c.IsPC)
+                    {
+                        result = 1;
+                        //return 1;
+                    }
+                    else if (!c.IsPC && c.IsPCParty)
+                    {
+                        result = 2;
+                        //return 2;
+                    }
+                    else
+                    {
+                        result = 3;
+                        //return 3;
+                    }
+                    Log("R:" + result, LogTier.All);
                 }
-                else if (!c.IsPC && c.IsPCParty)
+                catch (NullReferenceException ex)
                 {
-                    result = 2;
-                    //return 2;
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    result = 0;
                 }
-                else
-                {
-                    result = 3;
-                    //return 3;
-                }
-                Log("R:" + result, LogTier.All);
-
-            MethodEnd:
-                //LogStackDump();
+            //MethodEnd:
+                LogStackDump();
                 return result;
             }
             private static bool GetCharaRegulation(int tcp, int wcc) 
             {
-                bool result = false;
-                //LogStack("[Main:GCR]");
                 string title = "[GCR]";
-                //Log(title + "Start", LogTier.Other);
+                LogStack("[" + modNS + "/" + title + "]");
 
-                //if (c == null) { Log(title + "*Error* NoChara"); return false; }
-                //int tcp = TypeCharaPlaying(c);
-                result = tcp <= wcc;
-                Log(title + "R:" + result, LogTier.All);
+                //bool result = false;
+                bool result = tcp <= wcc;
+                Log("R:" + result, LogTier.All);
 
-                //LogStackDump();
+                LogStackDump();
                 return result;
             }
             private static bool GetCharaJunkRegulation(int tcp, int wccj)
             {
-                bool result = false;
-                //LogStack("[Main:GCJR]");
                 string title = "[GCJR]";
-                //Log(title + "Start", LogTier.Other);
-                //if (c == null) { Log(title + "*Error* NoChara"); return false; }
-                //int tcp = TypeCharaPlaying(c);
-                //bool result = tcp <= CE_WhichCharaCreatesJunkBottles.Value;
-                //Log(title + "R:" + result, 3);
+                LogStack("[" + modNS + "/" + title + "]");
 
-                // LogStackDump();
-                result = tcp <= wccj;
-                Log(title + "R:" + result, LogTier.All);
+                //bool result = false;
+                bool result = tcp <= wccj;
+                Log("R:" + result, LogTier.All);
+
+                LogStackDump();
                 return result;
             }
 
-            internal static bool CheckRegulation(BottleIngredient bi, Chara c, ActType acttype) 
-            {
-                //string title = "[PBR:Main:CheckR]";
-                //仲介
-                bool resultBool;
-                LogStack("[" + modNS + "/CheckR]");
-                resultBool = CheckReg(bi.isJunk, c, acttype);
-                LogStackDump();
-                return resultBool;
-            }
-            private static bool CheckReg(bool isJunk, Chara argChara, ActType argActtype) 
+            internal static bool CheckRegulation(BottleIngredient bi, Chara argChara, ActType acttype) 
             {
                 bool resultBool = false;
-                 //string title = "[PBR:Main:CheckR]";
-                
-                if (argChara == null) { LogError("NoChara"); goto MethodEnd; }
-                int tcp = TypeCharaPlaying(argChara);
-                if (argActtype == null) { LogError("NoActType"); goto MethodEnd; }
-                Log("ArgChecked", LogTier.Other);
+                string title = "[CheR]";
+                LogStack("[" + modNS + "/" + title + "]");
+                try 
+                {
+                    var args = new List<string> { GetStr(bi), GetStr(argChara), GetStr(acttype) };
+                    var argtext = string.Join("/", args);
+                    Log("Start/Arg:" + argtext, LogTier.Other);
+                    int tcp = TypeCharaPlaying(argChara);
+                    bool isForAll = acttype.IsForAll();
+                    int wcc = ReturnWCC(acttype.id);
+                    int wccj = CE_WhichCharaCreatesJunkBottles.Value;
+                    bool regChara = GetCharaRegulation(tcp, wcc);
+                    bool regJunk = !bi.isJunk || GetCharaJunkRegulation(tcp, wccj);
 
-                bool isForAll = argActtype.IsForAll();
-                int wcc = ReturnWCC(argActtype.id);
-                int wccj = CE_WhichCharaCreatesJunkBottles.Value;
-                bool regChara = GetCharaRegulation(tcp, wcc);
-                bool regJunk = !isJunk || GetCharaJunkRegulation(tcp, wccj);
+                    resultBool = isForAll ? (regChara && regJunk) : regJunk;
+                } 
+                catch (NullReferenceException ex)
+                {
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    resultBool = false;
+                }
                 
-                resultBool = isForAll ? (regChara && regJunk) : regJunk;
-                Log("R:" + resultBool, LogTier.Other);
-            MethodEnd:
-                //LogStackDump();
-                return resultBool;
-            }
-            //recycle--------------------------------------------------------
-            internal static bool DoRecycle(BottleIngredient bi, Chara c, Point p = null)
-            {
-                bool resultBool;
-                LogStack("[" + modNS + "/DoR]");
-                resultBool = DoRecc(bi, c, p);
+            //MethodEnd:
                 LogStackDump();
                 return resultBool;
             }
+            
+            //recycle--------------------------------------------------------
+            internal static bool DoRecycle(BottleIngredient bi, Chara argChara, Point point = null)
+            {
+                bool resultBool = false;
+                Thing createBI = null;
+                string title = "[DoR]";
+                LogStack("[" + modNS + "/" + title + "]");
+
+                //LogStack("[" + modNS + "/DoR]");
+                //resultBool = DoRecc(bi, c, p);
+                try
+                {
+                    var args = new List<string> { GetStr(bi), GetStr(argChara), GetStr(point) };
+                    var argtext = string.Join("/", args);
+                    Log("Start/Arg:" + argtext, LogTier.Deep);
+
+                    createBI = ThingGenFromBI(bi);//= ThingGen.Create(bi.GetID()).SetNum(bi.num);
+                    //if (createBI == null) { Log("NoResult", LogTier.Deep); goto MethodEnd; }
+                    
+                }
+                catch (NullReferenceException ex)
+                {
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    LogStackDump();
+                    return resultBool;
+                }
+                string text = "" + GetStr(createBI);
+                if (point == null)
+                {
+                    if (argChara.IsPC)
+                    {
+                        text += "/toPC";
+                        argChara.Pick(createBI);
+                    }
+                    else
+                    {
+                        text += "/to:" + GetStr(argChara);
+                        EClass._zone.AddCard(createBI, argChara.pos);
+                    }
+
+                    Log("Recycled:" + text);
+                    resultBool = true;
+                }
+                else
+                {
+                    text += "/p:" + GetStr(point);
+                    EClass._zone.AddCard(createBI, point);
+                    resultBool = true;
+                    Log("RecycledTo:" + text);
+                }
+
+                LogStackDump();
+                return resultBool;
+            }
+            /*
             private static bool DoRecc(BottleIngredient bi, Chara c, Point p = null) 
             {
                 bool resultBool = false;
@@ -353,14 +415,6 @@ namespace s649PBR
                 text += "/C:" + GetStr(c);//c.NameSimple;
                 text += "/P:" + GetStr(p);
                 Log("ArgDeepCheck/" + text, LogTier.Deep);
-
-                // text = GetStr(acttype);
-                //text += "/bi:" + GetStr(bi);
-                //text += "/C:" + GetStr(c);
-                //text += "/P:" + GetStr(p);
-
-                //text += "/rsID:" + GetID();
-                
 
                 Thing createBI = ThingGenFromBI(bi);//= ThingGen.Create(bi.GetID()).SetNum(bi.num);
                 if (createBI == null) { Log("NoResult", LogTier.Deep); goto MethodEnd; }
@@ -392,6 +446,7 @@ namespace s649PBR
                 
                 return resultBool;
             }
+            */
             /*
             internal static Thing DoRecycle(BottleIngredient bi, Chara c, ActType acttype, Point p = null) 
             {
@@ -438,15 +493,52 @@ namespace s649PBR
             }
             */
             //TryCreateBIs--------------------------------------------------------------------------------
-            internal static BottleIngredient TryCreateBottleIng(ActType acttype, Thing thing, Chara chara = null, int num = 1)
+            internal static BottleIngredient TryCreateBottleIng(ActType argActtype, Thing argThing, Chara argChara = null, int argNum = 1)
             {
-                BottleIngredient result;
-                LogStack("[" + modNS + "/TCBI]");
-                if (chara == null) { chara = EClass.pc; }//cがnullの時はPCが行ったとみなす
-                result =  TryCBI(thing, chara, acttype, num);
+                BottleIngredient resultBI = null;
+                string title = "[TCBI]";
+                LogStack("[" + modNS + "/" + title + "]");
+                //if (argChara == null) { argChara = EClass.pc; }//cがnullの時はPCが行ったとみなす
+                
+                try
+                {
+                    var args = new List<string> { GetStr(argActtype), GetStr(argThing), GetStr(argChara), GetStr(argNum) };
+                    var argtext = string.Join("/", args);
+                    Log("Start/Arg:" + argtext, LogTier.Deep);
+
+                    resultBI = CreateBI(argThing, argNum);
+                }
+                catch (NullReferenceException ex)
+                {
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    goto MethodEnd;
+                }
+                Chara chara = argChara ?? EClass.pc;//cがnullの時はPCが行ったとみなす
+                if (resultBI != null && resultBI.IsValid())
+                {
+                    Log("CreateBI->Success/" + GetStr(resultBI), LogTier.Deep);
+                }
+                else { 
+                    Log("BI has not been created or invalid", LogTier.Deep);
+                    resultBI = null; 
+                    goto MethodEnd;
+                }
+                if (CheckRegulation(resultBI, chara, argActtype))
+                {
+                    Log("Regulation Checked", LogTier.Deep);
+                }
+                else { 
+                    Log("Regulation Failure", LogTier.Deep);
+                    resultBI = null;
+                    goto MethodEnd;
+                }
+                //result =  TryCBI(argThing, argChara, argActtype, argNum);
+            MethodEnd:
                 LogStackDump();
-                return result;
+                return resultBI;
             }
+            /*
             private static BottleIngredient TryCBI(Thing argThing, Chara argChara, ActType argActtype, int argNum = 1) 
             {
                 BottleIngredient returnBI = null;
@@ -478,193 +570,7 @@ namespace s649PBR
             MethodEnd:
             //    LogStackDump();
                 return returnBI;
-            }
-            /*
-            internal static bool TryRecycle(Thing t, Chara c, ActType acttype, Point p = null, bool broken = false)
-            {
-                string title = "[PBR:Main:TrRe]";
-                Log(title + "Start", 1);
-                if (t == null) { Log(title + "*Error* NoThing"); return false; }
-                if (c == null) { Log(title + "*Error* NoChara"); return false; }
-                if (acttype == null) { Log(title + "*Error* ActType is Not Valid"); return false; }
-
-                string text = GetStr(acttype) + ":";
-                text += "T:" + t.NameSimple;
-                text += "/C:" + c.NameSimple;
-                //text += "/Br:" + GetStr(broken);
-                text += "/P:" + GetStr(p);
-                //Thing usedT = trait.owner.Thing;
-                //Log(title + "Thing->" + t.NameSimple + " :by " + c.NameSimple, 1);
-                PatchMain.Log(title + "ArgCheck/" + text, 1);
-                BottleIngredient bi = CreateBI(t);
-                //bool isBIValid = CheckBI(bi);
-                if (bi == null)
-                {
-                    Log(title + "BI is null", 1);
-                    return false;
-                }
-                else { Log(title + "CreateBI->Success/" + GetStr(bi)); }
-                
-                //if (!bi.IsValid())
-                //{
-                //    Log(title + "BI is Invalid", 1);
-                //    return false;
-                //}
-                else { Log(title + "CreateBI Success/" + GetStr(bi)); }
-                if (!CheckRegulation(bi, c, acttype))
-                {
-                    Log(title + "Regulation Failure", 1);
-                    return false;
-                }
-                else { Log(title + "Regulation Checked"); }
-                if (broken) //破損処理
-                {
-                    bool tryBrake = bi.TryBrake();
-                    text += "/tB:" + GetStr(tryBrake);
-                }
-                Thing result = DoRecycle(bi, c, acttype, p);
-                text = "";
-                
-                if (result != null)
-                {
-                    text += "/Rs:" + result.NameSimple;
-                    PatchMain.Log(title + "Success!" + text, 1);
-                    return true;
-                }
-                else 
-                {
-                    PatchMain.Log(title + "NotDone", 1);
-                    return false;
-                }
-            }
-            */
-            /*
-            public static bool TryUse(Trait trait, Chara c) 
-            {
-                string title = "[PBR-Main:TUse]";
-                Log(title + "Start", 1);
-                if (trait == null) { Log(title + "*Error* NoTrait"); return false; }
-                if (c == null) { Log(title + "*Error* NoChara"); return false; }
-                if (Cf_Allow_Use)
-                {
-                    bool isDrink = trait is TraitDrink;
-                    bool isDye = trait is TraitDye;
-
-                    if (isDrink || isDye)//飲めるもの全般
-                    {
-                        //if (__instance == null) { Log(title + "*Error* NoInstance"); return; }
-                        if (trait.owner == null) { Log(title + "*Error* NoOwner"); return false; }
-                        if (trait.owner.Thing == null) { Log(title + "*Error* NoOwner.Thing"); return false; }
-
-                        Thing usedT = trait.owner.Thing;
-                        //Log(title + "Try/" + GetStr(usedT) + ":C" + GetStr(c), 1);
-                        bool b = TryRecycle(usedT, c, new ActType(ActType.Use));
-                        if (b)
-                        {
-                            Log(title + "Success", 1);
-                            return true;
-                        }
-                        else
-                        { 
-                            Log(title + "NotDone", 1);
-                        }
-                    }
-                    else//不明 
-                    {
-                        Log(title + "*Error* Trait is not Drink and also Dye", 1);
-                    }
-                }
-                else
-                { Log(title + "Use:NotAllowed", 1); }
-                return false;
-            }
-            public static bool TryThrown(Trait trait, Chara c_thrower, Point point, bool broken)
-            {
-                bool isSuccess = false;
-                string title = "[PBR-Main:TThrown]";
-                if (trait == null) { Log(title + "*Error* NoTrait"); return false; }
-                if (c_thrower == null) { Log(title + "*Error* NoChara"); return false; }
-                if (point == null) { Log(title + "*Error* NoPoint"); return false; }
-                if (Cf_Allow_Throw)
-                {
-                    bool isDrink = trait is TraitDrink;
-                    bool isDye = trait is TraitDye;
-
-                    if (isDrink || isDye)//飲めるもの全般
-                    {
-                        //if (__instance == null) { Log(title + "*Error* NoInstance"); return; }
-                        if (trait.owner == null) { Log(title + "*Error* NoOwner"); return false; }
-                        if (trait.owner.Thing == null) { Log(title + "*Error* NoOwner.Thing"); return false; }
-
-                        Thing usedT = trait.owner.Thing;
-                        //Log(title + "Try/" + GetStr(usedT) + ":C" + GetStr(c), 1);
-                        bool b = TryRecycle(usedT, c_thrower, new ActType(ActType.Throw), point, broken);
-                        if (b)
-                        {
-                            Log(title + "Success", 1);
-                            isSuccess = true;
-                        }
-                        else
-                        {
-                            Log(title + "NotDone", 1);
-                        }
-                    }
-                    else//不明 
-                    {
-                        Log(title + "*Error* Trait is not Drink and also Dye", 1);
-                    }
-                }
-                else
-                { Log(title + "Throw:NotAllowed", 1); }
-                //IsThrown = false;
-                //lastThrower = null;
-                //lastCreatedBI = null;
-                //lastThrownThing = null;
-                if (isSuccess) { return true; } else { return false; }
-                    
-            }
-            public static bool TryBlend(Trait trait, Chara c) 
-            {
-                bool isSuccess = false;
-                string title = "[PBR-Main:TB]";
-
-                //if (t == null) { Log(title + "*Error* NoThing"); return false; }
-                if (trait == null) { Log(title + "*Error* NoTrait"); return false; }
-                if (c == null) { Log(title + "*Error* NoChara"); return false; }
-                if (Cf_Allow_Blend)
-                {
-                    bool isDrink = trait is TraitDrink;
-                    bool isDye = trait is TraitDye;
-
-                    if (isDrink || isDye)//飲めるもの全般
-                    {
-                        //if (__instance == null) { Log(title + "*Error* NoInstance"); return; }
-                        if (trait.owner == null) { Log(title + "*Error* NoOwner"); return false; }
-                        if (trait.owner.Thing == null) { Log(title + "*Error* NoOwner.Thing"); return false; }
-
-                        //Thing usedT = trait.owner.Thing;
-                        //Log(title + "Try/" + GetStr(usedT) + ":C" + GetStr(c), 1);
-                        bool b = TryRecycle(trait.owner.Thing, c, new ActType(ActType.Blend));
-                        if (b)
-                        {
-                            Log(title + "Success", 1);
-                            isSuccess = true;
-                        }
-                        else
-                        {
-                            Log(title + "NotDone", 1);
-                        }
-                    }
-                    else//不明 
-                    {
-                        Log(title + "*Error* Trait is not Drink and also Dye", 1);
-                    }
-                }
-                else
-                { Log(title + "Throw:NotAllowed", 1); }
-                if (isSuccess) { return true; } else { return false; }
-            }
-            */
+            }*/
             //文字列出力：GetStr----------------------------------------------------------------------------------------------------------------------------------------
             private static string ToTF(bool b) { return (b) ? "T" : "F"; }
             public static string GetStr(bool b) {
@@ -914,10 +820,233 @@ if(PatchMain.configDebugLogging)
 ///
 
 
+/*
+internal static bool TryRecycle(Thing t, Chara c, ActType acttype, Point p = null, bool broken = false)
+{
+    string title = "[PBR:Main:TrRe]";
+    Log(title + "Start", 1);
+    if (t == null) { Log(title + "*Error* NoThing"); return false; }
+    if (c == null) { Log(title + "*Error* NoChara"); return false; }
+    if (acttype == null) { Log(title + "*Error* ActType is Not Valid"); return false; }
+
+    string text = GetStr(acttype) + ":";
+    text += "T:" + t.NameSimple;
+    text += "/C:" + c.NameSimple;
+    //text += "/Br:" + GetStr(broken);
+    text += "/P:" + GetStr(p);
+    //Thing usedT = trait.owner.Thing;
+    //Log(title + "Thing->" + t.NameSimple + " :by " + c.NameSimple, 1);
+    PatchMain.Log(title + "ArgCheck/" + text, 1);
+    BottleIngredient bi = CreateBI(t);
+    //bool isBIValid = CheckBI(bi);
+    if (bi == null)
+    {
+        Log(title + "BI is null", 1);
+        return false;
+    }
+    else { Log(title + "CreateBI->Success/" + GetStr(bi)); }
+
+    //if (!bi.IsValid())
+    //{
+    //    Log(title + "BI is Invalid", 1);
+    //    return false;
+    //}
+    else { Log(title + "CreateBI Success/" + GetStr(bi)); }
+    if (!CheckRegulation(bi, c, acttype))
+    {
+        Log(title + "Regulation Failure", 1);
+        return false;
+    }
+    else { Log(title + "Regulation Checked"); }
+    if (broken) //破損処理
+    {
+        bool tryBrake = bi.TryBrake();
+        text += "/tB:" + GetStr(tryBrake);
+    }
+    Thing result = DoRecycle(bi, c, acttype, p);
+    text = "";
+
+    if (result != null)
+    {
+        text += "/Rs:" + result.NameSimple;
+        PatchMain.Log(title + "Success!" + text, 1);
+        return true;
+    }
+    else 
+    {
+        PatchMain.Log(title + "NotDone", 1);
+        return false;
+    }
+}
+*/
+/*
+public static bool TryUse(Trait trait, Chara c) 
+{
+    string title = "[PBR-Main:TUse]";
+    Log(title + "Start", 1);
+    if (trait == null) { Log(title + "*Error* NoTrait"); return false; }
+    if (c == null) { Log(title + "*Error* NoChara"); return false; }
+    if (Cf_Allow_Use)
+    {
+        bool isDrink = trait is TraitDrink;
+        bool isDye = trait is TraitDye;
+
+        if (isDrink || isDye)//飲めるもの全般
+        {
+            //if (__instance == null) { Log(title + "*Error* NoInstance"); return; }
+            if (trait.owner == null) { Log(title + "*Error* NoOwner"); return false; }
+            if (trait.owner.Thing == null) { Log(title + "*Error* NoOwner.Thing"); return false; }
+
+            Thing usedT = trait.owner.Thing;
+            //Log(title + "Try/" + GetStr(usedT) + ":C" + GetStr(c), 1);
+            bool b = TryRecycle(usedT, c, new ActType(ActType.Use));
+            if (b)
+            {
+                Log(title + "Success", 1);
+                return true;
+            }
+            else
+            { 
+                Log(title + "NotDone", 1);
+            }
+        }
+        else//不明 
+        {
+            Log(title + "*Error* Trait is not Drink and also Dye", 1);
+        }
+    }
+    else
+    { Log(title + "Use:NotAllowed", 1); }
+    return false;
+}
+public static bool TryThrown(Trait trait, Chara c_thrower, Point point, bool broken)
+{
+    bool isSuccess = false;
+    string title = "[PBR-Main:TThrown]";
+    if (trait == null) { Log(title + "*Error* NoTrait"); return false; }
+    if (c_thrower == null) { Log(title + "*Error* NoChara"); return false; }
+    if (point == null) { Log(title + "*Error* NoPoint"); return false; }
+    if (Cf_Allow_Throw)
+    {
+        bool isDrink = trait is TraitDrink;
+        bool isDye = trait is TraitDye;
+
+        if (isDrink || isDye)//飲めるもの全般
+        {
+            //if (__instance == null) { Log(title + "*Error* NoInstance"); return; }
+            if (trait.owner == null) { Log(title + "*Error* NoOwner"); return false; }
+            if (trait.owner.Thing == null) { Log(title + "*Error* NoOwner.Thing"); return false; }
+
+            Thing usedT = trait.owner.Thing;
+            //Log(title + "Try/" + GetStr(usedT) + ":C" + GetStr(c), 1);
+            bool b = TryRecycle(usedT, c_thrower, new ActType(ActType.Throw), point, broken);
+            if (b)
+            {
+                Log(title + "Success", 1);
+                isSuccess = true;
+            }
+            else
+            {
+                Log(title + "NotDone", 1);
+            }
+        }
+        else//不明 
+        {
+            Log(title + "*Error* Trait is not Drink and also Dye", 1);
+        }
+    }
+    else
+    { Log(title + "Throw:NotAllowed", 1); }
+    //IsThrown = false;
+    //lastThrower = null;
+    //lastCreatedBI = null;
+    //lastThrownThing = null;
+    if (isSuccess) { return true; } else { return false; }
+
+}
+public static bool TryBlend(Trait trait, Chara c) 
+{
+    bool isSuccess = false;
+    string title = "[PBR-Main:TB]";
+
+    //if (t == null) { Log(title + "*Error* NoThing"); return false; }
+    if (trait == null) { Log(title + "*Error* NoTrait"); return false; }
+    if (c == null) { Log(title + "*Error* NoChara"); return false; }
+    if (Cf_Allow_Blend)
+    {
+        bool isDrink = trait is TraitDrink;
+        bool isDye = trait is TraitDye;
+
+        if (isDrink || isDye)//飲めるもの全般
+        {
+            //if (__instance == null) { Log(title + "*Error* NoInstance"); return; }
+            if (trait.owner == null) { Log(title + "*Error* NoOwner"); return false; }
+            if (trait.owner.Thing == null) { Log(title + "*Error* NoOwner.Thing"); return false; }
+
+            //Thing usedT = trait.owner.Thing;
+            //Log(title + "Try/" + GetStr(usedT) + ":C" + GetStr(c), 1);
+            bool b = TryRecycle(trait.owner.Thing, c, new ActType(ActType.Blend));
+            if (b)
+            {
+                Log(title + "Success", 1);
+                isSuccess = true;
+            }
+            else
+            {
+                Log(title + "NotDone", 1);
+            }
+        }
+        else//不明 
+        {
+            Log(title + "*Error* Trait is not Drink and also Dye", 1);
+        }
+    }
+    else
+    { Log(title + "Throw:NotAllowed", 1); }
+    if (isSuccess) { return true; } else { return false; }
+}
+*/
+/*
+            private static bool CheckReg(bool isJunk, Chara argChara, ActType argActtype) 
+            {
+                bool resultBool = false;
+                 //string title = "[PBR:Main:CheckR]";
+                
+                if (argChara == null) { LogError("NoChara"); goto MethodEnd; }
+                int tcp = TypeCharaPlaying(argChara);
+                if (argActtype == null) { LogError("NoActType"); goto MethodEnd; }
+                Log("ArgChecked", LogTier.Other);
+
+                bool isForAll = argActtype.IsForAll();
+                int wcc = ReturnWCC(argActtype.id);
+                int wccj = CE_WhichCharaCreatesJunkBottles.Value;
+                bool regChara = GetCharaRegulation(tcp, wcc);
+                bool regJunk = !isJunk || GetCharaJunkRegulation(tcp, wccj);
+                
+                resultBool = isForAll ? (regChara && regJunk) : regJunk;
+                Log("R:" + resultBool, LogTier.Other);
+            MethodEnd:
+                //LogStackDump();
+                return resultBool;
+            }
+            */
+// text = GetStr(acttype);
+//text += "/bi:" + GetStr(bi);
+//text += "/C:" + GetStr(c);
+//text += "/P:" + GetStr(p);
+
+//text += "/rsID:" + GetID();
+
 //text += "/Br:" + GetStr(broken);
 //text += "P:" + GetStr(p);
 //Thing usedT = trait.owner.Thing;
 //Log("Thing->" + t.NameSimple + " :by " + c.NameSimple, 1);
+
+//Log(title + "Start", LogTier.Other);
+//if (c == null) { Log(title + "*Error* NoChara"); return false; }
+//int tcp = TypeCharaPlaying(c);
+//bool result = tcp <= CE_WhichCharaCreatesJunkBottles.Value;
+//Log(title + "R:" + result, 3);
 /*
             private static Thing DoRecycleBottle(Thing t, Chara c, int acttype, bool broken = false, Point p = null)
             {
