@@ -78,7 +78,7 @@ namespace s649PBR
                 
                 string text = "[PBR]CF:Load";
                 //text += ("[F01/" + TorF(cf_F01_NCBWD) + "]");
-                Log(text, 0);
+                Log(text);
                 
             }
             
@@ -435,7 +435,7 @@ namespace s649PBR
             internal static BottleIngredient TryCreateBottleIng(ActType argActtype, Thing argThing, Chara argChara = null, int argNum = 1)
             {
                 BottleIngredient resultBI = null;
-                string title = "[TCBI]";
+                string title = "TCBI";
                 LogStack("[" + modNS + "/" + title + "]");
                 //if (argChara == null) { argChara = EClass.pc; }//cがnullの時はPCが行ったとみなす
                 
@@ -481,7 +481,7 @@ namespace s649PBR
             public static string GetStr(object input)
             {
                 //ElinのclassにあるものはElinLogから呼ばせるように。ToString()をオーバーライドしてあれば、記述はいらない。
-                if (input == null) { return ""; }
+                if (input == null) { return "*NULL*"; }
                 switch (input) 
                 {
                     case ActType:
@@ -504,7 +504,7 @@ namespace s649PBR
             */
             internal static string GetStringsList(List<BottleIngredient> biList)
             {
-                string text = "";
+                string text = ""; if(biList == null){ return text; }
                 if (biList.Count > 0)
                 {
                     foreach (BottleIngredient bi in biList)
@@ -518,7 +518,38 @@ namespace s649PBR
                 else { text += "-"; }
                 return text;
             }
-
+            internal static string GetStringsList(List<Ingredient> list)
+            {
+                string text = ""; if (list == null) { return "*NoList*"; }
+                if (list.Count > 0)
+                {
+                    foreach (Ingredient ing in list)
+                    {
+                        if (ing != null)
+                        {
+                            text += ing.ToString() + "/";
+                        }
+                    }
+                }
+                else { text += "-"; }
+                return text;
+            }
+            internal static string GetStringsList(List<Thing> list)
+            {
+                string text = ""; if (list == null) { return "*NoList*"; }
+                if (list.Count > 0)
+                {
+                    foreach (Thing ing in list)
+                    {
+                        if (ing != null)
+                        {
+                            text += GetStr(ing)+ "." + GetStr(ing.Num) + "/";
+                        }
+                    }
+                }
+                else { text += "-"; }
+                return text;
+            }
 
         }//<<<end class:Main
 

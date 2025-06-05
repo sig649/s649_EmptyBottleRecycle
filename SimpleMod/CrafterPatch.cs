@@ -12,6 +12,8 @@ using static Recipe;
 using Debug = UnityEngine.Debug;
 using s649PBR.BIClass;
 using static s649PBR.Main.PatchMain;
+using s649ElinLog;
+
 
 namespace s649PBR
 {//>begin NamespaceMain
@@ -27,6 +29,7 @@ namespace s649PBR
             static Thing lastMixedThing;
             static int lastCraftCount;
             static int recycleSet;
+            static int craftMultiNum;
 
             //lastProcess---------------------------------------------------------------------------
             private static bool ExeRecycle()
@@ -199,54 +202,70 @@ namespace s649PBR
                 ClearLogStack();
                 if (!PatchMain.Cf_Allow_Craft) { return; }
                 //共通初期化...のはず
-                string title = "AIUC.OS";
+                string title = "HP:AIUC.OS";
                 LogStack("[" + modNS + "/" + title + "]");
                 //LogStack(title);
                 recycleQueues = new List<BottleIngredient>();
                 lastMixedThing = null;
                 lastCraftCount = 0;
                 recycleSet = 0;
+                craftMultiNum = 1;
                 Log("StateInit", LogTier.Deep);
-                bool isSuccess = false;
+                //bool isSuccess = false;
                 bool isFactory = false;
                 TraitCrafter traitCrafter = null;
+                string text = "";
                 try
                 {
                     traitCrafter = __instance.crafter;
-                    //if (trait == null) { LogError("NoTrait"); goto MethodEnd; }
+                    text += "Tr:" + GetStr(traitCrafter);
                     isFactory = traitCrafter is TraitFactory;
+                    text += "/iF:" + GetStr(isFactory);
+                    //text += "/t:" + GetStr(traitCrafter);
+                    Recipe recipe = __instance.recipe;
+                    text += "/recipe:" + GetStr(recipe);
+
+                    craftMultiNum = __instance.num;
+                    text += "/num:" + GetStr(craftMultiNum);
                 }
                 catch (NullReferenceException ex)
                 {
                     LogError("ArgCheckFailed for NullPo");
+                    LogError(text);
                     Debug.Log(ex.Message);
                     Debug.Log(ex.StackTrace);
                     return;
                 }
-                Log("ArgChexk/iF:" + GetStr(isFactory) + "/t:" + GetStr(traitCrafter), LogTier.Deep);
-                string text = "";
+                Log("ArgCheck/" + text, LogTier.Deep);
+                text = "";
                 if (!isFactory) { goto MethodEnd; }
+                /*
                 try
                 {
-                    Recipe recipe = __instance.recipe;
+                    
                     //if (recipe == null) { LogError("NoRecipe"); goto MethodEnd; }
-                    text = "recipe:" + GetStr(recipe);
-                    Log(text, LogTier.Deep);
-                    List<Ingredient> ingredients = recipe.ingredients;
+                    
+                    
+                    //Log(text, LogTier.Deep);
+                    //List<Ingredient> ingredients = recipe.ingredients;
+                    //List<Thing> ingredients = __instance.ings;
+                    //text += "/ings:" + GetStringsList(ingredients);
                     //checkRecipesource
                     //bool b;
-                    isSuccess = TrySetBIToQueuesFromIngs(ingredients);
+                    //isSuccess = TrySetBIToQueuesFromIngs(ingredients);
+                    //text += "/iS:" + GetStr(isSuccess);
                 }
                 catch (NullReferenceException ex)
                 {
                     LogError("Recipe and Ingredients Check Failed for NullPo");
+                    LogError(text);
                     Debug.Log(ex.Message);
                     Debug.Log(ex.StackTrace);
                     return;
-                }
-                
-                text = isSuccess ? "Done!" : "Not Done";
-                Log("TrySet->" + text, LogTier.Deep);
+                }*/
+                recycleSet++;
+                //text = isSuccess ? "Done!" : "Not Done";
+                Log("PhaseProceed->" + text, LogTier.Deep);
 
             MethodEnd:
                 text = "End";
@@ -259,7 +278,77 @@ namespace s649PBR
             {
                 //作業台などのクラフト用からThingを得る
                 if (!PatchMain.Cf_Allow_Craft) { return ; }
+
+                ClearLogStack();
+                string title = "RC.C";
+                LogStack("[" + modNS + "/" + title + "]");
+                if (!(recycleSet == 1)) { Log("phase is not set phase", LogTier.Other); return; }
+                Log("SetPhaseStart", LogTier.Other);
+                //argcheck
+                List<string> args = new() { };
+                string argtext;
+                try
+                {
+                    args.Add(GetStringsList(ings));
+                    //args.Add(GetStr(__result));
+                }
+                catch (NullReferenceException ex)
+                {
+                    LogError("ArgCheckFailed for NullPo");
+                    argtext = string.Join("/", args);
+                    LogError(argtext);
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    return;
+                }
+                argtext = string.Join("/", args);
+                Log("Start/Arg:" + argtext, LogTier.Deep);
+                //Craft Info Check
+                args = new() { };
+                int craftNum;
+                try
+                {
+                    args.Add(GetStr(__result));
+                    craftNum = __result.trait.CraftNum;
+                    args.Add(GetStr(craftNum));
+                    //argtext = GetStr(__result);
+                }
+                catch (NullReferenceException ex)
+                {
+                    LogError("CraftInfoCheck Failed for NullPo");
+                    argtext = string.Join(".", args);
+                    LogError(argtext);
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    return;
+                }
+                argtext = string.Join(".", args);
+                argtext += "*" + GetStr(craftMultiNum);
+                Log("CraftInfo:" + argtext, LogTier.Deep);
+
+                //phase getBI from ings
+                bool isSuccess;
+                isSuccess = TrySetBIToQueuesFromIngs(ings);
+                argtext = "/iS:" + GetStr(isSuccess);
+                Log("CreateBIInfo:" + argtext, LogTier.Deep);
+
+                //phase removeBI from resultBIs
+                //craftしたThingからBIを作成しつつRemove
+                //Log("lastMixed:" + lastMixedThing.NameSimple + "/num:" + lastMixedThing.Num);
+                // var bi = new BottleIngredient(lastMixedThing, lastMixedThing.trait.CraftNum);
+                var bi = TryCreateBottleIng(new ActType(ActType.Craft), __result, null, craftNum * craftMultiNum);
+                if (bi.IsEnableRecycle()) //還元除外用
+                {
+                    //recycleQueue.RemoveBIFromQueues(new (PatchMain.GetStringID(lastMixedThing), lastMixedThing.trait.CraftNum));
+                    var boolremove = RemoveBIFromQueues(bi);
+                    if (boolremove) { ElinLog.LogDeepTry(true); } else { ElinLog.LogDeepTry(false); }
+                }
+                else { Log("Result:NoBI or not valid", LogTier.Deep); }
+
                 lastMixedThing = __result;
+                recycleSet++;
+            //MethodEnd:
+                LogStackDump();
             }
             //traitcrafter------------------------------------------------------------
             [HarmonyPrefix]
@@ -352,15 +441,7 @@ namespace s649PBR
                 {   //作業台など
                     if (lastMixedThing != null && recycleQueues != null && recycleQueues.Count > 0)
                     {
-                        //craftしたThingからBIを作成しつつRemove
-                        Log("lastMixed:" + lastMixedThing.NameSimple + "/num:" + lastMixedThing.Num);
-                       // var bi = new BottleIngredient(lastMixedThing, lastMixedThing.trait.CraftNum);
-                        var bi = TryCreateBottleIng(new ActType(ActType.Craft), lastMixedThing, null, lastMixedThing.trait.CraftNum);
-                        if (bi.IsEnableRecycle()) //還元除外用
-                        {
-                            //recycleQueue.RemoveBIFromQueues(new (PatchMain.GetStringID(lastMixedThing), lastMixedThing.trait.CraftNum));
-                            RemoveBIFromQueues(bi);
-                        } else { Log("Result:NoBI", LogTier.Deep); }
+                       
                         
                         //出力
                         SetMultiNum(__instance.num);//回数分倍化

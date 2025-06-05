@@ -171,7 +171,7 @@ namespace s649PBR
                 //Thing t = _Thing;
                 //idIngredient‚ðset‚µ‚Â‚ÂŒ‹‰Ê‚ðƒŠƒ^[ƒ“
                 //if (t == null) { LogError(title + "NoThing"); return; }
-                Log(title + "Start", LogTier.Other);
+                Log("Start", LogTier.Other);
                 int result = BottleIngredient.None;
                 string category = _ThingCategory;
                 string unit = _ThingUnit;
@@ -283,11 +283,11 @@ namespace s649PBR
                     }
                     
                     idIngredient = result;
-                    Log(title + "IDing => " + GetStr(result), LogTier.Deep);
+                    Log("IDing => " + GetStr(result), LogTier.Deep);
                     //return;
                 }
                 else
-                { LogError(title + "NoTrait"); }
+                { LogError("NoTrait"); }
             MethodEnd:
                 LogStackDump();
             }
