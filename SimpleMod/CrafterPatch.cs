@@ -21,7 +21,8 @@ namespace s649PBR
         [HarmonyPatch]
         internal class PatchExe
         {//>>>begin class:PatchExe
-            static string header = "[PBR:Craft]";
+            private static readonly string modNS = "CP";
+            //static string header = "[PBR:Craft]";
             static List<BottleIngredient> recycleQueues;
             static Thing lastMixedThing;
             static int lastCraftCount;
@@ -30,8 +31,9 @@ namespace s649PBR
             //lastProcess---------------------------------------------------------------------------
             private static bool ExeRecycle()
             {
-                string title = "[ExeR]";
-                LogStack(title);
+                string title = "ExeR";
+                LogStack("[" + modNS + "/" + title + "]");
+
                 Log("Start", 3);
                 string text = "[recycle]";
                 bool b = false;
@@ -151,7 +153,10 @@ namespace s649PBR
                 return isSuccess;
             }*/
             private static bool TrySetBIToQueuesFromIngs(List<Ingredient> ings)
-            {   //argがIngredient listの場合
+            {   //argがIngredient listの場合:IsFactory:true
+                /*
+                 * nullpo発生中
+                 */
                 string title = "TSBITQFI";
                 LogStack("[" + title + "]");
                 bool isSuccess = false;
@@ -183,34 +188,7 @@ namespace s649PBR
                 LogStackDump();
                 return isSuccess;
             }
-            /*
-            private static bool TrySetFromFactory(AI_UseCrafter ai_usecrafter) 
-            {
-                string title = "[TSFF]";
-                LogStack(title);//追加済
-                //PatchMain.Log("[PBR:craft]Crafter is TraitFactory", 1);
-                bool isSuccess = false;
-                Recipe recipe = ai_usecrafter.recipe;
-                if (recipe == null) { LogError("NoRecipe"); goto MethodEnd ; }
-                string text = "recipe:" + recipe.GetName();
-                Log(text, LogTier.Deep);
-                List<Ingredient> ingredients = recipe.ingredients;
-                //checkRecipesource
-                //bool b;
-                if (ingredients != null)
-                {
-                    isSuccess = TrySetBIToQueuesFromIngs(ingredients);
-                }
-                else { LogError("NoIngredients"); goto MethodEnd; }
-                text = isSuccess ? "Done!" : "Not Done";
-                Log(text, LogTier.Other);
-
-                MethodEnd:
-                LogStackDump();
-                return isSuccess;
-               
-            }
-            */
+            
 
 
             //Harmony Patches ---------------------------------------------------------------------------
@@ -218,11 +196,11 @@ namespace s649PBR
             [HarmonyPatch(typeof(AI_UseCrafter), "OnStart")]
             private static void AI_UseCrafterOnStartPostPatch(AI_UseCrafter __instance)
             {
+                ClearLogStack();
                 if (!PatchMain.Cf_Allow_Craft) { return; }
                 //共通初期化...のはず
-                string title = "[AIUC.OS]";
-                ClearLogStack();
-                LogStack(header + title);
+                string title = "AIUC.OS";
+                LogStack("[" + modNS + "/" + title + "]");
                 //LogStack(title);
                 recycleQueues = new List<BottleIngredient>();
                 lastMixedThing = null;
@@ -230,48 +208,49 @@ namespace s649PBR
                 recycleSet = 0;
                 Log("StateInit", LogTier.Deep);
                 bool isSuccess = false;
-                TraitCrafter trait = __instance.crafter;
-                if (trait == null) { LogError("NoTrait"); goto MethodEnd; }
-                bool isFactory = trait is TraitFactory;
-                Log("ArgChexk/iF:" + GetStr(isFactory) + "/t:" + GetStr(trait), LogTier.Deep);
-                string text = "";
-                if (isFactory) 
+                bool isFactory = false;
+                TraitCrafter traitCrafter = null;
+                try
                 {
-                    //title = "[TSFF]";
-                    //LogStack(title);
-                    //string title = "[TSFF]";
-                    //LogStack(title);//追加済
-                                    //PatchMain.Log("[PBR:craft]Crafter is TraitFactory", 1);
-                    
+                    traitCrafter = __instance.crafter;
+                    //if (trait == null) { LogError("NoTrait"); goto MethodEnd; }
+                    isFactory = traitCrafter is TraitFactory;
+                }
+                catch (NullReferenceException ex)
+                {
+                    LogError("ArgCheckFailed for NullPo");
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    return;
+                }
+                Log("ArgChexk/iF:" + GetStr(isFactory) + "/t:" + GetStr(traitCrafter), LogTier.Deep);
+                string text = "";
+                if (!isFactory) { goto MethodEnd; }
+                try
+                {
                     Recipe recipe = __instance.recipe;
-                    if (recipe == null) { LogError("NoRecipe"); goto MethodEnd; }
-                    text = "recipe:" + recipe.GetName();
+                    //if (recipe == null) { LogError("NoRecipe"); goto MethodEnd; }
+                    text = "recipe:" + GetStr(recipe);
                     Log(text, LogTier.Deep);
                     List<Ingredient> ingredients = recipe.ingredients;
                     //checkRecipesource
                     //bool b;
-                    if (ingredients != null)
-                    {
-                        isSuccess = TrySetBIToQueuesFromIngs(ingredients);
-                    }
-                    else { LogError("NoIngredients"); goto MethodEnd; }
-                    text = isSuccess ? "Done!" : "Not Done";
-                    Log("TrySet->" + text, LogTier.Deep);
-
-                
-                    //LogStackDump();
-                    //return isSuccess;
-
-                    //LogStackDump();
+                    isSuccess = TrySetBIToQueuesFromIngs(ingredients);
                 }
+                catch (NullReferenceException ex)
+                {
+                    LogError("Recipe and Ingredients Check Failed for NullPo");
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    return;
+                }
+                
+                text = isSuccess ? "Done!" : "Not Done";
+                Log("TrySet->" + text, LogTier.Deep);
+
             MethodEnd:
                 text = "End";
                 Log(text, LogTier.Other);
-                //isProhibition = false;
-                //processRecycleList = null;
-
-                //LogStackDump();
-                //ClearLogStack();
             }
             
             [HarmonyPostfix]
@@ -280,10 +259,7 @@ namespace s649PBR
             {
                 //作業台などのクラフト用からThingを得る
                 if (!PatchMain.Cf_Allow_Craft) { return ; }
-                if (__result != null)
-                {
-                    lastMixedThing = __result;
-                }
+                lastMixedThing = __result;
             }
             //traitcrafter------------------------------------------------------------
             [HarmonyPrefix]
@@ -293,12 +269,11 @@ namespace s649PBR
                 if (!PatchMain.Cf_Allow_Craft) { return true; }
 
                 //加工機械のクラフトからIngを得る
-                string title = "[TC.C/Pre]";
+                string title = "HP:TC.C/Pre";
                 ClearLogStack();
-                LogStack(header);
-                LogStack(title);
+                LogStack("[" + modNS + "/" + title + "]");
                 //title = "[PBR:Craft/TC.C/Pre]";
-                
+
                 if (recycleSet == PhaseRecycle.None)
                 {
                     PatchMain.Log(title + "SetStart", 1);
@@ -364,9 +339,10 @@ namespace s649PBR
             private static void AI_UseCrafterOnEndPostPatch(AI_UseCrafter __instance)
             {
                 //title = "[PBR:Craft/AIUC.OE:Post]";
-                string title = "[AIUC.OE:Post]";
+                string title = "HP:AIUC.OE:Post";
                 ClearLogStack();
-                LogStack(header + title);
+                LogStack("[" + modNS + "/" + title + "]");
+
                 if (!PatchMain.Cf_Allow_Craft) { return; }
 
                 //PatchMain.Log(title + "AI_UseCrafter/OnEnd", 1);
@@ -425,12 +401,45 @@ namespace s649PBR
 
 ///trashbox//////////////////////////////////////////////////////////////////
 /// 
-/*
+//
 //           trash box
 //
 ////////////////////////////////////////////////
-*/
+//
 
+//title = "[TSFF]";
+//LogStack(title);
+//string title = "[TSFF]";
+//LogStack(title);//追加済
+//PatchMain.Log("[PBR:craft]Crafter is TraitFactory", 1);
+/*
+            private static bool TrySetFromFactory(AI_UseCrafter ai_usecrafter) 
+            {
+                string title = "[TSFF]";
+                LogStack(title);//追加済
+                //PatchMain.Log("[PBR:craft]Crafter is TraitFactory", 1);
+                bool isSuccess = false;
+                Recipe recipe = ai_usecrafter.recipe;
+                if (recipe == null) { LogError("NoRecipe"); goto MethodEnd ; }
+                string text = "recipe:" + recipe.GetName();
+                Log(text, LogTier.Deep);
+                List<Ingredient> ingredients = recipe.ingredients;
+                //checkRecipesource
+                //bool b;
+                if (ingredients != null)
+                {
+                    isSuccess = TrySetBIToQueuesFromIngs(ingredients);
+                }
+                else { LogError("NoIngredients"); goto MethodEnd; }
+                text = isSuccess ? "Done!" : "Not Done";
+                Log(text, LogTier.Other);
+
+                MethodEnd:
+                LogStackDump();
+                return isSuccess;
+               
+            }
+            */
 //kokokara
 /*
 if (ings == null || ings.Count <= 0)

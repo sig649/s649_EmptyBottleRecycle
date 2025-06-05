@@ -11,6 +11,7 @@ using UnityEngine;
 using static Recipe;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
+using s649ElinLog;
 
 namespace s649PBR
 {//>begin namespaceMain
@@ -255,37 +256,22 @@ namespace s649PBR
                 string title = "[TCP]";
                 LogStack("[" + modNS + "/" + title + "]");
                 int result = 0;
-                try
+                if(c == null){ LogError("c is null"); goto MethodEnd; }
+                Log("ArgChecked:" + GetStr(c), LogTier.Other);
+                if (c.IsPC)
                 {
-                    
-                    //LogStack("[" + modNS + "TCP]"); //string title = "[PBR-" + modNS + "RWCC]";
-                    //string title = "[TCP]";
-                    //if (c == null) { LogError(title + "c is null"); goto MethodEnd; }
-                    Log("ArgChecked:" + GetStr(c), LogTier.Other);
-                    if (c.IsPC)
-                    {
-                        result = 1;
-                        //return 1;
-                    }
-                    else if (!c.IsPC && c.IsPCParty)
-                    {
-                        result = 2;
-                        //return 2;
-                    }
-                    else
-                    {
-                        result = 3;
-                        //return 3;
-                    }
-                    Log("R:" + result, LogTier.All);
+                    result = 1;
                 }
-                catch (NullReferenceException ex)
+                else if (!c.IsPC && c.IsPCParty)
                 {
-                    Debug.Log(ex.Message);
-                    Debug.Log(ex.StackTrace);
-                    result = 0;
+                    result = 2;
                 }
-            //MethodEnd:
+                else
+                {
+                    result = 3;
+                }
+                Log("R:" + result, LogTier.All);
+                MethodEnd:
                 LogStackDump();
                 return result;
             }
@@ -319,28 +305,30 @@ namespace s649PBR
                 bool resultBool = false;
                 string title = "[CheR]";
                 LogStack("[" + modNS + "/" + title + "]");
+                List<string> args; 
+                string argtext;
                 try 
                 {
-                    var args = new List<string> { GetStr(bi), GetStr(argChara), GetStr(acttype) };
-                    var argtext = string.Join("/", args);
+                    args = new List<string> { GetStr(bi), GetStr(argChara), GetStr(acttype) };
+                    argtext = string.Join("/", args);
                     Log("Start/Arg:" + argtext, LogTier.Other);
-                    int tcp = TypeCharaPlaying(argChara);
-                    bool isForAll = acttype.IsForAll();
-                    int wcc = ReturnWCC(acttype.id);
-                    int wccj = CE_WhichCharaCreatesJunkBottles.Value;
-                    bool regChara = GetCharaRegulation(tcp, wcc);
-                    bool regJunk = !bi.isJunk || GetCharaJunkRegulation(tcp, wccj);
-
-                    resultBool = isForAll ? (regChara && regJunk) : regJunk;
                 } 
                 catch (NullReferenceException ex)
                 {
+                    LogError("ArgCheckFailed for NullPo");
                     Debug.Log(ex.Message);
                     Debug.Log(ex.StackTrace);
-                    resultBool = false;
+                    goto MethodEnd;
                 }
-                
-            //MethodEnd:
+                int tcp = TypeCharaPlaying(argChara);
+                bool isForAll = acttype.IsForAll();
+                int wcc = ReturnWCC(acttype.id);
+                int wccj = CE_WhichCharaCreatesJunkBottles.Value;
+                bool regChara = GetCharaRegulation(tcp, wcc);
+                bool regJunk = !bi.isJunk || GetCharaJunkRegulation(tcp, wccj);
+
+                resultBool = isForAll ? (regChara && regJunk) : regJunk;
+            MethodEnd:
                 LogStackDump();
                 return resultBool;
             }
@@ -350,28 +338,25 @@ namespace s649PBR
             {
                 bool resultBool = false;
                 Thing createBI = null;
-                string title = "[DoR]";
+                string title = "DoR";
                 LogStack("[" + modNS + "/" + title + "]");
-
-                //LogStack("[" + modNS + "/DoR]");
-                //resultBool = DoRecc(bi, c, p);
+                List<string> args;
+                string argtext;
                 try
                 {
-                    var args = new List<string> { GetStr(bi), GetStr(argChara), GetStr(point) };
-                    var argtext = string.Join("/", args);
-                    Log("Start/Arg:" + argtext, LogTier.Deep);
-
-                    createBI = ThingGenFromBI(bi);//= ThingGen.Create(bi.GetID()).SetNum(bi.num);
-                    //if (createBI == null) { Log("NoResult", LogTier.Deep); goto MethodEnd; }
-                    
+                    args = new List<string> { GetStr(bi), GetStr(argChara), GetStr(point) };
+                    argtext = string.Join("/", args);
                 }
                 catch (NullReferenceException ex)
                 {
+                    LogError("ArgCheckFailed for NullPo");
                     Debug.Log(ex.Message);
                     Debug.Log(ex.StackTrace);
                     LogStackDump();
                     return resultBool;
                 }
+                Log("Start/Arg:" + argtext, LogTier.Deep);
+                createBI = ThingGenFromBI(bi);
                 string text = "" + GetStr(createBI);
                 if (point == null)
                 {
@@ -400,53 +385,7 @@ namespace s649PBR
                 LogStackDump();
                 return resultBool;
             }
-            /*
-            private static bool DoRecc(BottleIngredient bi, Chara c, Point p = null) 
-            {
-                bool resultBool = false;
-                 //string title = "[PBR:" + modNS + "DR]";
-                //Log( + "Start", 3);
-                if (bi == null) { Log("NoBI"); goto MethodEnd; }
-                if (c == null) { Log("NoChara"); goto MethodEnd; }
-                //if (acttype == null) { Log( + "*Error* ActType is Invalid"); return null; }
-
-                string text = "";
-                text += "BI:" + GetStr(bi);
-                text += "/C:" + GetStr(c);//c.NameSimple;
-                text += "/P:" + GetStr(p);
-                Log("ArgDeepCheck/" + text, LogTier.Deep);
-
-                Thing createBI = ThingGenFromBI(bi);//= ThingGen.Create(bi.GetID()).SetNum(bi.num);
-                if (createBI == null) { Log("NoResult", LogTier.Deep); goto MethodEnd; }
-                text = "" + GetStr(createBI);
-                if (p == null)
-                {
-                    if (c.IsPC)
-                    {
-                        text += "/toPC";
-                        c.Pick(createBI);
-                    }
-                    else
-                    {
-                        text += "/to:" + GetStr(c);
-                        EClass._zone.AddCard(createBI, c.pos);
-                    }
-                    
-                    PatchMain.Log("Recycled:" + text, LogTier.Info);
-                    resultBool = true;
-                }
-                else
-                {
-                    text += "/p:" + p.ToString();
-                    EClass._zone.AddCard(createBI, p);
-                    resultBool = true;
-                    PatchMain.Log("RecycledTo:" + text, LogTier.Info);
-                }
-            MethodEnd:
-                
-                return resultBool;
-            }
-            */
+            
             /*
             internal static Thing DoRecycle(BottleIngredient bi, Chara c, ActType acttype, Point p = null) 
             {
@@ -538,64 +477,22 @@ namespace s649PBR
                 LogStackDump();
                 return resultBI;
             }
-            /*
-            private static BottleIngredient TryCBI(Thing argThing, Chara argChara, ActType argActtype, int argNum = 1) 
-            {
-                BottleIngredient returnBI = null;
-                 //string title = "[PBR:Main:TCBI]";
-                //Log("Start", 1);
-                //argcheck
-                if (argThing == null) { LogError("NoThing"); goto MethodEnd; }
-                if (argChara == null) { LogError("NoChara"); goto MethodEnd; }
-                if (argActtype == null) { LogError("ActType is Not Valid"); goto MethodEnd; }
-
-                string text = GetStr(argActtype) + "->";
-                text += "T:" + argThing.NameSimple + "/";
-                text += "C:" + argChara.NameSimple + "/";
-                Log("ArgDeepCheck/" + text, LogTier.Deep);
-
-                returnBI = CreateBI(argThing, argNum);
-                //bool b = CheckBI(bi);
-                if (returnBI != null)
-                {
-                    Log("CreateBI->Success/" + GetStr(returnBI), LogTier.Deep);
-                }
-                else {  Log("BI is null", LogTier.Deep); goto MethodEnd;
-                }
-                if (CheckRegulation(returnBI, argChara, argActtype))
-                {
-                    Log("Regulation Checked", LogTier.Deep);
-                }
-                else { Log("Regulation Failure", LogTier.Deep); goto MethodEnd; }
-            MethodEnd:
-            //    LogStackDump();
-                return returnBI;
-            }*/
             //文字列出力：GetStr----------------------------------------------------------------------------------------------------------------------------------------
-            private static string ToTF(bool b) { return (b) ? "T" : "F"; }
-            public static string GetStr(bool b) {
-                return ToTF(b);
-            }
-            public static string GetStr(int arg)
+            public static string GetStr(object input)
             {
-                return (arg != 0) ? arg.ToString() : "0";
+                //ElinのclassにあるものはElinLogから呼ばせるように。ToString()をオーバーライドしてあれば、記述はいらない。
+                if (input == null) { return ""; }
+                switch (input) 
+                {
+                    case ActType:
+                        return input.ToString() ?? "";
+                    case BottleIngredient:
+                        return input.ToString() ?? "";
+                    default:
+                        return ElinLog.ConvertToString(input);
+                }
             }
-            public static string GetStr(string s) 
-            {
-                return s;
-            }
-            public static string GetStr(Point arg)
-            {
-                return (arg != null) ? arg.ToString() : "-";
-            }
-            public static string GetStr(Trait arg)
-            {
-                return (arg != null) ? arg.ToString() : "-";
-            }
-            public static string GetStr(Card arg)
-            {
-                return (arg != null) ? arg.NameSimple : "-";
-            }
+            /*
             public static string GetStr(ActType arg)
             {
                 return (arg != null) ? arg.ToString() : "-";
@@ -604,6 +501,7 @@ namespace s649PBR
             {
                 return (arg != null) ? arg.ToString() : "-";
             }
+            */
             internal static string GetStringsList(List<BottleIngredient> biList)
             {
                 string text = "";
@@ -820,6 +718,39 @@ if(PatchMain.configDebugLogging)
 ///
 
 
+/*
+private static BottleIngredient TryCBI(Thing argThing, Chara argChara, ActType argActtype, int argNum = 1) 
+{
+    BottleIngredient returnBI = null;
+     //string title = "[PBR:Main:TCBI]";
+    //Log("Start", 1);
+    //argcheck
+    if (argThing == null) { LogError("NoThing"); goto MethodEnd; }
+    if (argChara == null) { LogError("NoChara"); goto MethodEnd; }
+    if (argActtype == null) { LogError("ActType is Not Valid"); goto MethodEnd; }
+
+    string text = GetStr(argActtype) + "->";
+    text += "T:" + argThing.NameSimple + "/";
+    text += "C:" + argChara.NameSimple + "/";
+    Log("ArgDeepCheck/" + text, LogTier.Deep);
+
+    returnBI = CreateBI(argThing, argNum);
+    //bool b = CheckBI(bi);
+    if (returnBI != null)
+    {
+        Log("CreateBI->Success/" + GetStr(returnBI), LogTier.Deep);
+    }
+    else {  Log("BI is null", LogTier.Deep); goto MethodEnd;
+    }
+    if (CheckRegulation(returnBI, argChara, argActtype))
+    {
+        Log("Regulation Checked", LogTier.Deep);
+    }
+    else { Log("Regulation Failure", LogTier.Deep); goto MethodEnd; }
+MethodEnd:
+//    LogStackDump();
+    return returnBI;
+}*/
 /*
 internal static bool TryRecycle(Thing t, Chara c, ActType acttype, Point p = null, bool broken = false)
 {

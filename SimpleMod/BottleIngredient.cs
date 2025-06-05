@@ -76,6 +76,7 @@ namespace s649PBR
         }//class:ActType
         public class BottleIngredient
         {//class:BottleIng
+            private readonly string modNS = "BI";
             public const int None = 0;
             public const int Bottle_Empty = 1;
             public const int Bucket_Empty = 2;
@@ -121,11 +122,11 @@ namespace s649PBR
                 //orgTrait = thing.trait;
                 //init
                 _Thing = thing;
-                _Trait = thing.trait;
-                _ThingID = thing.id;
-                _ThingCategory = (thing.sourceCard != null)? thing.sourceCard.category : "";
-                _ThingUnit = (thing.source != null) ? thing.source.unit : "";
-                _ThingIDMaterial = thing.idMaterial;
+                _Trait = (thing != null) ? thing.trait : null;
+                _ThingID = (thing != null) ? thing.id : "";
+                _ThingCategory = (thing != null) ? (thing.sourceCard != null ? thing.sourceCard.category : "") : ""; //thing?.sourceCard?.category ?? "";// (thing.sourceCard != null)? thing.sourceCard.category : "";
+                _ThingUnit = (thing != null) ? (thing.source != null ? thing.source.unit : "") : ""; //thing?.source?.unit ?? "";//(thing.source != null) ? thing.source.unit : "";
+                _ThingIDMaterial = (thing != null) ? thing.idMaterial : 0; //thing?.idMaterial ?? 0;
                 
                 isBroken = false;
                 isConsumed = false;
@@ -164,15 +165,13 @@ namespace s649PBR
             }
             private void SetIDIngredient()
             {
-                string title = "[BI:SIDI]";
-                
-                Thing t = _Thing;
+                string title = "SIDI";
+                LogStack("[" + modNS + "/" + title + "]");
+
+                //Thing t = _Thing;
                 //idIngredientをsetしつつ結果をリターン
-                if (t == null) { LogError(title + "NoThing"); return; }
+                //if (t == null) { LogError(title + "NoThing"); return; }
                 Log(title + "Start", LogTier.Other);
-                //Trait trait = t.trait;
-                //string category = t.sourceCard.category;
-                //string unit = t.source.unit;
                 int result = BottleIngredient.None;
                 string category = _ThingCategory;
                 string unit = _ThingUnit;
@@ -180,7 +179,7 @@ namespace s649PBR
                 string tid = _ThingID;
                 //string category = orgThing.sourceCard.category;
                 //string unit = orgThing.source.unit;
-                if (tid == "") { LogError(title + "NoThingID"); return; }
+                if (tid == "") { LogError("NoThingID"); goto MethodEnd; }
 
                 if (trait != null)
                 {
@@ -282,79 +281,15 @@ namespace s649PBR
                             }
                             break;
                     }
-                    /*
-                    if (trait is TraitSnow) { result = BottleIngredient.Snow; }
-                    else if (trait is TraitDye) { result = BottleIngredient.Bottle_Empty; }
-                    else if (trait is TraitPotion || trait is TraitPotionRandom || trait is TraitPotionEmpty)
-                    {
-                        if (category == "drug") { result = BottleIngredient.Drug; }
-                        else { result = BottleIngredient.Bottle_Empty; }
-                        //result = 1;
-                    }
-                    else if (trait is TraitPerfume) { result = BottleIngredient.Junk_Bottles; }
-                    else if (trait is TraitDrinkMilk || trait is TraitDrinkMilkMother)
-                    {
-                        if (unit == "cup") { result = BottleIngredient.Junk_Bottles; }//kofi:718 etc
-                        else if (unit == "bowl") { result = BottleIngredient.Junk_Bowl; }//coconut j:789 etc
-                        result = BottleIngredient.Milk;
-                    }
-                    else if (trait is TraitDrink)
-                    {
-                        if (category == "booze")
-                        {
-                            if (unit == "jug") { result = BottleIngredient.Junk_Glass; }//ビア:58
-                            else if (unit == "glass") { result = BottleIngredient.Junk_Glass; }//ワイン:732 etc
-                            result = BottleIngredient.Junk_Bottles;
-                        }
-                        else if (category == "_drink")
-                        {
-                            if (unit == "bucket") { result = BottleIngredient.Bucket_Empty; }
-                            else if (unit == "pot") { result = BottleIngredient.Bottle_Empty; }
-                            else if (unit == "bottle") { result = BottleIngredient.Junk_Bottles; }
-                            else if (unit == "jar") { result = BottleIngredient.Junk_Bottles; }//ビン:59
-                            else if (unit == "cup") { result = BottleIngredient.Junk_Cup; }//お茶:503
-                            else if (unit == "can") { result = BottleIngredient.Junk_Can; }//缶ジュース:504,505
-                        }
-                        //else if (category == "milk") { }
-                    }
-                    else if (tid == "toolAlchemy")
-                    {
-                        result = Bottle_Empty;
-                        isInstalled = true;
-                        num = 4;
-                    }
-
-
-                    result = BottleIngredient.None;
-                    */
+                    
                     idIngredient = result;
                     Log(title + "IDing => " + GetStr(result), LogTier.Deep);
-                    return;
+                    //return;
                 }
                 else
-                { LogError(title + "NoTrait"); return; }
-                /*
-                else //ThingがCreateされておらず、idから呼び出す時に使う。ThingVには使えない？Foodは対応する
-                {   //traitナシ・TraitFactoryから呼び出すときのみ・ThingやFoodなど
-                    
-                    switch (category)
-                    {
-                        case "_drink"://雪・汚水・水・水バケツ・ポーション・香水・飲料
-                            if (unit == "bucket") { return BottleIngredient.Bucket_Empty; }
-                            if (unit == "handful") { return BottleIngredient.None; }
-                            if (unit == "pot") { return BottleIngredient.Bottle_Empty; }
-                            if (unit == "bottle") { return BottleIngredient.Junk_Bottles; }
-                            if (tid == "perfume") { return BottleIngredient.Junk_Bottles; }
-                            return BottleIngredient.Bottle_Empty;//random potion
-                        case "drug"://薬
-                            return BottleIngredient.Drug;
-                        case "milk"://乳・ミルク缶・
-                            return BottleIngredient.None;
-                        default:
-                            return BottleIngredient.None;
-                    }
-                    return;
-                }*/
+                { LogError(title + "NoTrait"); }
+            MethodEnd:
+                LogStackDump();
             }
 
             //private void SetIDIngredient()
@@ -610,8 +545,73 @@ namespace s649PBR
 //trash/////////////////////////////////////////////////////////////////////////////////////
 
 
+/*
+                else //ThingがCreateされておらず、idから呼び出す時に使う。ThingVには使えない？Foodは対応する
+                {   //traitナシ・TraitFactoryから呼び出すときのみ・ThingやFoodなど
+                    
+                    switch (category)
+                    {
+                        case "_drink"://雪・汚水・水・水バケツ・ポーション・香水・飲料
+                            if (unit == "bucket") { return BottleIngredient.Bucket_Empty; }
+                            if (unit == "handful") { return BottleIngredient.None; }
+                            if (unit == "pot") { return BottleIngredient.Bottle_Empty; }
+                            if (unit == "bottle") { return BottleIngredient.Junk_Bottles; }
+                            if (tid == "perfume") { return BottleIngredient.Junk_Bottles; }
+                            return BottleIngredient.Bottle_Empty;//random potion
+                        case "drug"://薬
+                            return BottleIngredient.Drug;
+                        case "milk"://乳・ミルク缶・
+                            return BottleIngredient.None;
+                        default:
+                            return BottleIngredient.None;
+                    }
+                    return;
+                }*/
+/*
+                    if (trait is TraitSnow) { result = BottleIngredient.Snow; }
+                    else if (trait is TraitDye) { result = BottleIngredient.Bottle_Empty; }
+                    else if (trait is TraitPotion || trait is TraitPotionRandom || trait is TraitPotionEmpty)
+                    {
+                        if (category == "drug") { result = BottleIngredient.Drug; }
+                        else { result = BottleIngredient.Bottle_Empty; }
+                        //result = 1;
+                    }
+                    else if (trait is TraitPerfume) { result = BottleIngredient.Junk_Bottles; }
+                    else if (trait is TraitDrinkMilk || trait is TraitDrinkMilkMother)
+                    {
+                        if (unit == "cup") { result = BottleIngredient.Junk_Bottles; }//kofi:718 etc
+                        else if (unit == "bowl") { result = BottleIngredient.Junk_Bowl; }//coconut j:789 etc
+                        result = BottleIngredient.Milk;
+                    }
+                    else if (trait is TraitDrink)
+                    {
+                        if (category == "booze")
+                        {
+                            if (unit == "jug") { result = BottleIngredient.Junk_Glass; }//ビア:58
+                            else if (unit == "glass") { result = BottleIngredient.Junk_Glass; }//ワイン:732 etc
+                            result = BottleIngredient.Junk_Bottles;
+                        }
+                        else if (category == "_drink")
+                        {
+                            if (unit == "bucket") { result = BottleIngredient.Bucket_Empty; }
+                            else if (unit == "pot") { result = BottleIngredient.Bottle_Empty; }
+                            else if (unit == "bottle") { result = BottleIngredient.Junk_Bottles; }
+                            else if (unit == "jar") { result = BottleIngredient.Junk_Bottles; }//ビン:59
+                            else if (unit == "cup") { result = BottleIngredient.Junk_Cup; }//お茶:503
+                            else if (unit == "can") { result = BottleIngredient.Junk_Can; }//缶ジュース:504,505
+                        }
+                        //else if (category == "milk") { }
+                    }
+                    else if (tid == "toolAlchemy")
+                    {
+                        result = Bottle_Empty;
+                        isInstalled = true;
+                        num = 4;
+                    }
 
 
+                    result = BottleIngredient.None;
+                    */
 /*
            public BottleIngredient(string argID, string argCategory, string argUnit, int n1 = 1)
            {
