@@ -10,7 +10,8 @@ using UnityEngine;
 //using System.Diagnostics;
 using Debug = UnityEngine.Debug;
 using static s649PBR.Main.PatchMain;
-
+using s649ElinLog;
+using static s649ElinLog.ElinLog;
 namespace s649PBR
 {//>begin namespaceMain
     namespace BlendPatch
@@ -49,8 +50,8 @@ namespace s649PBR
             [HarmonyPatch(typeof(InvOwnerBlend), "_OnProcess")]
             private static void IOBOnProcesdPostPatch(InvOwnerBlend __instance, Thing t, BottleIngredient __state)
             {
-                title = "[PBR:IOBOP]";
-                Log(title + "FookCheck");
+                //title = "[PBR:IOBOP]";
+                //Log(title + "FookCheck");
                 /*
                 if (Cf_Allow_Blend)
                 {

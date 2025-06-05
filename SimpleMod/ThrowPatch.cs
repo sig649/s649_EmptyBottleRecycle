@@ -11,7 +11,8 @@ using UnityEngine;
 using Debug = UnityEngine.Debug;
 using s649PBR.BIClass;
 using static s649PBR.Main.PatchMain;
-
+using s649ElinLog;
+using static s649ElinLog.ElinLog;
 
 namespace s649PBR
 {//>begin namespaceMain
@@ -80,7 +81,7 @@ namespace s649PBR
                     bool result = DoRecycle(stateBottleIng, c_thrower, throwed_p);
                     text += result ? "Done!" : "Not Done";
 
-                    if (result) { Log(text); } else { Log(text, LogTier.Deep); }
+                    if (result) { LogDeep(text); } else { Log(text, LogTier.Deep); }
                 }
                 catch (NullReferenceException ex)
                 {

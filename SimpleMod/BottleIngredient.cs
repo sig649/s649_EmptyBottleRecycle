@@ -9,6 +9,8 @@ using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
 using static s649PBR.Main.PatchMain;
+using s649ElinLog;
+using static s649ElinLog.ElinLog;
 //using s649PBR.Main;
 
 namespace s649PBR
@@ -16,14 +18,7 @@ namespace s649PBR
     namespace BIClass
     {//>>begin namespaceSub
         //--nakami----------------------
-        public class LogTier
-        {
-            public const int Error = 0;
-            public const int Info = 1;
-            public const int Deep = 2;
-            public const int Other = 3;
-            public const int All = 4;
-        }
+        
         public class ActType
         {//class:ActType
             //public int value;

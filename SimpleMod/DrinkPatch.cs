@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using s649PBR.Main;
 using s649PBR.BIClass;
 using static s649PBR.Main.PatchMain;
+using s649ElinLog;
+using static s649ElinLog.ElinLog;
 using System;
 //using BepInEx.Logging;
 
@@ -98,7 +100,7 @@ namespace s649PBR
                     bool result = DoRecycle(stateBottleIng, c_drinker);
                     text += result ? "Done!" : "Not Done";
 
-                    PatchMain.Log(text, LogTier.Other);
+                    LogOther(text);
                 }
                 else { Log("'Use' not Allowed", LogTier.Other); }
                 

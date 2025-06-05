@@ -13,6 +13,7 @@ using Debug = UnityEngine.Debug;
 using s649PBR.BIClass;
 using static s649PBR.Main.PatchMain;
 using s649ElinLog;
+using static s649ElinLog.ElinLog;
 
 
 namespace s649PBR
@@ -53,7 +54,7 @@ namespace s649PBR
                         b = true;
                     }
                 }
-                PatchMain.Log(text, 1);
+                LogInfo(text);
                 LogStackDump();
                 return b;
             }
@@ -103,17 +104,17 @@ namespace s649PBR
                 bool isSuccess = false;
                 if (ings == null || ings.Count <= 0)
                 {
-                    PatchMain.Log(title + "NoIngs");
+                    LogError(title + "NoIngs");
                     return false;
                 }
-                //else { PatchMain.Log(title + "ai.ings:Found", 1); }
+                //else { LogInfo(title + "ai.ings:Found", 1); }
                 foreach (Thing thing in ings)
                 {
                     //if (thing == null) { break; }
 
                     //var bi = new BottleIngredient(thing);
                     var bi = TryCreateBottleIng(new ActType(ActType.Craft), thing,  null, thing.Num);
-                    //PatchMain.Log(title + "BIcheck:" + thing.NameSimple + "/bi:" + bi.ToString(), 1);
+                    //LogInfo(title + "BIcheck:" + thing.NameSimple + "/bi:" + bi.ToString(), 1);
                     //text += "[" + thing.NameSimple + ":" + bi + ":" + thing.Num + "]";
                     if (bi.IsValid())
                     {
@@ -122,12 +123,12 @@ namespace s649PBR
                         isSuccess = true;
                     }
                     text += "/";
-                    //else { PatchMain.Log(title + "processRLSet:Canceled......", 1); }
-                    //PatchMain.Log(text, 1);
+                    //else { LogInfo(title + "processRLSet:Canceled......", 1); }
+                    //LogInfo(text, 1);
                 }
-                PatchMain.Log(title + text, 1);
+                Log(title + text, 1);
                 text = "queue:" + GetStringsList(recycleQueues);
-                PatchMain.Log(title + text, 1);
+                Log(title + text, 1);
                 return isSuccess;
             }
             /*
@@ -149,9 +150,9 @@ namespace s649PBR
                     }
                     text += "/";
                 }
-                PatchMain.Log(text, LogTier.Deep);
+                LogInfo(text, LogTier.Deep);
                 text = "queue:" + GetStringsList(recycleQueues);
-                PatchMain.Log(text, LogTier.Deep);
+                LogInfo(text, LogTier.Deep);
             MethodEnd:
                 return isSuccess;
             }*/
@@ -180,9 +181,9 @@ namespace s649PBR
                     }
                     text += "/";
                 }
-                PatchMain.Log(text, LogTier.Deep);
+                LogDeep(text);
                 text = "queue:" + GetStringsList(recycleQueues);
-                PatchMain.Log(text, LogTier.Deep);
+                LogDeep(text);
            
                 //return isSuccess;
                 text = isSuccess ? "Done!" : "Not Done";
@@ -341,7 +342,7 @@ namespace s649PBR
                 {
                     //recycleQueue.RemoveBIFromQueues(new (PatchMain.GetStringID(lastMixedThing), lastMixedThing.trait.CraftNum));
                     var boolremove = RemoveBIFromQueues(bi);
-                    if (boolremove) { ElinLog.LogDeepTry(true); } else { ElinLog.LogDeepTry(false); }
+                    LogDeepTry(boolremove);
                 }
                 else { Log("Result:NoBI or not valid", LogTier.Deep); }
 
@@ -365,19 +366,19 @@ namespace s649PBR
 
                 if (recycleSet == PhaseRecycle.None)
                 {
-                    PatchMain.Log(title + "SetStart", 1);
+                    LogDeep("SetStart");
                     if (ai == null)
                     {
-                        PatchMain.Log(title + "NoAI");
+                        LogInfo(title + "NoAI");
                         return true;
                     }
-                    else { PatchMain.Log(title + "AI:Found", 1); }
+                    else { LogDeep("AI:Found"); }
                     List<Thing> ings = ai.ings;
                     var b = TrySetBIToQueuesFromIngs(ings);
                     
                     recycleSet++;
                 }
-                else { PatchMain.Log(title + "SetSkipped", 2); }
+                else { LogDeep("SetSkipped"); }
             //MethodEnd:
                 LogStackDump();
                 return true;
@@ -399,27 +400,27 @@ namespace s649PBR
                     Log("ArgChecked", LogTier.Deep);
                     lastMixedThing = __result;
                     var bi = TryCreateBottleIng(new ActType(ActType.Craft), __result, null, __result.trait.CraftNum);
-                    //PatchMain.Log(title + "BIcheck:" + __result.NameSimple + "/bi:" + bi.ToString(), 1);
+                    //LogInfo(title + "BIcheck:" + __result.NameSimple + "/bi:" + bi.ToString(), 1);
                     //productにbottleingが含まれている場合はリターンを減産する
                     if (bi.IsValid())
                     {
                         bool b = RemoveBIFromQueues(bi);
                         if (b)
                         {
-                            PatchMain.Log("Remove:Success" + GetStringsList(recycleQueues), LogTier.Deep);
+                            LogDeep("Remove:Success" + GetStringsList(recycleQueues));
                         }
-                        else { PatchMain.Log("Remove:Fail" + GetStringsList(recycleQueues), LogTier.Deep); }
+                        else { LogDeep("Remove:Fail" + GetStringsList(recycleQueues)); }
                     }
                     else
-                    { PatchMain.Log("Result:NoBI or Invalid" + GetStringsList(recycleQueues), LogTier.Deep); }
+                    { LogDeep("Result:NoBI or Invalid" + GetStringsList(recycleQueues)); }
 
                     recycleSet++;
                     //PatchMain.ExeRecycle(recycleList, EClass.pc);
                 }
-                else { PatchMain.Log("RemoveSkipped:", LogTier.Other); }
+                else { LogOther("RemoveSkipped:"); }
             //MethodEnd:
                 lastCraftCount++;
-                //PatchMain.Log(title + "Count:" + lastCraftCount.ToString(), 2);
+                //LogInfo(title + "Count:" + lastCraftCount.ToString(), 2);
                 //LogStackDump();
             }//<<<<end method:PostPatch
             //OnEnd---------------------------------------------------------------------
@@ -434,7 +435,7 @@ namespace s649PBR
 
                 if (!PatchMain.Cf_Allow_Craft) { return; }
 
-                //PatchMain.Log(title + "AI_UseCrafter/OnEnd", 1);
+                //LogInfo(title + "AI_UseCrafter/OnEnd", 1);
                 TraitCrafter trait = __instance.crafter;
                 
                 if (trait is TraitFactory)
@@ -445,27 +446,27 @@ namespace s649PBR
                         
                         //出力
                         SetMultiNum(__instance.num);//回数分倍化
-                        Log("RQ:" + GetStringsList(recycleQueues));
+                        LogDeep("RQ:" + GetStringsList(recycleQueues));
                         ExeRecycle();
-                        Log("RecycleDone!", LogTier.Deep);
-                    } else { Log("Canceled:RemoveFromResult", LogTier.Deep); }
+                        LogDeep("RecycleDone!");
+                    } else { LogOther("Canceled:RemoveFromResult"); }
                 }
                 else 
                 {   //加工機械
-                    //PatchMain.Log("[PBR:craft]Crafter is not TraitFactory", 1);
+                    //LogInfo("[PBR:craft]Crafter is not TraitFactory", 1);
                     if (lastCraftCount != 0 && recycleQueues != null && recycleSet == PhaseRecycle.Done) 
                     {
-                        Log("lastCraftCount:" + lastCraftCount.ToString(), LogTier.Deep);
+                        LogDeep("lastCraftCount:" + lastCraftCount.ToString());
                         SetMultiNum(lastCraftCount);
-                        Log("RQ:" + GetStringsList(recycleQueues), LogTier.Deep);
+                        LogDeep("RQ:" + GetStringsList(recycleQueues));
                         ExeRecycle();
-                        Log("RecycleDone!", LogTier.Deep);
+                        LogDeep("RecycleDone!");
                     }
-                    else { Log("RecycleNotExecuted", LogTier.Deep); }
+                    else { LogOther("RecycleNotExecuted"); }
                 }
                 
                 //Chara owner = __instance.owner;
-                //PatchMain.Log("[PBR:craft]chara:" + owner.NameSimple, 1);
+                //LogInfo("[PBR:craft]chara:" + owner.NameSimple, 1);
             }
         }//<<<end class:PatchExe
 
@@ -492,13 +493,13 @@ namespace s649PBR
 //LogStack(title);
 //string title = "[TSFF]";
 //LogStack(title);//追加済
-//PatchMain.Log("[PBR:craft]Crafter is TraitFactory", 1);
+//LogInfo("[PBR:craft]Crafter is TraitFactory", 1);
 /*
             private static bool TrySetFromFactory(AI_UseCrafter ai_usecrafter) 
             {
                 string title = "[TSFF]";
                 LogStack(title);//追加済
-                //PatchMain.Log("[PBR:craft]Crafter is TraitFactory", 1);
+                //LogInfo("[PBR:craft]Crafter is TraitFactory", 1);
                 bool isSuccess = false;
                 Recipe recipe = ai_usecrafter.recipe;
                 if (recipe == null) { LogError("NoRecipe"); goto MethodEnd ; }
@@ -525,10 +526,10 @@ namespace s649PBR
 /*
 if (ings == null || ings.Count <= 0)
 {
-    PatchMain.Log(title + "NoIngs");
+    LogInfo(title + "NoIngs");
     return true;
 }
-else { PatchMain.Log(title + "ai.ings:Found", 1); }
+else { LogInfo(title + "ai.ings:Found", 1); }
 
 foreach (Thing thing in ings)
 {
@@ -536,7 +537,7 @@ foreach (Thing thing in ings)
 
     //var bi = new BottleIngredient(thing);
     var bi = TryCreateBI(thing, new ActType(ActType.Craft));
-    //PatchMain.Log(title + "BIcheck:" + thing.NameSimple + "/bi:" + bi.ToString(), 1);
+    //LogInfo(title + "BIcheck:" + thing.NameSimple + "/bi:" + bi.ToString(), 1);
     //text += "[" + thing.NameSimple + ":" + bi + ":" + thing.Num + "]";
     if (bi.IsValid())
     {
@@ -545,15 +546,15 @@ foreach (Thing thing in ings)
         bool b = AddBIToQueues(bi);
         if (b) 
         {
-            PatchMain.Log(title + "processRLSet:Success/" + GetStringsList(recycleQueues), 1);
+            LogInfo(title + "processRLSet:Success/" + GetStringsList(recycleQueues), 1);
         } else 
         {
-            PatchMain.Log(title + "processRLSet:Failed....../" + GetStringsList(recycleQueues), 1);
+            LogInfo(title + "processRLSet:Failed....../" + GetStringsList(recycleQueues), 1);
         }
 
     }
-    else { PatchMain.Log(title + "processRLSet:Canceled......", 1); }
-    //PatchMain.Log(text, 1);
+    else { LogInfo(title + "processRLSet:Canceled......", 1); }
+    //LogInfo(text, 1);
 }
 */
 //kokomade
@@ -572,11 +573,11 @@ foreach (Thing thing in ings)
      }
      text += "/";
  }
- PatchMain.Log(title + text, 1);
+ LogInfo(title + text, 1);
 
  string recycleString = "queue:" + GetStringsList(recycleQueues);
 
- PatchMain.Log(title + recycleString, 1);
+ LogInfo(title + recycleString, 1);
 */
 //TSBITQFI:ここまで
 /*
@@ -595,7 +596,7 @@ foreach (Thing thing in ings)
 //productにbottleingが含まれている場合はリターンを減産する
 //PatchMain.RemoveFromList(recycleList, new RecycleThing(resultBI), __result.Num);
 //recycleQueue = new RecycleQueue(recycleList);
-//PatchMain.Log(title + "QueueSet:" + recycleQueue.ToString(), 1);
+//LogInfo(title + "QueueSet:" + recycleQueue.ToString(), 1);
 //PatchMain.ExeRecycle(recycleList, EClass.pc);
 //static bool isProhibition;
 //static bool ConsumeIng;
@@ -609,7 +610,7 @@ foreach (Thing thing in ings)
 //RecipeCardからfook出来た
 /*
 var id = recipe.id;
-if (!EClass.sources.things.map.ContainsKey(id)) { PatchMain.Log(title + "*error* idが無いよ"); return; }
+if (!EClass.sources.things.map.ContainsKey(id)) { LogInfo(title + "*error* idが無いよ"); return; }
 var category = EClass.sources.things.map[id].category;
 var unit = EClass.sources.things.map[id].unit;
 var traits = EClass.sources.things.map[id].trait;
@@ -619,9 +620,9 @@ var resultBI = new BottleIngredient(id, category, unit, traits, num);
 //if (PatchMain.IsValid(recycleQueues))
 //{
 //    recycleQueues = new RecycleQueue(recycleQueues);
-//    PatchMain.Log(title + "QueueSet:" + recycleQueues.ToString(), 1);
+//    LogInfo(title + "QueueSet:" + recycleQueues.ToString(), 1);
 //}
-//else { PatchMain.Log(title + "QueueSet:Fail", 1); }
+//else { LogInfo(title + "QueueSet:Fail", 1); }
 /*
                     if(resNum > 0)
                         {
@@ -641,7 +642,7 @@ var resultBI = new BottleIngredient(id, category, unit, traits, num);
             [HarmonyPatch(typeof(AI_Craft), "OnSuccess")]
             internal static void APostPatch()
             {
-                PatchMain.Log("[PBR]AI_craft/OnSucess/Fook");
+                LogInfo("[PBR]AI_craft/OnSucess/Fook");
             }
  */
 
@@ -652,16 +653,16 @@ var resultBI = new BottleIngredient(id, category, unit, traits, num);
 [HarmonyPatch(typeof(AI_UseCrafter), "OnSuccess")]
 internal static void OnSuccessPostPatch(AI_UseCrafter __instance)
 {
-    PatchMain.Log("[PBR:craft]Fook:AI_UseCrafter/OnSuccess", 1);
+    LogInfo("[PBR:craft]Fook:AI_UseCrafter/OnSuccess", 1);
     List<Thing> ings = __instance.ings;
     string text = "";
     foreach(Thing thing in ings)
     {
         text += thing.NameSimple + "/";
     }
-    PatchMain.Log("[PBR:craft]ings:" + text, 1);
+    LogInfo("[PBR:craft]ings:" + text, 1);
     Chara owner = __instance.owner;
-    PatchMain.Log("[PBR:craft]chara:" + owner.NameSimple, 1);
+    LogInfo("[PBR:craft]chara:" + owner.NameSimple, 1);
 }
 */
 
@@ -690,17 +691,17 @@ traits = EClass.sources.things._rows[recipe.id].trait;
 [HarmonyPatch(typeof(Recipe), "Craft")]
 private static void RecipeCraftPostPatch(Thing __result, BlessedState blessed, bool sound, List<Thing> ings, TraitCrafter crafter, bool model)
 {
-    //PatchMain.Log("[PBR:craft]Fook:Recipe/Craft");
+    //LogInfo("[PBR:craft]Fook:Recipe/Craft");
     /*
     if (__result == null)
     {
-        PatchMain.Log("[PBR:Craft]NoResult");
+        LogInfo("[PBR:Craft]NoResult");
         return;
     }
-    PatchMain.Log("[PBR:craft]product:" + __result.NameSimple + "/Num:" + __result.Num.ToString(), 1);
+    LogInfo("[PBR:craft]product:" + __result.NameSimple + "/Num:" + __result.Num.ToString(), 1);
     if (ings == null)
     {
-        PatchMain.Log("[PBR:Craft]NoIngs");
+        LogInfo("[PBR:Craft]NoIngs");
         return;
     }
     if (Func_Craft_Allowed)
@@ -719,7 +720,7 @@ private static void RecipeCraftPostPatch(Thing __result, BlessedState blessed, b
                 PatchMain.AddThingToList(recycleList, new(bi, thing.Num));
             }
         }
-        PatchMain.Log(text, 1);
+        LogInfo(text, 1);
 
         string resultBI = GetStringID(__result);
         //productにbottleingが含まれている場合はリターンを減産する
@@ -733,29 +734,29 @@ private static void RecipeCraftPostPatch(Thing __result, BlessedState blessed, b
 [HarmonyPatch(typeof(RecipeCard), "Craft")]
 private static void RecipeCardCraftPostPatch(Thing __result, BlessedState blessed, bool sound, List<Thing> ings, TraitCrafter crafter, bool model)
 {
-    //PatchMain.Log("[PBR:craft]Fook:RecipeCard/Craft");
-    //if(__result != null) { PatchMain.Log("[PBR:craft]product:" + __result.NameSimple + "/Num:" + __result.Num.ToString(), 1); }
-    // PatchMain.Log("[PBR:craft]blessed:" + blessed.ToString(), 1);
-    //PatchMain.Log("[PBR:craft]sound:" + sound.ToString(), 1);
-    //if (ings != null) { PatchMain.Log("[PBR:craft]ings:" + ings.ToString(), 1); }
-    //if (crafter != null) { PatchMain.Log("[PBR:craft]crafter:" + crafter.ToString(), 1); }
-    //PatchMain.Log("[PBR:craft]model:" + model.ToString(), 1);
+    //LogInfo("[PBR:craft]Fook:RecipeCard/Craft");
+    //if(__result != null) { LogInfo("[PBR:craft]product:" + __result.NameSimple + "/Num:" + __result.Num.ToString(), 1); }
+    // LogInfo("[PBR:craft]blessed:" + blessed.ToString(), 1);
+    //LogInfo("[PBR:craft]sound:" + sound.ToString(), 1);
+    //if (ings != null) { LogInfo("[PBR:craft]ings:" + ings.ToString(), 1); }
+    //if (crafter != null) { LogInfo("[PBR:craft]crafter:" + crafter.ToString(), 1); }
+    //LogInfo("[PBR:craft]model:" + model.ToString(), 1);
 
 
     /*
     if (__result == null)
     {
-        PatchMain.Log("[PBR:Craft]NoResult");
+        LogInfo("[PBR:Craft]NoResult");
         return;
     }
-    //PatchMain.Log("[PBR:craft]Fook:RecipeCard/Craft", 1);
-    PatchMain.Log("[PBR:craft]product:" + __result.NameSimple + "/Num:" + __result.Num.ToString(), 1);
+    //LogInfo("[PBR:craft]Fook:RecipeCard/Craft", 1);
+    LogInfo("[PBR:craft]product:" + __result.NameSimple + "/Num:" + __result.Num.ToString(), 1);
 
     if (Func_Craft_Allowed)
     {
         if (ings == null)
         {
-            PatchMain.Log("[PBR:Craft]NoIngs");
+            LogInfo("[PBR:Craft]NoIngs");
             return;
         }
         string text = "[PBR:craft]ings:";
@@ -773,7 +774,7 @@ private static void RecipeCardCraftPostPatch(Thing __result, BlessedState blesse
                 PatchMain.AddThingToList(recycleList, new(bi, thing.Num));
             }
         }
-        PatchMain.Log(text, 1);
+        LogInfo(text, 1);
 
         string resultBI = GetStringID(__result);
         //productにbottleingが含まれている場合はリターンを減産する
@@ -797,7 +798,7 @@ else { text += "/ing:-"; }
             [HarmonyPatch(typeof(Recipe), "Craft")]
             private static void RecipeCraftPostPatch(Thing __result, BlessedState blessed, bool sound, List<Thing> ings, TraitCrafter crafter, bool model)
             {
-                PatchMain.Log("[PBR:craft]Fook:Recipe/Craft");
+                LogInfo("[PBR:craft]Fook:Recipe/Craft");
             }
  lastMixedThing.sourceCard.category != "_tool"
  */
@@ -810,13 +811,13 @@ else { text += "/ing:-"; }
                [HarmonyPatch(typeof(AI_UseCrafter), "Run")]
                private static void AI_UseCrafterRunPostPatch(AI_UseCrafter __instance)
                {
-                   PatchMain.Log("[PBR:craft]AI_UseCrafter/Run");
+                   LogInfo("[PBR:craft]AI_UseCrafter/Run");
                    TraitCrafter trait = __instance.crafter;
                    if (trait is TraitFactory) 
                    {
                        if (recycleQueue != null && lastMixedThing != null)
                        {
-                           PatchMain.Log(title + "created:" + lastMixedThing.id + "." + lastMixedThing.Num + ":bi" + PatchMain.ReturnBottleIngredient(lastMixedThing).ToString());
+                           LogInfo(title + "created:" + lastMixedThing.id + "." + lastMixedThing.Num + ":bi" + PatchMain.ReturnBottleIngredient(lastMixedThing).ToString());
                        }
                    }
                    else
@@ -832,7 +833,7 @@ else { text += "/ing:-"; }
             [HarmonyPatch(typeof(CraftUtil), "MixIngredients", new Type[] { typeof(string), typeof(List<Thing>), typeof(CraftUtil.MixType), typeof(int), typeof(Chara)})]
             private static void CraftUtilMI_PostPatch(CraftUtil __instance, Thing __result)
             {
-                PatchMain.Log(title + "MI_Called", 1);
+                LogInfo(title + "MI_Called", 1);
                 lastMixedThing = __result;
             }
             */
@@ -864,12 +865,12 @@ if (Func_Craft_Allowed)
     text += "[result]N:" + __result.NameSimple;
     text += "/T:" + rt.ToString();
     text += "/n:" + __result.Num.ToString();
-    PatchMain.Log(text, 1);
+    LogInfo(text, 1);
     //productにbottleingが含まれている場合はリターンを減産する
     PatchMain.RemoveFromList(recycleList, DoRecycleBottle(__result, ai.owner, ActType.Craft), __result.Num);
     PatchMain.ExeRecycle(recycleList, ai.owner);
     //string text2 = "[PBR:return]" + recycleList.ToString() + "[C:" + ai.owner.NameSimple + "]";
-    //PatchMain.Log(text2, 1); 
+    //LogInfo(text2, 1); 
 }//<<<<<end if
 */
 //var recycleList = new List<RecycleThing>();
@@ -879,7 +880,7 @@ if (Func_Craft_Allowed)
 //List<Thing> ings = __instance.ings;
 //if (ings == null)
 //{
-//    PatchMain.Log(title + "[process]NoIngs");
+//    LogInfo(title + "[process]NoIngs");
 //    return;
 //}
 //string text = "ings:";
@@ -905,7 +906,7 @@ if (Func_Craft_Allowed)
 /*
 if (ings == null || ings.Count <= 0)
 {
-    PatchMain.Log(title + "NoIngs");
+    LogInfo(title + "NoIngs");
     return;
 }
 foreach (Thing thing in ings)
@@ -921,4 +922,4 @@ foreach (Thing thing in ings)
 }
 */
 //recycleSet = true;
-//PatchMain.Log(text, 1);
+//LogInfo(text, 1);
