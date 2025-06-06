@@ -8,7 +8,7 @@
 進捗：1.0.0のアルファテスト前なう   
 (WIP)Use  
 (実装作業前)Blend  
-(test)Throw  
+(WIP)Throw  
 (アルファ前check)Craft  
 
 Todo:  
