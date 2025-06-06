@@ -9,7 +9,7 @@ namespace s649ElinLog
         public const int Fatal = -1;//未使用
         public const int Error = 0;//引数不正やtrycatchで投げられる
         public const int Info = 1;//実行結果出力など
-        public const int Deep = 2;//引数の詳細
+        public const int Deep = 2;//引数の詳細やnullcheckなど
         public const int Other = 3;//動作の確認
         public const int Tweet = 4;//末端のメソッドの呼び出し確認など
     }
@@ -23,10 +23,19 @@ namespace s649ElinLog
             Level_Log = lv;
             modNS = ns;
         }
+        public static void LogDeepTry(bool b, string arg)
+        {
+            string text = b ? "Success!" : "Failed...";
+            LogDeep(text + arg);
+        }
         public static void LogDeepTry(bool b)
         {
             string text = b ? "Success!" : "Failed...";
             LogDeep(text);
+        }
+        public static void LogTweet(string s, int lv)//旧式
+        {
+            LogTweet(s);
         }
         public static void LogTweet(string s)
         {
@@ -34,17 +43,34 @@ namespace s649ElinLog
             //LogDeepTry(text);
             Log(s, LogTier.Tweet);
         }
+        public static void LogOtherTry(bool b)
+        {
+            string text = b ? "Success!" : "Failed...";
+            LogOther(text);
+        }
+        public static void LogOther(string s, int lv)//旧式
+        {
+            LogOther(s);
+        }
         public static void LogOther(string s)
         {
             //string text = b ? "Success!" : "Failed...";
             //LogDeepTry(text);
             Log(s, LogTier.Other);
         }
+        public static void LogDeep(string s, int lv)//旧式
+        {
+            LogDeep(s);
+        }
         public static void LogDeep(string s)
         {
             //string text = b ? "Success!" : "Failed...";
             //LogDeepTry(text);
             Log(s, LogTier.Deep);
+        }
+        public static void LogInfo(string s, int lv)//旧式
+        {
+            LogInfo(s);
         }
         public static void LogInfo(string s)
         {
@@ -56,7 +82,7 @@ namespace s649ElinLog
         {
             Log(argText, 0);
         }
-        public static void Log(string arg, int lv)
+        private static void Log(string arg, int lv)
         {
             //string text = b ? "Success!" : "Failed...";
             //LogDeepTry(text);

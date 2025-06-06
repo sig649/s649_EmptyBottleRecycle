@@ -31,6 +31,7 @@ namespace s649PBR
             static int lastCraftCount;
             static int recycleSet;
             static int craftMultiNum;
+            static bool isRunningAI;
 
             //lastProcess---------------------------------------------------------------------------
             private static bool ExeRecycle()
@@ -38,7 +39,7 @@ namespace s649PBR
                 string title = "ExeR";
                 LogStack("[" + modNS + "/" + title + "]");
 
-                Log("Start", 3);
+                LogTweet("Start");
                 string text = "[recycle]";
                 bool b = false;
                 foreach (BottleIngredient bi in recycleQueues)
@@ -48,7 +49,7 @@ namespace s649PBR
                         //Thing t = ThingGen.Create(bi.GetID()).SetNum(bi.num);
                         Thing t = ThingGenFromBI(bi);
                         if (t != null) { EClass._zone.AddCard(t, EClass.pc.pos); } 
-                        else { Log(title + "Thing has not Created",1); }
+                        else { LogOther(title + "Thing has not Created"); }
                             
                         text += "N:" + t.NameSimple + "/n:" + t.Num.ToString();
                         b = true;
@@ -99,8 +100,10 @@ namespace s649PBR
             //set BI Process -----------------------------------------------------------------------------
             private static bool TrySetBIToQueuesFromIngs(List<Thing> ings)
             {
-                string title = "[PBR:Craft/TSBITQFI]";
-                string text = "ingre:";
+                //string title = "[PBR:Craft/TSBITQFI]";
+                string title = "TSBITQFI";
+                LogStack("[" + modNS + "/" + title + "]");
+                //string text = "ingre:";
                 bool isSuccess = false;
                 if (ings == null || ings.Count <= 0)
                 {
@@ -108,92 +111,73 @@ namespace s649PBR
                     return false;
                 }
                 //else { LogInfo(title + "ai.ings:Found", 1); }
-                foreach (Thing thing in ings)
+                List<string> checkThings = new();
+                string checktext = "";
+                try
                 {
-                    //if (thing == null) { break; }
-
-                    //var bi = new BottleIngredient(thing);
-                    var bi = TryCreateBottleIng(new ActType(ActType.Craft), thing,  null, thing.Num);
-                    //LogInfo(title + "BIcheck:" + thing.NameSimple + "/bi:" + bi.ToString(), 1);
-                    //text += "[" + thing.NameSimple + ":" + bi + ":" + thing.Num + "]";
-                    if (bi.IsValid())
+                    if (ings == null || ings.Count <= 0) { LogError("NoList"); goto MethodEnd; }
+                    foreach (Thing ing in ings)
                     {
-                        text += "bi:" + GetStr(bi);
-                        AddBIToQueues(bi);
-                        isSuccess = true;
+                        //var bi = new BottleIngredient(ing.thing, ing.req);
+                        BottleIngredient bi = TryCreateBottleIng(new ActType(ActType.Craft), ing, null, ing.Num);
+                        if (bi != null && bi.IsValid())
+                        {
+                            //text += "bi:" + GetStr(bi);
+                            checkThings.Add(GetStr(bi));
+                            var b = AddBIToQueues(bi);
+                            if (b) { isSuccess = true; }
+                        }
                     }
-                    text += "/";
-                    //else { LogInfo(title + "processRLSet:Canceled......", 1); }
-                    //LogInfo(text, 1);
+                    checktext = string.Join("/", checkThings);
+                    LogDeep("ingcheck:" + checktext);
+                    checktext = "queue:" + GetStringsList(recycleQueues);
+                    LogDeep(checktext);
                 }
-                Log(title + text, 1);
-                text = "queue:" + GetStringsList(recycleQueues);
-                Log(title + text, 1);
-                return isSuccess;
-            }
+                catch (NullReferenceException ex)
+                {
+                    LogError("NullPo at QueueSet Phase");
+                    checktext = string.Join("/", checkThings);
+                    LogError(checktext);
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    goto MethodEnd;
+                }
             /*
-            private static bool TSBITQFI(List<Ingredient> ings)
-            {   //TrySetBIToQueuesFromIngsの中身
-                //string title = "[PBR:Craft/TSBITQFI]";//stack済み
-                string text = "ingre:";
-                bool isSuccess = false;
-                if (ings == null || ings.Count <= 0) { LogError("NoList"); isSuccess = false; goto MethodEnd; }
-                foreach (Ingredient ing in ings)
-                {
-                    //var bi = new BottleIngredient(ing.thing, ing.req);
-                    BottleIngredient bi = TryCreateBottleIng(new ActType(ActType.Craft), ing.thing, null, ing.req);
-                    if (bi.IsValid())
-                    {
-                        text += "bi:" + GetStr(bi);
-                        isSuccess = AddBIToQueues(bi);
-                        //isSuccess = true;
-                    }
-                    text += "/";
-                }
-                LogInfo(text, LogTier.Deep);
-                text = "queue:" + GetStringsList(recycleQueues);
-                LogInfo(text, LogTier.Deep);
-            MethodEnd:
-                return isSuccess;
-            }*/
-            private static bool TrySetBIToQueuesFromIngs(List<Ingredient> ings)
-            {   //argがIngredient listの場合:IsFactory:true
-                /*
-                 * nullpo発生中
-                 */
-                string title = "TSBITQFI";
-                LogStack("[" + title + "]");
-                bool isSuccess = false;
+            foreach (Thing thing in ings)
+            {
+                //if (thing == null) { break; }
 
-               // var b = TSBITQFI(ings);
-                string text = "ingre:";
-                //bool isSuccess = false;
-                if (ings == null || ings.Count <= 0) { LogError("NoList"); goto MethodEnd; }
-                foreach (Ingredient ing in ings)
+                //var bi = new BottleIngredient(thing);
+                var bi = TryCreateBottleIng(new ActType(ActType.Craft), thing,  null, thing.Num);
+                if (bi.IsValid())
                 {
-                    //var bi = new BottleIngredient(ing.thing, ing.req);
-                    BottleIngredient bi = TryCreateBottleIng(new ActType(ActType.Craft), ing.thing, null, ing.req);
-                    if (bi.IsValid())
-                    {
-                        text += "bi:" + GetStr(bi);
-                        isSuccess = AddBIToQueues(bi);
-                        //isSuccess = true;
-                    }
-                    text += "/";
+                    text += "bi:" + GetStr(bi);
+                    AddBIToQueues(bi);
+                    isSuccess = true;
                 }
-                LogDeep(text);
-                text = "queue:" + GetStringsList(recycleQueues);
-                LogDeep(text);
-           
-                //return isSuccess;
-                text = isSuccess ? "Done!" : "Not Done";
-                Log(text, LogTier.Other);
+                text += "/";
+                //else { LogInfo(title + "processRLSet:Canceled......", 1); }
+                //LogInfo(text, 1);
+            }
+            Log(title + text, 1);
+            text = "queue:" + GetStringsList(recycleQueues);
+            Log(title + text, 1);
+            */
             MethodEnd:
                 LogStackDump();
                 return isSuccess;
             }
-            
 
+            //init---------------------------------------------------------------
+            private static void StateInit()
+            {
+                recycleQueues = new List<BottleIngredient>();
+                lastMixedThing = null;
+                lastCraftCount = 0;
+                recycleSet = 0;
+                craftMultiNum = 1;
+                isRunningAI = false;
+            }
 
             //Harmony Patches ---------------------------------------------------------------------------
             [HarmonyPostfix]
@@ -201,17 +185,14 @@ namespace s649PBR
             private static void AI_UseCrafterOnStartPostPatch(AI_UseCrafter __instance)
             {
                 ClearLogStack();
+                
                 if (!PatchMain.Cf_Allow_Craft) { return; }
                 //共通初期化...のはず
                 string title = "HP:AIUC.OS";
                 LogStack("[" + modNS + "/" + title + "]");
                 //LogStack(title);
-                recycleQueues = new List<BottleIngredient>();
-                lastMixedThing = null;
-                lastCraftCount = 0;
-                recycleSet = 0;
-                craftMultiNum = 1;
-                Log("StateInit", LogTier.Deep);
+                StateInit();
+                LogOther("StateInit");
                 //bool isSuccess = false;
                 bool isFactory = false;
                 TraitCrafter traitCrafter = null;
@@ -237,7 +218,7 @@ namespace s649PBR
                     Debug.Log(ex.StackTrace);
                     return;
                 }
-                Log("ArgCheck/" + text, LogTier.Deep);
+                LogDeep("ArgCheck/" + text);
                 text = "";
                 if (!isFactory) { goto MethodEnd; }
                 /*
@@ -266,11 +247,12 @@ namespace s649PBR
                 }*/
                 recycleSet++;
                 //text = isSuccess ? "Done!" : "Not Done";
-                Log("PhaseProceed->" + text, LogTier.Deep);
+                LogOther("PhaseProceed->" + text);
 
             MethodEnd:
                 text = "End";
-                Log(text, LogTier.Other);
+                isRunningAI = true;
+                LogTweet(text);
             }
             
             [HarmonyPostfix]
@@ -283,13 +265,15 @@ namespace s649PBR
                 ClearLogStack();
                 string title = "RC.C";
                 LogStack("[" + modNS + "/" + title + "]");
-                if (!(recycleSet == 1)) { Log("phase is not set phase", LogTier.Other); return; }
-                Log("SetPhaseStart", LogTier.Other);
+                if (!isRunningAI) { LogOther("AI is off"); goto MethodEnd; }
+                if (!(recycleSet == 1)) { LogOther("phase is not set phase"); goto MethodEnd; }
+                LogTweet("SetPhaseStart");
                 //argcheck
                 List<string> args = new() { };
                 string argtext;
                 try
                 {
+                    if (ings == null || ings.Count <= 0) { LogError("NoList"); goto MethodEnd; }
                     args.Add(GetStringsList(ings));
                     //args.Add(GetStr(__result));
                 }
@@ -303,7 +287,7 @@ namespace s649PBR
                     return;
                 }
                 argtext = string.Join("/", args);
-                Log("Start/Arg:" + argtext, LogTier.Deep);
+                LogDeep("Start/Arg:" + argtext, LogTier.Deep);
                 //Craft Info Check
                 args = new() { };
                 int craftNum;
@@ -325,30 +309,31 @@ namespace s649PBR
                 }
                 argtext = string.Join(".", args);
                 argtext += "*" + GetStr(craftMultiNum);
-                Log("CraftInfo:" + argtext, LogTier.Deep);
+                LogDeep("CraftInfo:" + argtext);
 
                 //phase getBI from ings
                 bool isSuccess;
                 isSuccess = TrySetBIToQueuesFromIngs(ings);
                 argtext = "/iS:" + GetStr(isSuccess);
-                Log("CreateBIInfo:" + argtext, LogTier.Deep);
+                LogDeep("CreateBIInfo:" + argtext);
 
                 //phase removeBI from resultBIs
                 //craftしたThingからBIを作成しつつRemove
                 //Log("lastMixed:" + lastMixedThing.NameSimple + "/num:" + lastMixedThing.Num);
                 // var bi = new BottleIngredient(lastMixedThing, lastMixedThing.trait.CraftNum);
                 var bi = TryCreateBottleIng(new ActType(ActType.Craft), __result, null, craftNum * craftMultiNum);
-                if (bi.IsEnableRecycle()) //還元除外用
+                if (bi?.IsEnableRecycle() ?? false) //還元除外用
                 {
                     //recycleQueue.RemoveBIFromQueues(new (PatchMain.GetStringID(lastMixedThing), lastMixedThing.trait.CraftNum));
                     var boolremove = RemoveBIFromQueues(bi);
                     LogDeepTry(boolremove);
                 }
-                else { Log("Result:NoBI or not valid", LogTier.Deep); }
+                else { LogOther("Result:NoBI or not valid"); }
 
                 lastMixedThing = __result;
                 recycleSet++;
-            //MethodEnd:
+            MethodEnd:
+                LogTweet("End");
                 LogStackDump();
             }
             //traitcrafter------------------------------------------------------------
@@ -366,21 +351,22 @@ namespace s649PBR
 
                 if (recycleSet == PhaseRecycle.None)
                 {
-                    LogDeep("SetStart");
+                    LogOther("SetStart");
                     if (ai == null)
                     {
-                        LogInfo(title + "NoAI");
+                        LogError("NoAI");
                         return true;
                     }
-                    else { LogDeep("AI:Found"); }
+                    else { LogOther("AI:Found"); }
                     List<Thing> ings = ai.ings;
                     var b = TrySetBIToQueuesFromIngs(ings);
                     
                     recycleSet++;
                 }
-                else { LogDeep("SetSkipped"); }
+                else { LogOther("SetSkipped"); }
             //MethodEnd:
                 LogStackDump();
+                LogTweet("End");
                 return true;
             }
 
@@ -397,7 +383,7 @@ namespace s649PBR
 
                     if (__result == null) { LogError("NoResult"); return; }
                     if (ai == null) { LogError("NoAI"); return; }
-                    Log("ArgChecked", LogTier.Deep);
+                    LogDeep("ArgChecked", LogTier.Deep);
                     lastMixedThing = __result;
                     var bi = TryCreateBottleIng(new ActType(ActType.Craft), __result, null, __result.trait.CraftNum);
                     //LogInfo(title + "BIcheck:" + __result.NameSimple + "/bi:" + bi.ToString(), 1);
@@ -415,11 +401,14 @@ namespace s649PBR
                     { LogDeep("Result:NoBI or Invalid" + GetStringsList(recycleQueues)); }
 
                     recycleSet++;
+                    
+                    //LogStackDump();
                     //PatchMain.ExeRecycle(recycleList, EClass.pc);
                 }
                 else { LogOther("RemoveSkipped:"); }
             //MethodEnd:
                 lastCraftCount++;
+                LogTweet("End");
                 //LogInfo(title + "Count:" + lastCraftCount.ToString(), 2);
                 //LogStackDump();
             }//<<<<end method:PostPatch
@@ -430,6 +419,7 @@ namespace s649PBR
             {
                 //title = "[PBR:Craft/AIUC.OE:Post]";
                 string title = "HP:AIUC.OE:Post";
+                isRunningAI = false;
                 ClearLogStack();
                 LogStack("[" + modNS + "/" + title + "]");
 
@@ -449,7 +439,7 @@ namespace s649PBR
                         LogDeep("RQ:" + GetStringsList(recycleQueues));
                         ExeRecycle();
                         LogDeep("RecycleDone!");
-                    } else { LogOther("Canceled:RemoveFromResult"); }
+                    } else { LogOther("Canceled:Recycle"); }
                 }
                 else 
                 {   //加工機械
@@ -462,7 +452,7 @@ namespace s649PBR
                         ExeRecycle();
                         LogDeep("RecycleDone!");
                     }
-                    else { LogOther("RecycleNotExecuted"); }
+                    else { LogOther("Canceled:Recycle"); }
                 }
                 
                 //Chara owner = __instance.owner;
@@ -489,6 +479,89 @@ namespace s649PBR
 ////////////////////////////////////////////////
 //
 
+/*
+            private static bool TrySetBIToQueuesFromIngs(List<Ingredient> ings)
+            {   //argがIngredient listの場合:IsFactory:true
+                
+                 //nullpo発生中
+                 
+                string title = "TSBITQFI";
+                LogStack("[" + title + "]");
+                bool isSuccess = false;
+
+               // var b = TSBITQFI(ings);
+                string text = "ingre:";
+                //bool isSuccess = false;
+                List<string> args = new() ;
+                string argtext = "";
+                try
+                {
+                    if (ings == null || ings.Count <= 0) { LogError("NoList"); goto MethodEnd; }
+                    foreach (Ingredient ing in ings)
+                    {
+                        //var bi = new BottleIngredient(ing.thing, ing.req);
+                        BottleIngredient bi = TryCreateBottleIng(new ActType(ActType.Craft), ing.thing, null, ing.req);
+                        if (bi != null && bi.IsValid())
+                        {
+                            //text += "bi:" + GetStr(bi);
+                            args.Add(GetStr(bi));
+                            isSuccess = AddBIToQueues(bi);
+                            //isSuccess = true;
+                        }
+                        text += "/";
+                    }
+                    LogDeep(text);
+                    text = "queue:" + GetStringsList(recycleQueues);
+                    LogDeep(text);
+                }
+                catch (NullReferenceException ex)
+                {
+                    LogError("NullPo at Queueset Phase");
+                    argtext = string.Join("/", args);
+                    LogError(argtext);
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    goto MethodEnd;
+                }
+                
+                
+           
+                //return isSuccess;
+                text = isSuccess ? "Done!" : "Not Done";
+                Log(text, LogTier.Other);
+            MethodEnd:
+                LogStackDump();
+                return isSuccess;
+            }
+            */
+
+/*
+            private static bool TSBITQFI(List<Ingredient> ings)
+            {   //TrySetBIToQueuesFromIngsの中身
+                //string title = "[PBR:Craft/TSBITQFI]";//stack済み
+                string text = "ingre:";
+                bool isSuccess = false;
+                if (ings == null || ings.Count <= 0) { LogError("NoList"); isSuccess = false; goto MethodEnd; }
+                foreach (Ingredient ing in ings)
+                {
+                    //var bi = new BottleIngredient(ing.thing, ing.req);
+                    BottleIngredient bi = TryCreateBottleIng(new ActType(ActType.Craft), ing.thing, null, ing.req);
+                    if (bi.IsValid())
+                    {
+                        text += "bi:" + GetStr(bi);
+                        isSuccess = AddBIToQueues(bi);
+                        //isSuccess = true;
+                    }
+                    text += "/";
+                }
+                LogInfo(text, LogTier.Deep);
+                text = "queue:" + GetStringsList(recycleQueues);
+                LogInfo(text, LogTier.Deep);
+            MethodEnd:
+                return isSuccess;
+            }*/
+//LogInfo(title + "BIcheck:" + thing.NameSimple + "/bi:" + bi.ToString(), 1);
+//text += "[" + thing.NameSimple + ":" + bi + ":" + thing.Num + "]";
 //title = "[TSFF]";
 //LogStack(title);
 //string title = "[TSFF]";

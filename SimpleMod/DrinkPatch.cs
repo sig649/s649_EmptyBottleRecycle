@@ -58,7 +58,7 @@ namespace s649PBR
                         c_drinker = __instance;
                         if (!t.isThing) { LogError("*Warn* t is not thing"); goto MethodEnd; }
                         used_t = t.Thing;
-                        Log("ArgChecked", LogTier.Deep);
+                        LogOther("ArgChecked");
                         //Thing thing = card.Thing;
                         stateBottleIng = TryCreateBottleIng(new ActType(ActType.Use), used_t, c_drinker);
                         //return = bi;
@@ -70,9 +70,9 @@ namespace s649PBR
                         Debug.Log(ex.StackTrace);
                         goto MethodEnd;
                     }
-                    if (stateBottleIng == null) { Log("NoBI", LogTier.Deep); goto MethodEnd; }
+                    if (stateBottleIng == null) { LogDeep("NoBI", LogTier.Deep); goto MethodEnd; }
                     isCheckSuccess = true;
-                    Log("PreFinish", LogTier.Other);
+                    LogTweet("PreFinish");
 
 
                 }
@@ -86,12 +86,14 @@ namespace s649PBR
             private static void CharaDrinkPostPatch(Chara __instance, Card t)
             {
                 string title = "[C.D/Post]";
+                ClearLogStack();// for HarmonyPatchFookMethod
+
                 LogStack(title);
                 if (Cf_Allow_Use) 
                 { //CharaDrinkPatchPostExe(__instance, t);
-                    if (!isCheckSuccess) { Log("post phase is skipped for check failure", LogTier.Deep); return; }
+                    if (!isCheckSuccess) { LogDeep("post phase is skipped for check failure", LogTier.Deep); return; }
 
-                    Log("Start", LogTier.Other);
+                    LogTweet("Start", LogTier.Other);
                     string text = "";
                     //if (card == null) { LogError("NoCard"); return; }
                     //Chara c_drinker = chara;
@@ -102,7 +104,7 @@ namespace s649PBR
 
                     LogOther(text);
                 }
-                else { Log("'Use' not Allowed", LogTier.Other); }
+                else { LogOther("'Use' not Allowed", LogTier.Other); }
                 
             }
             /*

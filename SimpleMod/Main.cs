@@ -146,15 +146,15 @@ namespace s649PBR
                 BottleIngredient resultBI = null;
                 //LogStack("[" + modNS + "/CreBI]"); //string title = "[PBR-Main:CreateBI]"; 
                 if (argThing == null) { LogError("NoThing"); goto MethodEnd; }
-                Log("ArgChecked", LogTier.Deep);
+                LogOther("ArgChecked", LogTier.Other);
 
                 resultBI = new BottleIngredient(argThing, argNum);
                 //if (resultBI != null) { Log("Create=>" + resultBI.GetDetail(), LogTier.Deep); }
-                if (resultBI == null) { Log("NoBI", LogTier.Deep); goto MethodEnd; }
+                if (resultBI == null) { LogDeep("NoBI", LogTier.Deep); goto MethodEnd; }
                 var isValid = CheckBI(resultBI);
                 if (isValid) 
-                { Log("ValidBI:" + StrConv(resultBI), LogTier.Deep); } 
-                else { Log("InvalidBI:" + StrConv(resultBI), LogTier.Deep); }
+                { LogDeep("ValidBI:" + StrConv(resultBI), LogTier.Deep); } 
+                else { LogDeep("InvalidBI:" + StrConv(resultBI), LogTier.Deep); }
 
             MethodEnd:
                 LogStackDump();
@@ -168,14 +168,14 @@ namespace s649PBR
 
                 Thing resultThing = null;
                 if (bi == null) { LogError("No BI"); goto MethodEnd; }
-                Log("ArgChecked", LogTier.Deep);
+                LogDeep("ArgChecked", LogTier.Other);
 
                 if (!bi.IsEnableRecycle()) { LogError("BI must be EnableRecycle"); goto MethodEnd; }
                 resultThing = ThingGen.Create(bi.GetID()).SetNum(bi.num);
                 if (resultThing == null) 
-                { Log("ThingGen has NotCreated:" + StrConv(resultThing), LogTier.Deep); goto MethodEnd; }
+                { LogDeep("ThingGen has NotCreated:" + StrConv(resultThing), LogTier.Deep); goto MethodEnd; }
                 resultThing.ChangeMaterial(bi.idMaterial);
-                Log("Success:" + StrConv(resultThing) + "/Mat:" + resultThing.idMaterial, LogTier.Deep);
+                LogDeep("Success:" + StrConv(resultThing) + "/Mat:" + resultThing.idMaterial, LogTier.Deep);
 
             MethodEnd:
                 LogStackDump();
@@ -188,10 +188,10 @@ namespace s649PBR
 
                 bool result = false;
                 if (bi == null) { LogError("bi is null"); goto MethodEnd; }
-                Log("ArgChecked", LogTier.Deep);
+                LogDeep("NullChecked", LogTier.Deep);
                 //Log(title + "Detail->" + bi.GetDetail(), 2);
                 result = bi.IsValid();
-                Log("R:" + bi.GetDetail(), LogTier.Deep);
+                LogDeep("R:" + bi.GetDetail(), LogTier.Deep);
 
             MethodEnd:
                 LogStackDump();
@@ -203,7 +203,7 @@ namespace s649PBR
                 //LogStack("[" + modNS + "RWCC]");
                 string title = "[ReWCC]";
                 LogStack("[" + modNS + "/" + title + "]");
-                Log("Start", LogTier.Tweet);
+                LogDeep("Start", LogTier.Tweet);
                 int result;
                 switch (acttype)
                 {
@@ -226,7 +226,7 @@ namespace s649PBR
                         result = 999;
                         break;
                 }
-                Log("R:" + result, LogTier.Other);
+                LogOther("R:" + result, LogTier.Other);
                 LogStackDump();
                 return result;
             }
@@ -236,7 +236,7 @@ namespace s649PBR
                 LogStack("[" + modNS + "/" + title + "]");
                 int result = 0;
                 if(c == null){ LogError("c is null"); goto MethodEnd; }
-                Log("ArgChecked:" + StrConv(c), LogTier.Other);
+                LogOther("ArgChecked:" + StrConv(c), LogTier.Other);
                 if (c.IsPC)
                 {
                     result = 1;
@@ -249,7 +249,7 @@ namespace s649PBR
                 {
                     result = 3;
                 }
-                Log("R:" + result, LogTier.Tweet);
+                LogOther("R:" + result);
                 MethodEnd:
                 LogStackDump();
                 return result;
@@ -261,7 +261,7 @@ namespace s649PBR
 
                 //bool result = false;
                 bool result = tcp <= wcc;
-                Log("R:" + result, LogTier.Tweet);
+                LogOther("R:" + result);
 
                 LogStackDump();
                 return result;
@@ -273,7 +273,7 @@ namespace s649PBR
 
                 //bool result = false;
                 bool result = tcp <= wccj;
-                Log("R:" + result, LogTier.Tweet);
+                LogOther("R:" + result);
 
                 LogStackDump();
                 return result;
@@ -284,13 +284,13 @@ namespace s649PBR
                 bool resultBool = false;
                 string title = "[CheR]";
                 LogStack("[" + modNS + "/" + title + "]");
-                List<string> args; 
-                string argtext;
+                List<string> checkThings = new();
+                string checktext = "";
                 try 
                 {
-                    args = new List<string> { StrConv(bi), StrConv(argChara), StrConv(acttype) };
-                    argtext = string.Join("/", args);
-                    Log("Start/Arg:" + argtext, LogTier.Other);
+                    checkThings = new List<string> { StrConv(bi), StrConv(argChara), StrConv(acttype) };
+                    checktext = string.Join("/", checkThings);
+                    LogDeep("Start/Arg:" + checktext);
                 } 
                 catch (NullReferenceException ex)
                 {
@@ -319,12 +319,12 @@ namespace s649PBR
                 Thing createBI = null;
                 string title = "DoR";
                 LogStack("[" + modNS + "/" + title + "]");
-                List<string> args;
-                string argtext;
+                List<string> checkThings = new();
+                string checktext = "";
                 try
                 {
-                    args = new List<string> { StrConv(bi), StrConv(argChara), StrConv(point) };
-                    argtext = string.Join("/", args);
+                    checkThings = new List<string> { StrConv(bi), StrConv(argChara), StrConv(point) };
+                    checktext = string.Join("/", checkThings);
                 }
                 catch (NullReferenceException ex)
                 {
@@ -334,7 +334,8 @@ namespace s649PBR
                     LogStackDump();
                     return resultBool;
                 }
-                Log("Start/Arg:" + argtext, LogTier.Deep);
+                LogDeep("Start/Arg:" + checktext, LogTier.Deep);
+                if (!bi.IsEnableRecycle()) { LogDeep("BI cannnot recycle"); goto MethodEnd; }
                 createBI = ThingGenFromBI(bi);
                 string text = "" + StrConv(createBI);
                 if (point == null)
@@ -360,7 +361,7 @@ namespace s649PBR
                     resultBool = true;
                     LogInfo("RecycledTo:" + text);
                 }
-
+            MethodEnd:
                 LogStackDump();
                 return resultBool;
             }
@@ -417,12 +418,13 @@ namespace s649PBR
                 string title = "TCBI";
                 LogStack("[" + modNS + "/" + title + "]");
                 //if (argChara == null) { argChara = EClass.pc; }//cがnullの時はPCが行ったとみなす
-                
+                List<string> checkThings = new();
+                string checktext = "";
                 try
                 {
-                    var args = new List<string> { StrConv(argActtype), StrConv(argThing), StrConv(argChara), StrConv(argNum) };
-                    var argtext = string.Join("/", args);
-                    Log("Start/Arg:" + argtext, LogTier.Deep);
+                    checkThings = new List<string> { StrConv(argActtype), StrConv(argThing), StrConv(argChara), StrConv(argNum) };
+                    checktext = string.Join("/", checkThings);
+                    LogDeep("Start/Arg:" + checktext, LogTier.Deep);
 
                     resultBI = CreateBI(argThing, argNum);
                 }
@@ -435,19 +437,19 @@ namespace s649PBR
                 Chara chara = argChara ?? EClass.pc;//cがnullの時はPCが行ったとみなす
                 if (resultBI != null && resultBI.IsValid())
                 {
-                    Log("CreateBI->Success/" + StrConv(resultBI), LogTier.Deep);
+                    LogDeep("CreateBI->Success/" + StrConv(resultBI), LogTier.Deep);
                 }
                 else { 
-                    Log("BI has not been created or invalid", LogTier.Deep);
+                    LogOther("BI has not been created or invalid", LogTier.Other);
                     resultBI = null; 
                     goto MethodEnd;
                 }
                 if (CheckRegulation(resultBI, chara, argActtype))
                 {
-                    Log("Regulation Checked", LogTier.Deep);
+                    LogOther("Regulation Checked", LogTier.Other);
                 }
                 else { 
-                    Log("Regulation Failure", LogTier.Deep);
+                    LogOther("Regulation Failure", LogTier.Other);
                     resultBI = null;
                     goto MethodEnd;
                 }
