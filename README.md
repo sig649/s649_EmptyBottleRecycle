@@ -6,10 +6,10 @@
 作る：レシピでのクラフト（作業台など）や加工機械による加工時に還元（石うす・染料窯など）
 
 進捗：1.0.0のアルファテスト前なう   
-(WIP)Use  
-(実装作業前)Blend  
-(WIP)Throw  
-(アルファ前check)Craft  
+(test)Use  
+(WIP)Blend  
+(test)Throw  
+(test)Craft  
 
 Todo:  
 （済）クラフトレシピの対応  
