@@ -37,7 +37,7 @@ namespace s649PBR
             static Point throwed_p;
             static bool isCheckSuccess;
             static bool trySetAllow;
-            static bool needDoRecycleSkip;
+            //static bool needDoRecycleSkip;
 
             private static void InitState() 
             {
@@ -47,7 +47,7 @@ namespace s649PBR
                 throwed_p = null;
                 isCheckSuccess = false;
                 trySetAllow = false;
-                needDoRecycleSkip = false;
+                //needDoRecycleSkip = false;
             }
 
             [HarmonyPrefix]

@@ -104,7 +104,7 @@ namespace s649PBR
 
                     LogOther(text);
                 }
-                else { LogOther("'Use' not Allowed", LogTier.Other); }
+                else { LogOther("'Use' not Allowed"); }
                 
             }
             /*

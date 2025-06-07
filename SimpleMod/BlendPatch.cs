@@ -3,6 +3,7 @@ using BepInEx.Configuration;
 using HarmonyLib;
 using s649PBR.BIClass;
 using s649PBR.Main;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 //using static UnityEngine.UIElements.UxmlAttributeDescription;
@@ -19,59 +20,84 @@ namespace s649PBR
         [HarmonyPatch]
         internal class PatchExe
         {
-            /*
+            private static readonly string modSubNS = "BP";
+            //static string title;// = "[PBR:IOBOP]";
+            //static string p_phase;
+
+            private static void CommonProcessOnBlend(string title, Trait instTrait, Thing argThing, Chara argChara)
+            {
+                ClearLogStack();
+                LogStack("[" + modSubNS + "/" + title + "]");
+                if (!Cf_Allow_Blend) { LogOther("'Use' not Allowed"); return; }
+
+                //argCheck;
+                List<string> checkThings = new();
+                string checktext = "";
+                BottleIngredient bottleIng;
+                try
+                {
+                    checkThings = new List<string> { GetStr(instTrait), GetStr(argThing), GetStr(argChara) };
+                    checktext = string.Join("/", checkThings);
+                }
+                catch (NullReferenceException ex)
+                {
+                    LogError("Arg check Failed for NullPo");
+                    LogError(checktext);
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    return;
+                }
+                LogDeep("ArgCheck:" + checktext);
+
+                //BIgenerate
+                bottleIng = TryCreateBottleIng(new ActType(ActType.Blend), argThing, argChara);
+                if (bottleIng == null) { LogDeep("BI was not generated.", LogTier.Deep); return; }
+
+                //DoRecycle
+                bool result = DoRecycle(bottleIng, argChara);
+                LogDeepTry(result);
+
+            }
+            //Harmony-----------------------------------------------------------------------------------------
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(TraitDye), "OnBlend")]
+            private static void TraitDye_OnBlendPatch(TraitDye __instance, Thing t, Chara c)
+            {   //アイテムに混ぜた時
+                string title = "TDye.OnB";
+                CommonProcessOnBlend(title, __instance, t, c);
+                //Log(title + "/FookCheck");
+            }
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(TraitWell), "OnBlend")]
+            private static void TraitWell_OnBlendPatch(TraitWell __instance, Thing t, Chara c)
+            {   //FookCheck:井戸に対して混ぜた時
+                string title = "TWell.OnB";
+                CommonProcessOnBlend(title, __instance, t, c);
+                //Log(title + "/FookCheck");
+            }
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(TraitDrink), "OnBlend")]
+            private static void TraitDrink_OnBlendPatch(TraitDrink __instance, Thing t, Chara c)
+            {
+                string title = "TDrink.OnB";
+                CommonProcessOnBlend(title, __instance, t, c);
+                //Log(title + "/FookCheck");
+            }
+
+        }//<<<end class:PatchExe
+    }//<<end namespaceSub
+}//<end namespaceMain
+
+
+
+/////trash////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
              * Fook出来てない挙動
              * 染料を持ってオブジェクトなどに使った時->Useなのでそっちで
              * 
              */
-            static string title;// = "[PBR:IOBOP]";
-            static string p_phase;
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(InvOwnerBlend), "_OnProcess")]
-            private static bool IOBOnProcessPrePatch(InvOwnerBlend __instance, Thing t, ref BottleIngredient __state)
-            {   //fookinfo:インベントリのアイテムを混ぜた時全般？//well/dye/poison
-                /*
-                if (Cf_Allow_Blend)
-                {
-                    p_phase = "Pre/";
-                    BottleIngredient bi;
-                    //if (__instance.owner == null) { Log(title + "*Error* NoOwner"); return true; }
-                    Chara c_blender = EClass.pc; // __instance.owner.Chara;
-                    Thing thing = t;// __instance.owner.Thing;
-                    bi = TryCreateBI(thing, c_blender, new ActType(ActType.Blend));
-                    __state = bi;
-                    Log(title + p_phase + "Finish", 2);
-                }
-                return true;
-                */
-                return true;
-            }
-            [HarmonyPostfix]
-            [HarmonyPatch(typeof(InvOwnerBlend), "_OnProcess")]
-            private static void IOBOnProcesdPostPatch(InvOwnerBlend __instance, Thing t, BottleIngredient __state)
-            {
-                //title = "[PBR:IOBOP]";
-                //Log(title + "FookCheck");
-                /*
-                if (Cf_Allow_Blend)
-                {
-                    p_phase = "Post/";
-                    string text = "";
-                    //if (__instance.owner == null) { Log(title + "*Error* NoOwner"); return; }
-                    Chara c_blender = EClass.pc; // __instance.owner.Chara;
-                    BottleIngredient bi = __state;
-                    if (bi == null) { Log(title + "NoBI", 1); return; }
-                    bool result = DoRecycle(bi, c_blender);
-                    text += result ? "Done!" : "Not Done";
-
-                    PatchMain.Log(title + p_phase + text, 2);
-                }
-                else { Log(title + "'Blend' not Allowed", 3); }
-                */
-            }
-
-            
-            /*
+/*
             [HarmonyPrefix]
             [HarmonyPatch(typeof(Trait), "OnBlend")]
             private static bool TraitOnBlendPrePatch(Trait __instance, Thing t, Chara c, ref BottleIngredient __state)
@@ -110,45 +136,81 @@ namespace s649PBR
                 else { Log(title + "'Use' not Allowed", 3); }
             }
             */
-            /*
-            [HarmonyPostfix]
-            [HarmonyPatch(typeof(TraitWell), "OnBlend")]
-            private static void TraitWellPostPatch(TraitWell __instance, Thing t, Chara c)
-            {//>>>>begin method:TraitDrinkPatch
-                string title = "[PBR:TW.OB]";
-                if (t.trait == null) { Log(title + "*Error* NoTrait", 1); return; }
-                bool b = TryBlend(t.trait, c);
-                if (b)
-                {
-                    Log(title + "Success", 1);
-                }
-                else
-                { Log(title + "NotDone", 1); }
-            }//<<<<end method:TraitDrinkPatch
+/*
+[HarmonyPostfix]
+[HarmonyPatch(typeof(TraitWell), "OnBlend")]
+private static void TraitWellPostPatch(TraitWell __instance, Thing t, Chara c)
+{//>>>>begin method:TraitDrinkPatch
+    string title = "[PBR:TW.OB]";
+    if (t.trait == null) { Log(title + "*Error* NoTrait", 1); return; }
+    bool b = TryBlend(t.trait, c);
+    if (b)
+    {
+        Log(title + "Success", 1);
+    }
+    else
+    { Log(title + "NotDone", 1); }
+}//<<<<end method:TraitDrinkPatch
 
-            [HarmonyPostfix]
-            [HarmonyPatch(typeof(TraitDrink), "OnBlend")]
-            private static void OnBlendPostPatch(TraitDrink __instance, Thing t, Chara c)
-            {//>>>>begin method:OnUsePostPatch
-                string title = "[PBR:TDye.OB]";
-                bool b = TryBlend(__instance, c);
-                if (b)
-                {
-                    Log(title + "Success", 1);
-                }
-                else
-                { Log(title + "NotDone", 1); }
-            }//<<<<end method:OnUsePostPatch
-            */
-        }//<<<end class:PatchExe
-    }//<<end namespaceSub
-}//<end namespaceMain
+[HarmonyPostfix]
+[HarmonyPatch(typeof(TraitDrink), "OnBlend")]
+private static void OnBlendPostPatch(TraitDrink __instance, Thing t, Chara c)
+{//>>>>begin method:OnUsePostPatch
+    string title = "[PBR:TDye.OB]";
+    bool b = TryBlend(__instance, c);
+    if (b)
+    {
+        Log(title + "Success", 1);
+    }
+    else
+    { Log(title + "NotDone", 1); }
+}//<<<<end method:OnUsePostPatch
+*/
+/*
+[HarmonyPrefix]
+[HarmonyPatch(typeof(InvOwnerBlend), "_OnProcess")]
+private static bool IOBOnProcessPrePatch(InvOwnerBlend __instance, Thing t, ref BottleIngredient __state)
+{   //fookinfo:インベントリのアイテムを混ぜた時全般？//well/dye/poison
 
+    if (Cf_Allow_Blend)
+    {
+        p_phase = "Pre/";
+        BottleIngredient bi;
+        //if (__instance.owner == null) { Log(title + "*Error* NoOwner"); return true; }
+        Chara c_blender = EClass.pc; // __instance.owner.Chara;
+        Thing thing = t;// __instance.owner.Thing;
+        bi = TryCreateBI(thing, c_blender, new ActType(ActType.Blend));
+        __state = bi;
+        Log(title + p_phase + "Finish", 2);
+    }
+    return true;
 
+    return true;
+}
+[HarmonyPostfix]
+[HarmonyPatch(typeof(InvOwnerBlend), "_OnProcess")]
+private static void IOBOnProcesdPostPatch(InvOwnerBlend __instance, Thing t, BottleIngredient __state)
+{
+    //title = "[PBR:IOBOP]";
+    //Log(title + "FookCheck");
 
+    if (Cf_Allow_Blend)
+    {
+        p_phase = "Post/";
+        string text = "";
+        //if (__instance.owner == null) { Log(title + "*Error* NoOwner"); return; }
+        Chara c_blender = EClass.pc; // __instance.owner.Chara;
+        BottleIngredient bi = __state;
+        if (bi == null) { Log(title + "NoBI", 1); return; }
+        bool result = DoRecycle(bi, c_blender);
+        text += result ? "Done!" : "Not Done";
 
+        PatchMain.Log(title + p_phase + text, 2);
+    }
+    else { Log(title + "'Blend' not Allowed", 3); }
 
-
+}
+*/
 
 //IsThrown = true;
 //lastThrower = c.Chara;
