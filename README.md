@@ -7,7 +7,7 @@
 
 進捗：1.0.0のアルファテスト前なう   
 (test)Use  
-(WIP)Blend  
+(test)Blend  
 (test)Throw  
 (test)Craft  
 
