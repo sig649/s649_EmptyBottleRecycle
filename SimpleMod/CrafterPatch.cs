@@ -197,6 +197,7 @@ namespace s649PBR
                 bool isFactory = false;
                 TraitCrafter traitCrafter = null;
                 string text = "";
+                string recipeThingId;
                 try
                 {
                     traitCrafter = __instance.crafter;
@@ -206,7 +207,8 @@ namespace s649PBR
                     //text += "/t:" + GetStr(traitCrafter);
                     Recipe recipe = __instance.recipe;
                     text += "/recipe:" + GetStr(recipe);
-
+                    recipeThingId = recipe.GetIdThing();
+                    text += "/recipeID:" + GetStr(recipeThingId);
                     craftMultiNum = __instance.num;
                     text += "/num:" + GetStr(craftMultiNum);
                 }
@@ -219,6 +221,7 @@ namespace s649PBR
                     return;
                 }
                 LogDeep("ArgCheck/" + text);
+                if (IsInProhibitionList(recipeThingId)) { LogDeep("Prohibition recycle Recipe"); goto MethodEnd; }
                 text = "";
                 if (!isFactory) { goto MethodEnd; }
                 /*

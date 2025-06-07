@@ -48,7 +48,7 @@ namespace s649PBR
                     return;
                 }
                 LogDeep("ArgCheck:" + checktext);
-
+                if (IsInProhibitionList(argThing.id)) { LogDeep("Prohibition Item"); return; }
                 //BIgenerate
                 bottleIng = TryCreateBottleIng(new ActType(ActType.Blend), argThing, argChara);
                 if (bottleIng == null) { LogDeep("BI was not generated.", LogTier.Deep); return; }

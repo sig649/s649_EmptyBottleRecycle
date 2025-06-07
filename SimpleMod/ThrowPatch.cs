@@ -81,6 +81,7 @@ namespace s649PBR
                     return true;
                 }
                 LogDeep("Throwtype:" + checktext);
+                if (IsInProhibitionList(t.id)) { LogDeep("Prohibition Item"); return true; }
                 //if (throwtype != ThrowType.Potion && !(t.trait is TraitDye)) { LogOther("Throwed Thing is not Potion."); return; }
                 if (throwtype != ThrowType.Potion || t.trait is TraitDye)
                 {

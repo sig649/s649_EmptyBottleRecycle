@@ -59,6 +59,7 @@ namespace s649PBR
                         if (!t.isThing) { LogError("*Warn* t is not thing"); goto MethodEnd; }
                         used_t = t.Thing;
                         LogOther("ArgChecked");
+                        if (IsInProhibitionList(used_t.id)) { LogDeep("Prohibition Item"); goto MethodEnd; }
                         //Thing thing = card.Thing;
                         stateBottleIng = TryCreateBottleIng(new ActType(ActType.Use), used_t, c_drinker);
                         //return = bi;

@@ -4,6 +4,8 @@ using HarmonyLib;
 using s649PBR.BIClass;
 using s649PBR.Main;
 using System;
+using System.Linq;
+using System.Text;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -47,6 +49,10 @@ namespace s649PBR
 
             public static bool Cf_Reg_JunkBottle => CE_AllowCreatesJunkBottles.Value;
 
+            //prohibition setting
+            public static List<string> list_Prohibition_ID => CE_ProhibitionList.Value.Split(',').Select(s => s.Trim()).ToList();
+            private static ConfigEntry<string> CE_ProhibitionList;
+
             //CE debug
             private static ConfigEntry<int> CE_LogLevel;//デバッグ用のログの出力LV　-1:出力しない 0~:第二引数に応じて出力
             public static int Cf_LogLevel => CE_LogLevel.Value;
@@ -74,7 +80,10 @@ namespace s649PBR
                 // junk
                 CE_AllowCreatesJunkBottles = Config.Bind("#F00-General", "ALLOW_CREATES_JUNK_Things", true, "Allow to generate junk things");
                 CE_WhichCharaCreatesJunkBottles = Config.Bind("#01-Reg", "Junk_Regulation", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
-                
+
+                //SettingInstall
+                CE_ProhibitionList = Config.Bind("#02-Setting", "Setting_Prohibition_List", "toolAlchemy", "List of Recycle Prohibition List");
+
                 // zz debug
                 CE_LogLevel = Config.Bind("#ZZ-Debug", "DEBUG_LOGGING", 0, "If value >= 0, Outputs debug info.");
                 
@@ -99,42 +108,7 @@ namespace s649PBR
             //public static Thing lastThrownThing;
 
             //internal method-------------------------------------------------------------------------------------------------
-            /*
-            internal static void Log(string text, int lv = 1)
-            {
-                //Log.Levels
-                //--- -1:None...出力しない。コメント的な意味合い
-                //---- 0:*Error*...想定外の場合に出力される...はず
-                //---- 1:Info...通常の出力
-                //---- 2:Deep...引数などの付随情報を出力
-                //---- 3:General...メソッドの呼び出しや終了などの簡易情報※デバッグ用。ログ過多必死
-                string logHeader = "";
-                switch (lv) 
-                {
-                    case < 0:
-                        return;
-                    case 0:
-                        logHeader = "[Error]";
-                        break;
-                    case 1:
-                        logHeader = "[Info ]";
-                        break;
-                    case 2:
-                        logHeader = "[Deep ]";
-                        break;
-                    case 3:
-                        logHeader = "[Other]";
-                        break;
-                    default:
-                        logHeader = "[ALL  ]";
-                        break;
-                        
-                }
-                if (Cf_LogLevel >= lv)
-                {
-                    GetStr(modtitle + logHeader + string.Join("", stackLog) + text);
-                }
-            }*/
+            
             
             
             //bi-------------------------------------------------------------------------
@@ -155,6 +129,13 @@ namespace s649PBR
                 if (isValid) 
                 { LogDeep("ValidBI:" + StrConv(resultBI), LogTier.Deep); } 
                 else { LogDeep("InvalidBI:" + StrConv(resultBI), LogTier.Deep); }
+            
+                if (resultBI.isProhibition) 
+                {
+                    LogOther("This BI is prohibition");
+                    resultBI = null;
+                }
+            
 
             MethodEnd:
                 LogStackDump();
@@ -312,6 +293,18 @@ namespace s649PBR
                 return resultBool;
             }
             
+            //prohibition
+            //レシピクラフトにおいて完成品が禁止リストに含まれている場合は還元できないように
+            //素材として使われた場合もBI生成を出来ないように
+            internal static bool IsInProhibitionList(string argID)
+            {
+                if (list_Prohibition_ID == null || list_Prohibition_ID.Count < 1) { return false; }
+                foreach (string strID in list_Prohibition_ID) 
+                {
+                    if (strID == argID) { return true; }
+                }
+                return false;
+            }
             //recycle--------------------------------------------------------
             internal static bool DoRecycle(BottleIngredient bi, Chara argChara, Point point = null)
             {
@@ -366,51 +359,7 @@ namespace s649PBR
                 return resultBool;
             }
             
-            /*
-            internal static Thing DoRecycle(BottleIngredient bi, Chara c, ActType acttype, Point p = null) 
-            {
-                string title = "[PBR:Main:DR]";
-                if (bi == null || !bi.IsEnableRecycle()) { Log(title + "NoBI or CannotRecycle"); return null; }
-                if (c == null) { Log(title + "*Error* NoChara"); return null; }
-                if (acttype == null) { Log(title + "*Error* ActType is Invalid"); return null; }
-                
-                string text = StrConv(acttype) + ":";
-                text += "BI:" + StrConv(bi);
-                text += "/C:" + c.NameSimple;
-                text += "/P:" + StrConv(p);
-                PatchMain.Log(title + "ArgCheck/" + text, 2);
-                
-               // text = StrConv(acttype);
-                //text += "/bi:" + StrConv(bi);
-                //text += "/C:" + StrConv(c);
-                //text += "/P:" + StrConv(p);
-                
-                //text += "/rsID:" + GetID();
-                Thing result = ThingGen.Create(bi.GetID()).SetNum(bi.num);
-                text = "rs:" + result.NameSimple;
-                if (p == null)
-                {
-                    if (c.IsPC)
-                    {
-                        text += "/isPC:T";
-                        c.Pick(result);
-                    }
-                    else
-                    {
-                        text += "/isPC:F";
-                        EClass._zone.AddCard(result, c.pos);
-                    }
-                    PatchMain.Log(title + "Create:" + text);
-                }
-                else
-                {
-                    text += "/p:" + p.ToString();
-                    EClass._zone.AddCard(result, p);
-                    PatchMain.Log(title + "CreateTo:" + text);
-                }
-                return result;
-            }
-            */
+            
             //TryCreateBIs--------------------------------------------------------------------------------
             internal static BottleIngredient TryCreateBottleIng(ActType argActtype, Thing argThing, Chara argChara = null, int argNum = 1)
             {
@@ -444,6 +393,7 @@ namespace s649PBR
                     resultBI = null; 
                     goto MethodEnd;
                 }
+                
                 if (CheckRegulation(resultBI, chara, argActtype))
                 {
                     LogOther("Regulation Checked", LogTier.Other);
@@ -458,7 +408,7 @@ namespace s649PBR
                 LogStackDump();
                 return resultBI;
             }
-            //文字列出力：StrConv----------------------------------------------------------------------------------------------------------------------------------------
+            //文字列出力：GetStr-GetStringsList---------------------------------------------------------------------------------------------------------------------------------------
             
             public static string GetStr(object input)
             {
@@ -474,7 +424,7 @@ namespace s649PBR
                         return StrConv(input);
                 }
             }
-            
+            /*
             public static string GetStr(ActType arg)
             {
                 return (arg != null) ? arg.ToString() : "-";
@@ -483,7 +433,7 @@ namespace s649PBR
             {
                 return (arg != null) ? arg.ToString() : "-";
             }
-            
+            */
             internal static string GetStringsList(List<BottleIngredient> biList)
             {
                 string text = ""; if(biList == null){ return text; }
@@ -731,6 +681,89 @@ if(PatchMain.configDebugLogging)
 ///
 
 
+
+
+/*
+            internal static void Log(string text, int lv = 1)
+            {
+                //Log.Levels
+                //--- -1:None...出力しない。コメント的な意味合い
+                //---- 0:*Error*...想定外の場合に出力される...はず
+                //---- 1:Info...通常の出力
+                //---- 2:Deep...引数などの付随情報を出力
+                //---- 3:General...メソッドの呼び出しや終了などの簡易情報※デバッグ用。ログ過多必死
+                string logHeader = "";
+                switch (lv) 
+                {
+                    case < 0:
+                        return;
+                    case 0:
+                        logHeader = "[Error]";
+                        break;
+                    case 1:
+                        logHeader = "[Info ]";
+                        break;
+                    case 2:
+                        logHeader = "[Deep ]";
+                        break;
+                    case 3:
+                        logHeader = "[Other]";
+                        break;
+                    default:
+                        logHeader = "[ALL  ]";
+                        break;
+                        
+                }
+                if (Cf_LogLevel >= lv)
+                {
+                    GetStr(modtitle + logHeader + string.Join("", stackLog) + text);
+                }
+            }*/
+/*
+            internal static Thing DoRecycle(BottleIngredient bi, Chara c, ActType acttype, Point p = null) 
+            {
+                string title = "[PBR:Main:DR]";
+                if (bi == null || !bi.IsEnableRecycle()) { Log(title + "NoBI or CannotRecycle"); return null; }
+                if (c == null) { Log(title + "*Error* NoChara"); return null; }
+                if (acttype == null) { Log(title + "*Error* ActType is Invalid"); return null; }
+                
+                string text = StrConv(acttype) + ":";
+                text += "BI:" + StrConv(bi);
+                text += "/C:" + c.NameSimple;
+                text += "/P:" + StrConv(p);
+                PatchMain.Log(title + "ArgCheck/" + text, 2);
+                
+               // text = StrConv(acttype);
+                //text += "/bi:" + StrConv(bi);
+                //text += "/C:" + StrConv(c);
+                //text += "/P:" + StrConv(p);
+                
+                //text += "/rsID:" + GetID();
+                Thing result = ThingGen.Create(bi.GetID()).SetNum(bi.num);
+                text = "rs:" + result.NameSimple;
+                if (p == null)
+                {
+                    if (c.IsPC)
+                    {
+                        text += "/isPC:T";
+                        c.Pick(result);
+                    }
+                    else
+                    {
+                        text += "/isPC:F";
+                        EClass._zone.AddCard(result, c.pos);
+                    }
+                    PatchMain.Log(title + "Create:" + text);
+                }
+                else
+                {
+                    text += "/p:" + p.ToString();
+                    EClass._zone.AddCard(result, p);
+                    PatchMain.Log(title + "CreateTo:" + text);
+                }
+                return result;
+            }
+            */
 /*
 private static BottleIngredient TryCBI(Thing argThing, Chara argChara, ActType argActtype, int argNum = 1) 
 {

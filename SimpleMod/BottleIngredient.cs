@@ -148,7 +148,9 @@ namespace s649PBR
            
             private void SetProhibition() 
             {
-                if (idIngredient == BottleIngredient.Snow) { isProhibition = true; }//koregayobarerukotohanai
+                //if (idIngredient == BottleIngredient.Snow) { isProhibition = true; }//koregayobarerukotohanai
+                if (IsInProhibitionList(_ThingID)) { isProhibition = true; }
+                
                 //return false;
                 /*
                 var trait = orgThing.trait;
@@ -268,12 +270,14 @@ namespace s649PBR
                             }
                             break;
                         default:
+                            /*
                             if (tid == "toolAlchemy")
                             {
                                 result = Bottle_Empty;
                                 isInstalled = true;
                                 num = 4;
                             }
+                            */
                             break;
                     }
                     
