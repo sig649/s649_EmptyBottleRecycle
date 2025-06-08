@@ -32,7 +32,7 @@ namespace s649PBR
             static int recycleSet;
             static int craftMultiNum;
             static bool isRunningAI;
-
+            static bool isCheckFailure;
             //lastProcess---------------------------------------------------------------------------
             private static bool ExeRecycle()
             {
@@ -177,6 +177,7 @@ namespace s649PBR
                 recycleSet = 0;
                 craftMultiNum = 1;
                 isRunningAI = false;
+                isCheckFailure = false;
             }
 
             //Harmony Patches ---------------------------------------------------------------------------
@@ -197,7 +198,7 @@ namespace s649PBR
                 bool isFactory = false;
                 TraitCrafter traitCrafter = null;
                 string text = "";
-                string recipeThingId;
+                //string recipeThingId;
                 try
                 {
                     traitCrafter = __instance.crafter;
@@ -207,8 +208,8 @@ namespace s649PBR
                     //text += "/t:" + GetStr(traitCrafter);
                     Recipe recipe = __instance.recipe;
                     text += "/recipe:" + GetStr(recipe);
-                    recipeThingId = recipe.GetIdThing();
-                    text += "/recipeID:" + GetStr(recipeThingId);
+                    //recipeThingId = recipe.GetIdThing();
+                    //text += "/recipeID:" + GetStr(recipeThingId);
                     craftMultiNum = __instance.num;
                     text += "/num:" + GetStr(craftMultiNum);
                 }
@@ -221,7 +222,7 @@ namespace s649PBR
                     return;
                 }
                 LogDeep("ArgCheck/" + text);
-                if (IsInProhibitionList(recipeThingId)) { LogDeep("Prohibition recycle Recipe"); goto MethodEnd; }
+                
                 text = "";
                 if (!isFactory) { goto MethodEnd; }
                 /*
@@ -310,6 +311,8 @@ namespace s649PBR
                     Debug.Log(ex.StackTrace);
                     return;
                 }
+                if (IsInProhibitionList(__result.id)) { LogDeep("Prohibition recycle Recipe"); isCheckFailure = true; goto MethodEnd; }
+
                 argtext = string.Join(".", args);
                 argtext += "*" + GetStr(craftMultiNum);
                 LogDeep("CraftInfo:" + argtext);
@@ -378,7 +381,7 @@ namespace s649PBR
             private static void TraitCrafterCraftPostPatch(TraitCrafter __instance, AI_UseCrafter ai, Thing __result)
             {//>>>>begin method:PostPatch
                 if (!PatchMain.Cf_Allow_Craft) { return; }
-                
+                if (isCheckFailure) { return; }
                 if (recycleSet == PhaseRecycle.IngSet && recycleQueues.Count > 0)
                 {
                     string title = "[TC.C:Post]";
@@ -387,6 +390,8 @@ namespace s649PBR
                     if (__result == null) { LogError("NoResult"); return; }
                     if (ai == null) { LogError("NoAI"); return; }
                     LogDeep("ArgChecked", LogTier.Deep);
+                    if (IsInProhibitionList(__result.id)) { LogDeep("Prohibition recycle Recipe"); isCheckFailure = true; return; }
+
                     lastMixedThing = __result;
                     var bi = TryCreateBottleIng(new ActType(ActType.Craft), __result, null, __result.trait.CraftNum);
                     //LogInfo(title + "BIcheck:" + __result.NameSimple + "/bi:" + bi.ToString(), 1);
@@ -427,7 +432,7 @@ namespace s649PBR
                 LogStack("[" + modNS + "/" + title + "]");
 
                 if (!PatchMain.Cf_Allow_Craft) { return; }
-
+                if (isCheckFailure) { return; }
                 //LogInfo(title + "AI_UseCrafter/OnEnd", 1);
                 TraitCrafter trait = __instance.crafter;
                 

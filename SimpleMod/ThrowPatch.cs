@@ -83,7 +83,7 @@ namespace s649PBR
                 LogDeep("Throwtype:" + checktext);
                 if (IsInProhibitionList(t.id)) { LogDeep("Prohibition Item"); return true; }
                 //if (throwtype != ThrowType.Potion && !(t.trait is TraitDye)) { LogOther("Throwed Thing is not Potion."); return; }
-                if (throwtype != ThrowType.Potion || t.trait is TraitDye)
+                if (throwtype == ThrowType.Potion || throwtype == ThrowType.Vase || t.trait is TraitDye)
                 {
                     trySetAllow = true;
                 }
@@ -135,7 +135,7 @@ namespace s649PBR
             }//end method
 
             [HarmonyPostfix]
-            [HarmonyPatch(typeof(Card), "Die", new Type[] { })]//TraitDyeのフック
+            [HarmonyPatch(typeof(Card), "Die")]//TraitDyeのフック
             internal static void Card_Die_PostPatch() 
             {
                 ClearLogStack();
@@ -146,7 +146,7 @@ namespace s649PBR
 
                 //string text = "";
                 bool tryBrake = stateBottleIng.TryBrake();
-                LogDeepTry(tryBrake, "tryB:");
+                LogDeepTry(tryBrake, "tryBrake");
                 //text += "/tB:" + GetStr(tryBrake) + "/";
                 bool result = DoRecycle(stateBottleIng, c_thrower, throwed_p);
                 LogDeepTry(result);

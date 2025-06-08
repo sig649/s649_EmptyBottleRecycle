@@ -37,6 +37,8 @@ namespace s649PBR
                 try
                 {
                     checkThings = new List<string> { GetStr(instTrait), GetStr(argThing), GetStr(argChara) };
+                    
+                    checkThings.Add(GetStr(instTrait.owner.Thing));
                     checktext = string.Join("/", checkThings);
                 }
                 catch (NullReferenceException ex)
@@ -48,9 +50,10 @@ namespace s649PBR
                     return;
                 }
                 LogDeep("ArgCheck:" + checktext);
+                Thing blend_Potion_Thing = instTrait.owner.Thing;
                 if (IsInProhibitionList(argThing.id)) { LogDeep("Prohibition Item"); return; }
                 //BIgenerate
-                bottleIng = TryCreateBottleIng(new ActType(ActType.Blend), argThing, argChara);
+                bottleIng = TryCreateBottleIng(new ActType(ActType.Blend), blend_Potion_Thing, argChara);
                 if (bottleIng == null) { LogDeep("BI was not generated.", LogTier.Deep); return; }
 
                 //DoRecycle
