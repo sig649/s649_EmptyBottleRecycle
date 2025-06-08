@@ -19,11 +19,7 @@ namespace s649PBR
 {//>begin namespaceMain
     namespace DrinkPatch
     {//>>begin namespaceSub
-        /*
-             * Fook出来てない挙動
-             * 染料を持ってオブジェクトなどに使った時
-             * 
-             */
+        
         [HarmonyPatch]
         internal class PatchExe
         {//>>>begin class:PatchExe
@@ -145,7 +141,11 @@ namespace s649PBR
 
 //trash
 
-
+/*
+             * Fook出来てない挙動
+             * 染料を持ってオブジェクトなどに使った時
+             * 
+             */
 /*
 private static void CharaDrinkPatchPreExe(Chara chara, Card card) 
 {

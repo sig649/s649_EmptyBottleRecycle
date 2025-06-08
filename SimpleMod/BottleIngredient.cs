@@ -387,6 +387,10 @@ namespace s649PBR
                         //resultid = "";
                         break;
                 }
+                if (_Trait is TraitDye)
+                {
+                    idMaterial = 22;
+                }
             }
             public string GetID() 
             {

@@ -150,10 +150,10 @@ namespace s649PBR
                 //text += "/tB:" + GetStr(tryBrake) + "/";
                 bool result = DoRecycle(stateBottleIng, c_thrower, throwed_p);
                 LogDeepTry(result);
-                LogOther("The recycle has been completed and we will initialize and close the recycling.");
+                LogOther("The recycle has been completed.");
                 InitState();
             }
-
+            /*
             [HarmonyPostfix]//TraitDye以外のpotionのフック
             [HarmonyPatch(typeof(Card), "Die", new Type[] { typeof(Element), typeof(Card), typeof(AttackSource) })]
             internal static void Card_Die_PostPatch(Element e, Card origin, AttackSource attackSource)
@@ -172,7 +172,7 @@ namespace s649PBR
                 LogOther("The recycle has been completed and we will initialize and close the recycling.");
                 InitState();
             }
-
+            */
         }//<<<end class:PatchExe
 
     }//<<end namespaceSub
