@@ -9,7 +9,7 @@
 (test)Use  
 (test)Blend  
 (test)Throw  
-(test)Craft  
+(加工機械バグ有り)Craft  
 
 Todo:  
 （済）クラフトレシピの対応  
