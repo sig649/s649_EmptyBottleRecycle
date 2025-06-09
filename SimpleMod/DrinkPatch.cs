@@ -2,7 +2,7 @@ using BepInEx;
 using HarmonyLib;
 
 using UnityEngine;
-using BepInEx.Configuration;
+//using BepInEx.Configuration;
 //using System.IO;
 //using System.Diagnostics;
 using Debug = UnityEngine.Debug;
@@ -25,17 +25,93 @@ namespace s649PBR
         {//>>>begin class:PatchExe
             private static BottleIngredient stateBottleIng;
             private static Chara c_drinker;
-            private static Thing used_t;
+            
             //private static Point throwed_p;
             private static bool isCheckSuccess;
-            private static readonly string modNS = "DP";
+            private static readonly string modSubNS = "DP";
             //private static readonly string header = "Dr";
+
+            private static void CommonProcessUse(string title, Chara chara, Trait trait) 
+            {
+                ClearLogStack();
+                LogStack("[" + modSubNS + "/" + title + "]");
+                List<string> checkThings = new();
+                string checktext = "";
+                //BottleIngredient bottleIng;
+                Thing used_t;
+                try
+                {
+                    used_t = trait.owner.Thing;
+                    checkThings = new List<string> { GetStr(used_t), GetStr(chara) };
+
+                    //checkThings.Add(GetStr(instTrait.owner.Thing));
+                    checktext = string.Join("/", checkThings);
+                    
+                }
+                catch (NullReferenceException ex)
+                {
+                    LogError("Arg check Failed for NullPo");
+                    LogError(checktext);
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    return;
+                }
+                LogDeep("ArgCheck:" + checktext);
+                CommonProcessUseCore(used_t, chara);
+
+            }
+            private static void CommonProcessUse(string title, Chara chara, Card card)
+            {
+                ClearLogStack();
+                LogStack("[" + modSubNS + "/" + title + "]");
+                List<string> checkThings = new();
+                string checktext = "";
+                
+                Thing used_t;
+                try
+                {
+                    if (!card.isThing) { LogError("*Warn* DrinkedCard is not thing"); return; }
+                    used_t = card.Thing;
+                    checkThings = new List<string> { GetStr(used_t), GetStr(chara) };
+
+                    //checkThings.Add(GetStr(instTrait.owner.Thing));
+                    checktext = string.Join("/", checkThings);
+                    
+                }
+                catch (NullReferenceException ex)
+                {
+                    LogError("Arg check Failed for NullPo");
+                    LogError(checktext);
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    return;
+                }
+                LogDeep("ArgCheck:" + checktext);
+                CommonProcessUseCore(used_t, chara);
+            }
+
+            private static void CommonProcessUseCore(Thing thing, Chara chara) 
+            {
+                BottleIngredient bottleIng;
+                //Thing used_Potion_Thing = traitInst.owner.Thing;
+                if (IsInProhibitionList(thing.id)) { LogDeep("Prohibition Item"); return; }
+                //BIgenerate
+                bottleIng = TryCreateBottleIng(new ActType(ActType.Use), thing, chara);
+                if (bottleIng == null) { LogDeep("BI was not generated.", LogTier.Deep); return; }
+
+                //DoRecycle
+                bool result = DoRecycle(bottleIng, chara);
+                LogDeepTry(result);
+
+            }
+
 
             [HarmonyPrefix]
             [HarmonyPatch(typeof(Chara), "Drink")]
             private static bool CharaDrinkPrePatch(Chara __instance, Card t) 
             {
                 //stat init
+                /*
                 stateBottleIng = null;
                 c_drinker = null;
                 used_t = null;
@@ -43,9 +119,10 @@ namespace s649PBR
                 isCheckSuccess = false;
                 //log init
                 ClearLogStack();
-                string title = "C.D";
+                string title = "C.D:Pre";
                 LogStack("[" + modNS + "/" + title + "]");
-
+                List<string> checkThings = new();
+                string checktext = "";
                 if (Cf_Allow_Use)
                 { //CharaDrinkPatchPreExe(__instance, t); }
                     try
@@ -54,19 +131,24 @@ namespace s649PBR
                         c_drinker = __instance;
                         if (!t.isThing) { LogError("*Warn* t is not thing"); goto MethodEnd; }
                         used_t = t.Thing;
-                        LogOther("ArgChecked");
-                        if (IsInProhibitionList(used_t.id)) { LogDeep("Prohibition Item"); goto MethodEnd; }
-                        //Thing thing = card.Thing;
-                        stateBottleIng = TryCreateBottleIng(new ActType(ActType.Use), used_t, c_drinker);
-                        //return = bi;
-                        
+                        checkThings.Add(GetStr(c_drinker));
+                        checkThings.Add(GetStr(used_t));
+                        checktext = string.Join("/", checkThings);
+
                     }
                     catch (NullReferenceException ex)
                     {
+                        LogError("ThrowType check Failed for NullPo");
+                        LogError(checktext);
                         Debug.Log(ex.Message);
                         Debug.Log(ex.StackTrace);
                         goto MethodEnd;
                     }
+                    LogOther("ArgChecked");
+                    if (IsInProhibitionList(used_t.id)) { LogDeep("Prohibition Item"); goto MethodEnd; }
+                    //Thing thing = card.Thing;
+                    stateBottleIng = TryCreateBottleIng(new ActType(ActType.Use), used_t, c_drinker);
+                    //return = bi;
                     if (stateBottleIng == null) { LogDeep("NoBI", LogTier.Deep); goto MethodEnd; }
                     isCheckSuccess = true;
                     LogTweet("PreFinish");
@@ -75,17 +157,22 @@ namespace s649PBR
                 }
             MethodEnd:
                 LogStackDump();
+                */
                 return true;
+                
             }
 
             [HarmonyPostfix]
             [HarmonyPatch(typeof(Chara), "Drink")]
             private static void CharaDrinkPostPatch(Chara __instance, Card t)
             {
-                string title = "[C.D/Post]";
+                string title = "C.D/Post";
+                if (!Cf_Allow_Use) { LogOther("'Use' not Allowed"); return; }
+                CommonProcessUse(title, __instance, t);
+                /*
                 ClearLogStack();// for HarmonyPatchFookMethod
 
-                LogStack(title);
+                LogStack("[" + modNS + "/" + title + "]");
                 if (Cf_Allow_Use) 
                 { //CharaDrinkPatchPostExe(__instance, t);
                     if (!isCheckSuccess) { LogDeep("post phase is skipped for check failure", LogTier.Deep); return; }
@@ -102,8 +189,19 @@ namespace s649PBR
                     LogOther(text);
                 }
                 else { LogOther("'Use' not Allowed"); }
-                
+                */
+
             }
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(TraitDye), "OnUse")]
+            internal static void TraitDye_OnUse_PostPatch(Chara c, Card tg, TraitDye __instance)
+            {
+                string title = "TD.OU";
+                if (!Cf_Allow_Use) { LogOther("'Use' not Allowed"); return; }
+                //LogStack("[" + modNS + "/" + title + "]");
+                CommonProcessUse(title, c, __instance);
+            }
+
             /*
             [HarmonyPostfix]
             [HarmonyPatch(typeof(HotItemAct), "TrySetAct")]
@@ -113,17 +211,11 @@ namespace s649PBR
                 Log(title + "HotItemAct" + "/" + "TrySetAct");
             }
             */
-            
+
             /*
-            [HarmonyPostfix]
-            [HarmonyPatch(typeof(TraitDye), "OnBlend")]
-            internal static void TraitDye_OnBlend_PostPatch()
-            {
-                string title = "[PBR:FookCheck]";
-                Log(title + "TraitDye" + "/" + "OnBlend");
-            }
-            */
             
+            */
+
             /*
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TraitDrink), "OnBlend")]
@@ -133,7 +225,7 @@ namespace s649PBR
                 Log(title + "TraitDrink" + "/" + "OnBlend");
             }
             */
-        
+
         }//<<<end class:PatchExe
     }//<<end namespaceSub
 }//<end namespaceMain

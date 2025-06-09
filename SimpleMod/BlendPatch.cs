@@ -28,7 +28,7 @@ namespace s649PBR
             {
                 ClearLogStack();
                 LogStack("[" + modSubNS + "/" + title + "]");
-                if (!Cf_Allow_Blend) { LogOther("'Use' not Allowed"); return; }
+                if (!Cf_Allow_Blend) { LogOther("'Blend' not Allowed"); return; }
 
                 //argCheck;
                 List<string> checkThings = new();
@@ -51,7 +51,7 @@ namespace s649PBR
                 }
                 LogDeep("ArgCheck:" + checktext);
                 Thing blend_Potion_Thing = instTrait.owner.Thing;
-                if (IsInProhibitionList(argThing.id)) { LogDeep("Prohibition Item"); return; }
+                if (IsInProhibitionList(blend_Potion_Thing.id)) { LogDeep("Prohibition Item"); return; }
                 //BIgenerate
                 bottleIng = TryCreateBottleIng(new ActType(ActType.Blend), blend_Potion_Thing, argChara);
                 if (bottleIng == null) { LogDeep("BI was not generated.", LogTier.Deep); return; }
