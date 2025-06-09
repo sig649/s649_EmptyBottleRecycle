@@ -8,7 +8,7 @@
 進捗：1.0.0のアルファテスト前なう   
 (test)Use  
 (pass)Blend  
-(pass)Throw  
+(test)Throw  
 (pass)Craft  
 
 Todo:  
