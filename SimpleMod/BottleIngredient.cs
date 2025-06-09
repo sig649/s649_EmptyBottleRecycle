@@ -396,6 +396,14 @@ namespace s649PBR
             {
                 if (IsChanged()) { return resultID; } else { return id; }
             }
+            public string GetOrgID()
+            {
+                return _ThingID;
+            }
+            public Trait GetOrgTrait()
+            {
+                return _Trait;
+            }
             private bool IsChanged() 
             {
                 return isConsumed || isBroken;

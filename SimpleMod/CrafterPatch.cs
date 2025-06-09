@@ -42,19 +42,26 @@ namespace s649PBR
                 LogTweet("Start");
                 string text = "[recycle]";
                 bool b = false;
-                foreach (BottleIngredient bi in recycleQueues)
+                if (recycleQueues != null && recycleQueues.Count > 0) 
                 {
-                    if (bi.IsEnableRecycle()) 
+                    foreach (BottleIngredient bi in recycleQueues)
                     {
-                        //Thing t = ThingGen.Create(bi.GetID()).SetNum(bi.num);
-                        Thing t = ThingGenFromBI(bi);
-                        if (t != null) { EClass._zone.AddCard(t, EClass.pc.pos); } 
-                        else { LogOther(title + "Thing has not Created"); }
-                            
-                        text += "N:" + t.NameSimple + "/n:" + t.Num.ToString();
-                        b = true;
+
+                        DoRecycle(bi, EClass.pc);
+                        /*
+                       if (bi.IsEnableRecycle()) 
+                       {
+                           //Thing t = ThingGen.Create(bi.GetID()).SetNum(bi.num);
+                           Thing t = ThingGenFromBI(bi);
+                           if (t != null) { EClass._zone.AddCard(t, EClass.pc.pos); } 
+                           else { LogOther(title + "Thing has not Created"); }
+
+                           text += "N:" + t.NameSimple + "/n:" + t.Num.ToString();
+                           b = true;
+                       }*/
                     }
                 }
+                
                 LogInfo(text);
                 LogStackDump();
                 return b;

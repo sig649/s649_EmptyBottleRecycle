@@ -21,16 +21,8 @@ namespace s649PBR
         [HarmonyPatch]
         internal class PatchExe
         {//>>>begin class:PatchExe
-            /*
-             * 不具合情報
-             * 染料を投げて地面に落ちた時は壊れないが、ガラスが還元されてしまう
-             * ActThrow実行時には当たって消費されているか確定していないので
-             * ここらへんの追加調査が必要
-             * OnDrink（直飲みを排除必須）やOnthrowGroundで還元すべきか？
-             * 染料から還元されるガラスが元の材質を参照
-             * 
-             */
             private static readonly string modSubNS = "TP";
+            /*
             static BottleIngredient stateBottleIng;
             static Chara c_thrower;
             static Thing throwed_t;
@@ -38,7 +30,7 @@ namespace s649PBR
             static bool isCheckSuccess;
             static bool trySetAllow;
             //static bool needDoRecycleSkip;
-
+            
             private static void InitState() 
             {
                 stateBottleIng = null;
@@ -49,27 +41,17 @@ namespace s649PBR
                 trySetAllow = false;
                 //needDoRecycleSkip = false;
             }
-
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(ActThrow), "Throw", new Type[] { typeof(Card), typeof(Point), typeof(Card), typeof(Thing), typeof(ThrowMethod) })]
-            private static bool ThrowPostPatch(ActThrow __instance, Card c, Point p, Card target, Thing t, ThrowMethod method)
-            {//begin method
-                
-                InitState();
-                ClearLogStack();
-                string title = "AT.T";
-                LogStack("[" + modSubNS + "/" + title + "]");
-                if (!Cf_Allow_Throw) { LogOther("'Throw' not Allowed", LogTier.Other); return true; }
-                //if(method != ThrowType.Potion)
-                //bool isCheckSuccess = false;
-                //throwtyoe check //potion以外を除外
+            */
+            private static void CommonProcessThrowPre(Card card_thorwer, Point point, Card target, Thing thing, ThrowMethod method) 
+            {
+                BottleIngredient stateBottleIng;
                 ThrowType throwtype;
-                List<string> checkThings = new();
+                List<string> checkThings;
                 string checktext = "";
                 try
                 {
-                    throwtype = t.trait.ThrowType;
-                    checkThings.Add(GetStr(throwtype));
+                    throwtype = thing.trait.ThrowType;
+                    checkThings = new List<string> { GetStr(throwtype), GetStr(card_thorwer), GetStr(point), GetStr(target), GetStr(thing) };
                     checktext = string.Join("/", checkThings);
                 }
                 catch (NullReferenceException ex)
@@ -78,52 +60,106 @@ namespace s649PBR
                     LogError(checktext);
                     Debug.Log(ex.Message);
                     Debug.Log(ex.StackTrace);
-                    return true;
+                    return;
                 }
                 LogDeep("Throwtype:" + checktext);
-                if (IsInProhibitionList(t.id)) { LogDeep("Prohibition Item"); return true; }
-                //if (throwtype != ThrowType.Potion && !(t.trait is TraitDye)) { LogOther("Throwed Thing is not Potion."); return; }
-                if (throwtype == ThrowType.Potion || throwtype == ThrowType.Vase || t.trait is TraitDye)
+                if (IsInProhibitionList(thing.id)) { LogDeep("Prohibition Item"); return; }
+                bool trySetAllow = false;
+                if (throwtype == ThrowType.Potion || throwtype == ThrowType.Vase || throwtype == ThrowType.Default || thing.trait is TraitDye)
                 {
                     trySetAllow = true;
                 }
-                //if (t.trait is TraitDye)
-                //{
-                //    trySetAllow = true;
-                //    //needDoRecycleSkip = true;
-                //}
-                //argcheck
-                if (!trySetAllow) { LogOther("Throwed thing is cannot recycle"); return true; }
+                if (!trySetAllow) { LogOther("Throwed thing is cannot recycle"); return; }
                 try
                 {
-                    var args = new List<string> { GetStr(c), GetStr(p), GetStr(target), GetStr(t), GetStr(throwtype) };
-                    var argtext = string.Join("/", args);
-                    LogDeep("Start/Arg:" + argtext, LogTier.Deep);
-                    if (!c.isChara || c.Chara == null) { { LogError("*Warn* c is invalid"); return true; } }
-                    c_thrower = c.Chara;
-                    throwed_t = t;
-                    throwed_p = p;
+                   // var args = new List<string> { GetStr(c), GetStr(p), GetStr(target), GetStr(t), GetStr(throwtype) };
+                    //var argtext = string.Join("/", args);
+                    //LogDeep("Start/Arg:" + argtext, LogTier.Deep);
+                    if (!card_thorwer.isChara || card_thorwer.Chara == null) { { LogError("*Warn* c is invalid"); return; } }
+                    //c_thrower = card_thorwer.Chara;
+                    //throwed_t = thing;
+                    //throwed_p = point;
                     
                     //Thing thing = card.Thing;
-                    stateBottleIng = TryCreateBottleIng(new ActType(ActType.Throw), throwed_t, c_thrower);
-                    if (stateBottleIng == null) { LogDeep("BI was not generated.", LogTier.Deep); return true; }
+                    stateBottleIng = TryCreateBottleIng(new ActType(ActType.Throw), thing, card_thorwer.Chara);
+                    if (stateBottleIng == null) { LogDeep("BI was not generated.", LogTier.Deep); return; }
                     //isCheckSuccess = true;
                     //return = bi;
                     LogOther("PreCheckDone");
-                    isCheckSuccess = true;
+                    //isCheckSuccess = true;
 
-
-                    
-
-                    
                 }
                 catch (NullReferenceException ex)
                 {
                     LogError("Error for NullPo");
                     Debug.Log(ex.Message);
                     Debug.Log(ex.StackTrace);
-                    return true;
+                    return;
                 }
+                CommonProcessThrowPost(stateBottleIng, target, card_thorwer.Chara, point);
+            }
+            private static void CommonProcessThrowPost(BottleIngredient argBI, Card target, Chara thrower, Point point)
+            {
+                //ClearLogStack();
+                //string title = "HM:AT.T/Post";
+                //LogStack("[" + modSubNS + "/" + title + "]");
+
+                //if (!isCheckSuccess) { LogTweet("Through Card.Die"); return; }
+
+                //string text = "";
+                if (argBI.GetOrgTrait() is TraitDye) 
+                {
+                    if (target != null || point.HasObj) 
+                    {
+                        //will brake
+                        bool tryBrake = argBI.TryBrake();
+                        LogDeepTry(tryBrake, "tryBrake");
+                    } 
+                    else
+                    {
+                        //won't brake cannnot recycle
+                        LogDeep("Just Dropped");
+                        return;
+                    }
+                }
+                else
+                {
+                    //will brake
+                    bool tryBrake = argBI.TryBrake();
+                    LogDeepTry(tryBrake, "tryBrake");
+                }
+                    
+                //text += "/tB:" + GetStr(tryBrake) + "/";
+
+                bool result = DoRecycle(argBI, thrower, point);
+                LogDeepTry(result);
+                LogOther("The recycle has been completed.");
+                //InitState();
+            }
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(ActThrow), "Throw", new Type[] { typeof(Card), typeof(Point), typeof(Card), typeof(Thing), typeof(ThrowMethod) })]
+            private static bool ThrowPostPatch(ActThrow __instance, Card c, Point p, Card target, Thing t, ThrowMethod method)
+            {//begin method
+                
+                //InitState();
+                ClearLogStack();
+                string title = "AT.T";
+                LogStack("[" + modSubNS + "/" + title + "]");
+                if (!Cf_Allow_Throw) { LogOther("'Throw' not Allowed", LogTier.Other); return true; }
+                //if(method != ThrowType.Potion)
+                //bool isCheckSuccess = false;
+                //throwtyoe check //potion以外を除外
+                CommonProcessThrowPre(c, p, target, t, method);
+                //if (throwtype != ThrowType.Potion && !(t.trait is TraitDye)) { LogOther("Throwed Thing is not Potion."); return; }
+                
+                //if (t.trait is TraitDye)
+                //{
+                //    trySetAllow = true;
+                //    //needDoRecycleSkip = true;
+                //}
+                //argcheck
+                
+                
                 //if (!needDoRecycleSkip) { LogOther("TraitDye"); }
                 
                 //text += result ? "Done!" : "Not Done";
@@ -133,7 +169,7 @@ namespace s649PBR
                 return true;
                 
             }//end method
-
+            /*
             [HarmonyPostfix]
             [HarmonyPatch(typeof(Card), "Die")]//TraitDyeのフック
             internal static void Card_Die_PostPatch() 
@@ -153,7 +189,7 @@ namespace s649PBR
                 LogOther("The recycle has been completed.");
                 InitState();
             }
-            /*
+            
             [HarmonyPostfix]//TraitDye以外のpotionのフック
             [HarmonyPatch(typeof(Card), "Die", new Type[] { typeof(Element), typeof(Card), typeof(AttackSource) })]
             internal static void Card_Die_PostPatch(Element e, Card origin, AttackSource attackSource)
@@ -171,8 +207,8 @@ namespace s649PBR
                 LogDeepTry(result);
                 LogOther("The recycle has been completed and we will initialize and close the recycling.");
                 InitState();
-            }
-            */
+            }*/
+            
         }//<<<end class:PatchExe
 
     }//<<end namespaceSub
@@ -183,7 +219,15 @@ namespace s649PBR
 ///
 
 
-
+/*
+             * 不具合情報
+             * 染料を投げて地面に落ちた時は壊れないが、ガラスが還元されてしまう
+             * ActThrow実行時には当たって消費されているか確定していないので
+             * ここらへんの追加調査が必要
+             * OnDrink（直飲みを排除必須）やOnthrowGroundで還元すべきか？
+             * 染料から還元されるガラスが元の材質を参照
+             * 
+             */
 /*
  * 
  * 

@@ -53,6 +53,9 @@ namespace s649PBR
             public static List<string> list_Prohibition_ID => CE_ProhibitionList.Value.Split(',').Select(s => s.Trim()).ToList();
             private static ConfigEntry<string> CE_ProhibitionList;
 
+            public static List<string> list_ThingIDs_Reference_OrgMat => CE_Thing_Reference_OrgMat.Value.Split(',').Select(s => s.Trim()).ToList();
+            private static ConfigEntry<string> CE_Thing_Reference_OrgMat;
+
             //CE debug
             internal static ConfigEntry<int> CE_LogLevel;//デバッグ用のログの出力LV　-1:出力しない 0~:第二引数に応じて出力
             public static int Cf_LogLevel => CE_LogLevel.Value;
@@ -81,8 +84,10 @@ namespace s649PBR
                 CE_AllowCreatesJunkBottles = Config.Bind("#F00-General", "ALLOW_CREATES_JUNK_Things", true, "Allow to generate junk things");
                 CE_WhichCharaCreatesJunkBottles = Config.Bind("#01-Reg", "Junk_Regulation", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
 
-                //SettingInstall
-                CE_ProhibitionList = Config.Bind("#02-Setting", "Setting_Prohibition_List", "toolAlchemy", "List of Recycle Prohibition List");
+                //SettingList
+                CE_ProhibitionList = Config.Bind("#02-Setting", "Setting_Prohibition_List", "toolAlchemy", "List of Recycle Prohibition Thing IDs");
+                CE_Thing_Reference_OrgMat = Config.Bind("#02-Setting", "Setting_Reference_OrgMat_List", "bucket_empty", "List of Reference Orginal Material things IDs");
+
 
                 // zz debug
                 CE_LogLevel = Config.Bind("#ZZ-Debug", "DEBUG_LOGGING", 0, "If value >= 0, Outputs debug info.");
@@ -305,6 +310,15 @@ namespace s649PBR
                 }
                 return false;
             }
+            internal static bool IsInRefOrgMatList(string argID)
+            {
+                if (list_ThingIDs_Reference_OrgMat == null || list_ThingIDs_Reference_OrgMat.Count < 1) { return false; }
+                foreach (string strID in list_ThingIDs_Reference_OrgMat)
+                {
+                    if (strID == argID) { return true; }
+                }
+                return false;
+            }
             //recycle--------------------------------------------------------
             internal static bool DoRecycle(BottleIngredient bi, Chara argChara, Point point = null)
             {
@@ -316,7 +330,7 @@ namespace s649PBR
                 string checktext = "";
                 try
                 {
-                    checkThings = new List<string> { StrConv(bi), StrConv(argChara), StrConv(point) };
+                    checkThings = new List<string> { StrConv(bi), StrConv(argChara) };
                     checktext = string.Join("/", checkThings);
                 }
                 catch (NullReferenceException ex)
@@ -330,6 +344,7 @@ namespace s649PBR
                 LogDeep("Start/Arg:" + checktext, LogTier.Deep);
                 if (!bi.IsEnableRecycle()) { LogDeep("BI cannnot recycle"); goto MethodEnd; }
                 createBI = ThingGenFromBI(bi);
+                if (IsInRefOrgMatList(bi.GetOrgID())) { createBI.ChangeMaterial(bi.idMaterial); }
                 string text = "" + StrConv(createBI);
                 if (point == null)
                 {
