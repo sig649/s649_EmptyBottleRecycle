@@ -366,6 +366,7 @@ namespace s649PBR
                     else { LogOther("AI:Found"); }
                     List<Thing> ings = ai.ings;
                     var b = TrySetBIToQueuesFromIngs(ings);
+                    LogDeepTry(b);
                     
                     recycleSet++;
                 }
@@ -396,7 +397,7 @@ namespace s649PBR
                     var bi = TryCreateBottleIng(new ActType(ActType.Craft), __result, null, __result.trait.CraftNum);
                     //LogInfo(title + "BIcheck:" + __result.NameSimple + "/bi:" + bi.ToString(), 1);
                     //productにbottleingが含まれている場合はリターンを減産する
-                    if (bi.IsValid())
+                    if (bi?.IsValid() ?? false)
                     {
                         bool b = RemoveBIFromQueues(bi);
                         if (b)

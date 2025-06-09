@@ -2,17 +2,17 @@ using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
 using s649PBR.BIClass;
-using s649PBR.Main;
+//using s649PBR.Main;
 using System;
 using System.Linq;
-using System.Text;
+//using System.Text;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
+//using System.Diagnostics;
+//using System.IO;
 using UnityEngine;
 using static Recipe;
 using Debug = UnityEngine.Debug;
-using Random = UnityEngine.Random;
+//using Random = UnityEngine.Random;
 using s649ElinLog;
 using static s649ElinLog.ElinLog;
 //using GetStr = s649ElinLog.ElinLog.GetStr;
@@ -21,7 +21,7 @@ namespace s649PBR
 {//>begin namespaceMain
     namespace Main
     {//>>begin namespaceSub
-        [BepInPlugin("s649_PotionBottleRecycle", "s649 Potion Bottle Recycle", "0.2.0.0")]
+        [BepInPlugin("s649_PotionBottleRecycle", "s649 Potion Bottle Recycle", "1.0.0.0")]
         public class PatchMain : BaseUnityPlugin
         {//>>>begin class:PatchExe
 
@@ -54,7 +54,7 @@ namespace s649PBR
             private static ConfigEntry<string> CE_ProhibitionList;
 
             //CE debug
-            private static ConfigEntry<int> CE_LogLevel;//デバッグ用のログの出力LV　-1:出力しない 0~:第二引数に応じて出力
+            internal static ConfigEntry<int> CE_LogLevel;//デバッグ用のログの出力LV　-1:出力しない 0~:第二引数に応じて出力
             public static int Cf_LogLevel => CE_LogLevel.Value;
             private static readonly string modtitle = "PBR";
             private static readonly string modNS = "Ma";
@@ -155,7 +155,7 @@ namespace s649PBR
                 resultThing = ThingGen.Create(bi.GetID()).SetNum(bi.num);
                 if (resultThing == null) 
                 { LogDeep("ThingGen has NotCreated:" + StrConv(resultThing), LogTier.Deep); goto MethodEnd; }
-                resultThing.ChangeMaterial(bi.idMaterial);
+                //resultThing.ChangeMaterial(bi.idMaterial);
                 LogDeep("Success:" + StrConv(resultThing) + "/Mat:" + resultThing.idMaterial, LogTier.Deep);
 
             MethodEnd:
