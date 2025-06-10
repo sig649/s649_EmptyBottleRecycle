@@ -168,12 +168,34 @@ namespace s649PBR
                 //Thing t = _Thing;
                 //idIngredientÇsetÇµÇ¬Ç¬åãâ ÇÉäÉ^Å[Éì
                 //if (t == null) { LogError(title + "NoThing"); return; }
-                LogOther("Start");
+                LogTweet("Start");
                 int result = BottleIngredient.None;
                 string category = _ThingCategory;
                 string unit = _ThingUnit;
                 Trait trait = _Trait;
                 string tid = _ThingID;
+                List<string> checkThings = new();
+                string checktext = "";
+                
+                try
+                {
+                    checkThings.Add("ID:" + GetStr(tid));
+                    checkThings.Add("trait:" + GetStr(trait));
+                    checkThings.Add("cate:" + GetStr(category));
+                    checkThings.Add("uni:" + GetStr(unit));
+                    checktext = string.Join("/", checkThings);
+                    LogDeep("Start/Arg:" + checktext);
+                }
+                catch (NullReferenceException ex)
+                {
+                    LogError("ArgCheckFailed for NullPo");
+                    LogDeep("Arg:" + checktext);
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    //goto MethodEnd;//method 
+                    //return;  //harmony
+                }
+                
                 //string category = orgThing.sourceCard.category;
                 //string unit = orgThing.source.unit;
                 if (tid == "") { LogError("NoThingID"); goto MethodEnd; }
@@ -260,8 +282,10 @@ namespace s649PBR
                                                         break;
                                                 }
                                                 break;
+                                            //case "junk":
+                                                //result = BottleIngredient.Junk_Bottles;
+                                                //break;
                                             default:
-                                                if (category == "junk") { result = BottleIngredient.Junk_Bottles; }
                                                 break;
                                         }
                                         //result = BottleIngredient.Bottle_Empty;
@@ -271,6 +295,17 @@ namespace s649PBR
                             }
                             break;
                         default:
+                            switch (tid)
+                            {
+                                case "726" or "727" or "728":
+                                    result = BottleIngredient.Junk_Bottles;
+                                    break;
+                                case "529" or "1170":
+                                    result = BottleIngredient.Junk_Can;
+                                    break;
+                                default:
+                                    break;
+                            }
                             /*
                             if (tid == "toolAlchemy")
                             {
