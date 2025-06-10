@@ -50,7 +50,8 @@ namespace s649PBR
                     return;
                 }
                 LogDeep("ArgCheck:" + checktext);
-                Thing blend_Potion_Thing = instTrait.owner.Thing;
+                Thing blend_Potion_Thing = (instTrait is TraitWell)? argThing : instTrait.owner.Thing;
+                
                 if (IsInProhibitionList(blend_Potion_Thing.id)) { LogDeep("Prohibition Item"); return; }
                 //BIgenerate
                 bottleIng = TryCreateBottleIng(new ActType(ActType.Blend), blend_Potion_Thing, argChara);
@@ -75,6 +76,21 @@ namespace s649PBR
             private static void TraitWell_OnBlendPatch(TraitWell __instance, Thing t, Chara c)
             {   //FookCheck:井戸に対して混ぜた時
                 string title = "TWell.OnB";
+                /*
+                string checktext;
+                try 
+                {
+                    checktexk = GetStr(t.trait.);
+                }
+                catch (NullReferenceException ex)
+                {
+                    LogError(title + "Arg check Failed for NullPo");
+                    LogError(checktext);
+                    Debug.Log(ex.Message);
+                    Debug.Log(ex.StackTrace);
+                    return;
+                }
+                */
                 CommonProcessOnBlend(title, __instance, t, c);
                 //Log(title + "/FookCheck");
             }

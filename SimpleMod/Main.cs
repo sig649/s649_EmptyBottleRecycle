@@ -394,6 +394,7 @@ namespace s649PBR
                 }
                 catch (NullReferenceException ex)
                 {
+                    LogError("Nullpo" + checktext);
                     Debug.Log(ex.Message);
                     Debug.Log(ex.StackTrace);
                     goto MethodEnd;

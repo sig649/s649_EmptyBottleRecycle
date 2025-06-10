@@ -261,6 +261,7 @@ namespace s649PBR
                                                 }
                                                 break;
                                             default:
+                                                if (category == "junk") { result = BottleIngredient.Junk_Bottles; }
                                                 break;
                                         }
                                         //result = BottleIngredient.Bottle_Empty;
