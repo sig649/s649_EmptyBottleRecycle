@@ -22,36 +22,44 @@ namespace s649PBR
         internal class PatchExe
         {//>>>begin class:PatchExe
             private static readonly string modSubNS = "TP";
-            /*
+            
             static BottleIngredient stateBottleIng;
             static Chara c_thrower;
             static Thing throwed_t;
             static Point throwed_p;
-            static bool isCheckSuccess;
+            static Card target_state;
+            static bool isPreCheckSuccess;
+            static bool isCreateSuccess;
+            //static bool isRecycleDone;
             static bool trySetAllow;
+            static ThrowType stateThrowType;
             //static bool needDoRecycleSkip;
-            
+
             private static void InitState() 
             {
                 stateBottleIng = null;
                 c_thrower = null;
                 throwed_t = null;
                 throwed_p = null;
-                isCheckSuccess = false;
+                target_state = null;
+
+                isPreCheckSuccess = false;
+                isCreateSuccess = false;
                 trySetAllow = false;
+                stateThrowType = ThrowType.Default;
                 //needDoRecycleSkip = false;
             }
-            */
-            private static void CommonProcessThrowPre(Card card_thorwer, Point point, Card target, Thing thing, ThrowMethod method) 
+            
+            private static void CommonThrowProcessPre(Card card_thrower, Point point, Card target, Thing thing, ThrowMethod method) 
             {
-                BottleIngredient stateBottleIng;
+                //BottleIngredient stateBottleIng;
                 ThrowType throwtype;
                 List<string> checkThings;
                 string checktext = "";
                 try
                 {
                     throwtype = thing.trait.ThrowType;
-                    checkThings = new List<string> { GetStr(throwtype), GetStr(card_thorwer), GetStr(point), GetStr(target), GetStr(thing) };
+                    checkThings = new List<string> { GetStr(throwtype), GetStr(card_thrower.Chara), GetStr(point), GetStr(target), GetStr(thing) };
                     checktext = string.Join("/", checkThings);
                 }
                 catch (NullReferenceException ex)
@@ -63,6 +71,12 @@ namespace s649PBR
                     return;
                 }
                 LogDeep("Throwtype:" + checktext);
+                c_thrower = card_thrower.Chara;
+                throwed_t = thing;
+                throwed_p = point;
+                target_state = target;
+                stateThrowType = throwtype;
+
                 if (IsInProhibitionList(thing.id)) { LogDeep("Prohibition Item"); return; }
                 bool trySetAllow = false;
                 if (throwtype == ThrowType.Potion || throwtype == ThrowType.Vase || throwtype == ThrowType.Default || thing.trait is TraitDye)
@@ -70,22 +84,31 @@ namespace s649PBR
                     trySetAllow = true;
                 }
                 if (!trySetAllow) { LogOther("Throwed thing is cannot recycle"); return; }
+                isPreCheckSuccess = true;
+                //CommonProcessThrowPost(stateBottleIng, target, card_thorwer.Chara, point);
+            }
+
+            private static void CommonThrowProcessPhaseCreate() 
+            {
+                if (!isPreCheckSuccess || isCreateSuccess) { return; }
                 try
                 {
-                   // var args = new List<string> { GetStr(c), GetStr(p), GetStr(target), GetStr(t), GetStr(throwtype) };
+                    // var args = new List<string> { GetStr(c), GetStr(p), GetStr(target), GetStr(t), GetStr(throwtype) };
                     //var argtext = string.Join("/", args);
                     //LogDeep("Start/Arg:" + argtext, LogTier.Deep);
-                    if (!card_thorwer.isChara || card_thorwer.Chara == null) { { LogError("*Warn* c is invalid"); return; } }
+                    //if (!card_thorwer.isChara || card_thorwer.Chara == null) { { LogError("*Warn* c is invalid"); return; } }
                     //c_thrower = card_thorwer.Chara;
                     //throwed_t = thing;
                     //throwed_p = point;
-                    
+
                     //Thing thing = card.Thing;
-                    stateBottleIng = TryCreateBottleIng(new ActType(ActType.Throw), thing, card_thorwer.Chara);
+                    stateBottleIng = TryCreateBottleIng(new ActType(ActType.Throw), throwed_t, c_thrower);
                     if (stateBottleIng == null) { LogDeep("BI was not generated.", LogTier.Deep); return; }
+                    bool tryBrake = stateBottleIng.TryBrake();
+                    LogDeepTry(tryBrake, "tryBrake");
                     //isCheckSuccess = true;
                     //return = bi;
-                    LogOther("PreCheckDone");
+                    //LogDeepTry(stateBottleIng != null);
                     //isCheckSuccess = true;
 
                 }
@@ -96,9 +119,10 @@ namespace s649PBR
                     Debug.Log(ex.StackTrace);
                     return;
                 }
-                CommonProcessThrowPost(stateBottleIng, target, card_thorwer.Chara, point);
+                isCreateSuccess = true;
             }
-            private static void CommonProcessThrowPost(BottleIngredient argBI, Card target, Chara thrower, Point point)
+
+            private static void CommonThrowProcessPost()
             {
                 //ClearLogStack();
                 //string title = "HM:AT.T/Post";
@@ -107,13 +131,17 @@ namespace s649PBR
                 //if (!isCheckSuccess) { LogTweet("Through Card.Die"); return; }
 
                 //string text = "";
-                if (argBI.GetOrgTrait() is TraitDye) 
+                if (!isCreateSuccess) { return; }
+                if (!(stateBottleIng.GetOrgTrait() is TraitDrink)) 
                 {
-                    if (target != null || point.HasObj) 
+                    /*
+                     命中判定を取得する必要有り
+                     */
+                    if (target_state != null || throwed_p.HasObj) 
                     {
                         //will brake
-                        bool tryBrake = argBI.TryBrake();
-                        LogDeepTry(tryBrake, "tryBrake");
+                        //bool tryBrake = argBI.TryBrake();
+                        //LogDeepTry(tryBrake, "tryBrake");
                     } 
                     else
                     {
@@ -125,23 +153,28 @@ namespace s649PBR
                 else
                 {
                     //will brake
-                    bool tryBrake = argBI.TryBrake();
-                    LogDeepTry(tryBrake, "tryBrake");
+                    //bool tryBrake = argBI.TryBrake();
+                    //LogDeepTry(tryBrake, "tryBrake");
                 }
                     
                 //text += "/tB:" + GetStr(tryBrake) + "/";
 
-                bool result = DoRecycle(argBI, thrower, point);
+                bool result = DoRecycle(stateBottleIng, c_thrower, throwed_p);
                 LogDeepTry(result);
                 LogOther("The recycle has been completed.");
+                InitState();
+                //isRecycleDone = true;
                 //InitState();
             }
+
+
+            //harmony--------------------------------------------------------------------------------------------------
             [HarmonyPrefix]
             [HarmonyPatch(typeof(ActThrow), "Throw", new Type[] { typeof(Card), typeof(Point), typeof(Card), typeof(Thing), typeof(ThrowMethod) })]
-            private static bool ThrowPostPatch(ActThrow __instance, Card c, Point p, Card target, Thing t, ThrowMethod method)
+            private static bool ThrowPrePatch(ActThrow __instance, Card c, Point p, Card target, Thing t, ThrowMethod method)
             {//begin method
                 
-                //InitState();
+                InitState();
                 ClearLogStack();
                 string title = "AT.T";
                 LogStack("[" + modSubNS + "/" + title + "]");
@@ -149,7 +182,7 @@ namespace s649PBR
                 //if(method != ThrowType.Potion)
                 //bool isCheckSuccess = false;
                 //throwtyoe check //potion以外を除外
-                CommonProcessThrowPre(c, p, target, t, method);
+                CommonThrowProcessPre(c, p, target, t, method);
                 //if (throwtype != ThrowType.Potion && !(t.trait is TraitDye)) { LogOther("Throwed Thing is not Potion."); return; }
                 
                 //if (t.trait is TraitDye)
@@ -169,6 +202,39 @@ namespace s649PBR
                 return true;
                 
             }//end method
+
+
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(ActThrow), "Throw", new Type[] { typeof(Card), typeof(Point), typeof(Card), typeof(Thing), typeof(ThrowMethod) })]
+            private static void ThrowPostPatch(ActThrow __instance, Card c, Point p, Card target, Thing t, ThrowMethod method)
+            {
+                //
+                CommonThrowProcessPost();
+            }
+
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(Card), "Die")]//TraitDyeのフック
+            internal static void Card_Die_PostPatch() 
+            {
+                CommonThrowProcessPhaseCreate();
+            }
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(Card), "Destroy")]//TraitDyeのフック
+            internal static void Card_Destroy_PostPatch() 
+            {
+                CommonThrowProcessPhaseCreate();
+            }
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(Trait), "OnThrowGround")]
+            internal static void TraitDrink_OnThrowGround_PostPatch(Chara c, Point p) 
+            {
+                CommonThrowProcessPhaseCreate();
+            }
+
             /*
             [HarmonyPostfix]
             [HarmonyPatch(typeof(Card), "Die")]//TraitDyeのフック
@@ -208,7 +274,7 @@ namespace s649PBR
                 LogOther("The recycle has been completed and we will initialize and close the recycling.");
                 InitState();
             }*/
-            
+
         }//<<<end class:PatchExe
 
     }//<<end namespaceSub

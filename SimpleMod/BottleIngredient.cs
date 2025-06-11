@@ -352,7 +352,15 @@ namespace s649PBR
                     case BottleIngredient.None://nothing
                         break;
                     case BottleIngredient.Junk_Bottles:
-                        resultid = GetRandomJunkBottle();//bottle
+                        if (_ThingID == "crimAle") 
+                        {
+                            resultid = "726";//bottle
+                        }
+                        else 
+                        {
+                            resultid = GetRandomJunkBottle();//bottle
+                        }
+                            
                         break;
                     case BottleIngredient.Junk_Can:
                         resultid = GetRandomJunkCan();//can
