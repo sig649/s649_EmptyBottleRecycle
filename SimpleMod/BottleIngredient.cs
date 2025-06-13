@@ -229,7 +229,7 @@ namespace s649PBR
                                         switch (unit) 
                                         {
                                             case "cup":
-                                                result = BottleIngredient.Junk_Bottles;
+                                                result = BottleIngredient.Milk;
                                                 break;
                                             case "bowl":
                                                 result = BottleIngredient.Junk_Bowl;

@@ -85,7 +85,7 @@ namespace s649PBR
                 CE_WhichCharaCreatesJunkBottles = Config.Bind("#01-Reg", "Junk_Regulation", 1, "0 = None, 1 = PC, 2 = PC&PARTY, 3 = ALL");
 
                 //SettingList
-                CE_ProhibitionList = Config.Bind("#02-Setting", "Setting_Prohibition_List", "toolAlchemy", "List of Recycle Prohibition Thing IDs");
+                CE_ProhibitionList = Config.Bind("#02-Setting", "Setting_Prohibition_List", "tool_alchemy", "List of Recycle Prohibition Thing IDs");
                 CE_Thing_Reference_OrgMat = Config.Bind("#02-Setting", "Setting_Reference_OrgMat_List", "bucket_empty", "List of Reference Orginal Material things IDs");
 
 
@@ -187,7 +187,7 @@ namespace s649PBR
             private static int ReturnWCC(int acttype)
             {
                 //LogStack("[" + modNS + "RWCC]");
-                string title = "[ReWCC]";
+                string title = "ReWCC";
                 LogStack("[" + modNS + "/" + title + "]");
                 LogDeep("Start", LogTier.Tweet);
                 int result;
@@ -218,7 +218,7 @@ namespace s649PBR
             }
             private static int TypeCharaPlaying(Card c)
             {
-                string title = "[TCP]";
+                string title = "TCP";
                 LogStack("[" + modNS + "/" + title + "]");
                 int result = 0;
                 if(c == null){ LogError("c is null"); goto MethodEnd; }
@@ -242,7 +242,7 @@ namespace s649PBR
             }
             private static bool GetCharaRegulation(int tcp, int wcc) 
             {
-                string title = "[GCR]";
+                string title = "GCR";
                 LogStack("[" + modNS + "/" + title + "]");
 
                 //bool result = false;
@@ -254,7 +254,7 @@ namespace s649PBR
             }
             private static bool GetCharaJunkRegulation(int tcp, int wccj)
             {
-                string title = "[GCJR]";
+                string title = "GCJR";
                 LogStack("[" + modNS + "/" + title + "]");
 
                 //bool result = false;
@@ -268,7 +268,7 @@ namespace s649PBR
             internal static bool CheckRegulation(BottleIngredient bi, Chara argChara, ActType acttype) 
             {
                 bool resultBool = false;
-                string title = "[CheR]";
+                string title = "CheR";
                 LogStack("[" + modNS + "/" + title + "]");
                 List<string> checkThings = new();
                 string checktext = "";
