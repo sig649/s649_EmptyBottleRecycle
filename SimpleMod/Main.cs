@@ -286,14 +286,23 @@ namespace s649PBR
                     goto MethodEnd;
                 }
                 int tcp = TypeCharaPlaying(argChara);
+                bool isJunk = bi.isJunk;
                 bool isForAll = acttype.IsForAll();
                 int wcc = ReturnWCC(acttype.id);
                 int wccj = CE_WhichCharaCreatesJunkBottles.Value;
                 bool regChara = GetCharaRegulation(tcp, wcc);
-                bool regJunk = !bi.isJunk || GetCharaJunkRegulation(tcp, wccj);
+                bool regJunk = Cf_Reg_JunkBottle && GetCharaJunkRegulation(tcp, wccj);
 
-                resultBool = isForAll ? (regChara && regJunk) : regJunk;
-            MethodEnd:
+                //resultBool = isForAll ? (regChara && regJunk) : regJunk;
+                if (!isForAll)
+                {
+                    resultBool = (!isJunk)? regChara : regChara && regJunk;
+                }
+                else 
+                {
+                    resultBool = !isJunk || regJunk;
+                }
+                MethodEnd:
                 LogStackDump();
                 return resultBool;
             }

@@ -359,7 +359,7 @@ namespace s649PBR
                 ClearLogStack();
                 LogStack("[" + modNS + "/" + title + "]");
                 //title = "[PBR:Craft/TC.C/Pre]";
-
+                if (isCheckFailure) { return true; }
                 if (recycleSet == PhaseRecycle.None)
                 {
                     LogOther("SetStart");
@@ -389,7 +389,7 @@ namespace s649PBR
             private static void TraitCrafterCraftPostPatch(TraitCrafter __instance, AI_UseCrafter ai, Thing __result)
             {//>>>>begin method:PostPatch
                 if (!PatchMain.Cf_Allow_Craft) { return; }
-                //if (isCheckFailure) { return; }
+                if (isCheckFailure) { return; }
                 if (recycleSet == PhaseRecycle.IngSet && recycleQueues.Count > 0)
                 {
                     string title = "[TC.C:Post]";
@@ -401,7 +401,7 @@ namespace s649PBR
                         if (__result == null) { LogError("NoResult"); return; }
                         if (ai == null) { LogError("NoAI"); return; }
                         LogDeep("ArgChecked" + GetStr(__result));
-                        if (IsInProhibitionList(__result.id)) { LogDeep("Prohibition recycle Recipe"); goto MethodEnd; }
+                        if (IsInProhibitionList(__result.id)) { LogDeep("Prohibition recycle Recipe"); isCheckFailure = true; goto MethodEnd; }
                         LogOther("Prohibition Checked");
                         //SetRecipeResult(__result);
                         //lastMixedThing = __result;
@@ -411,19 +411,20 @@ namespace s649PBR
                             bool b = RemoveBIFromQueues(bi);
                             if (b)
                             {
-                                LogDeep("Remove:Success" + GetStringsList(recycleQueues));
+                                LogDeep("Remove:Success/" + GetStringsList(recycleQueues));
                             }
-                            else { LogDeep("Remove:Fail" + GetStringsList(recycleQueues)); }
+                            else { LogDeep("Remove:Fail/" + GetStringsList(recycleQueues));  }
                         }
                         else
-                        { LogDeep("Result:NoBI or Invalid" + GetStringsList(recycleQueues)); }
-                        LogOther("Result Set");
+                        { LogDeep("Result:NoBI or Invalid/" + GetStringsList(recycleQueues));  }
+                        LogTweet("Result Set phase finish");
                     }
                     catch (NullReferenceException ex)
                     {
                         LogError("ArgCheckFailed for NullPo");
                         Debug.Log(ex.Message);
                         Debug.Log(ex.StackTrace);
+                        isCheckFailure = true;
                         //goto MethodEnd;//method 
                         //return;  //harmony
                     }
@@ -449,10 +450,11 @@ namespace s649PBR
                     //PatchMain.ExeRecycle(recycleList, EClass.pc);
                 }
                 else { LogTweet("RemoveSkipped:"); }
-                MethodEnd:
+            MethodEnd:
                 recycleSet = PhaseRecycle.Done;
-                LogTweet("End");
-                //LogInfo(title + "Count:" + lastCraftCount.ToString(), 2);
+                lastCraftCount++;
+                //LogTweet("End");
+                LogOther("Count:" + lastCraftCount.ToString());
                 //LogStackDump();
             }//<<<<end method:PostPatch
             //OnEnd---------------------------------------------------------------------
@@ -520,14 +522,11 @@ namespace s649PBR
                 }
                 //ing
                 
-                
 
                 if (isFactory)
                 {   //作業台など
                     if (recycleQueues != null && recycleQueues.Count > 0)
                     {
-                       
-                        
                         //出力
                         //SetMultiNum(__instance.num);//回数分倍化
                         LogDeep("RQ:" + GetStringsList(recycleQueues));
@@ -538,6 +537,25 @@ namespace s649PBR
                 else 
                 {   //加工機械
                     //LogInfo("[PBR:craft]Crafter is not TraitFactory", 1);
+
+                    try
+                    {
+                        List<string> checkThings = new();
+                        string checktext = "";
+                        checkThings.Add("lCC:" + GetStr(lastCraftCount));
+                        checkThings.Add("RQ:" + GetStringsList(recycleQueues));
+                        checkThings.Add("PR:" + GetStr(recycleSet));
+                        checktext = string.Join("/", checkThings);
+                        LogDeep(checktext);
+                    }
+                    catch (NullReferenceException ex)
+                    {
+                        LogError("checkthings CheckFailed for NullPo");
+                        Debug.Log(ex.Message);
+                        Debug.Log(ex.StackTrace);
+                        //goto MethodEnd;//method 
+                        //return;  //harmony
+                    }
                     if (lastCraftCount != 0 && recycleQueues != null && recycleSet == PhaseRecycle.Done) 
                     {
                         LogDeep("lastCraftCount:" + lastCraftCount.ToString());
