@@ -55,7 +55,7 @@ namespace s649PBR
                 LogStack("[" + modNS + "/" + title + "]");
 
                 LogTweet("Start");
-                string text = "[recycle]";
+                //string text = "[recycle]";
                 bool b = false;
                 if (recycleQueues != null && recycleQueues.Count > 0) 
                 {
@@ -63,6 +63,7 @@ namespace s649PBR
                     {
 
                         b = DoRecycle(bi, EClass.pc);
+                        LogOtherTry(b);
                         /*
                        if (bi.IsEnableRecycle()) 
                        {
@@ -77,8 +78,9 @@ namespace s649PBR
                     }
                 }
                 
-                LogInfo(text);
+                
                 LogStackDump();
+                LogTweet("END");
                 return b;
             }
 
